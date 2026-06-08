@@ -1,0 +1,26 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test fixtures — keep repo clean, don't commit example JDs, sample CVs, screenshots
+test-jds/
+sample-cvs/
+screenshots/
+*.test.html
+*.test.js
+
+# Python server artefacts
+__pycache__/
+*.pyc
+
+# Local secrets (just in case anyone drops one in)
+.env
+.env.local
+*.local

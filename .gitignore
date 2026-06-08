@@ -20,6 +20,10 @@ screenshots/
 __pycache__/
 *.pyc
 
+# Node / npm
+node_modules/
+npm-debug.log*
+
 # Local secrets (just in case anyone drops one in)
 .env
 .env.local

@@ -8,14 +8,25 @@ function renderEditor() {
     return;
   }
 
+  const activeTab = state.draftVersion.editorTab || 'cv';
+
   container.innerHTML = `
     <div class="flex h-screen">
       <!-- Left Pane: Editor -->
-      <div class="w-1/2 border-r border-white/5 overflow-y-auto scrollbar p-6">
-        <div class="mb-4">
-          <h2 class="text-lg font-bold text-white">Editing Room</h2>
-          <p class="text-xs text-gray-500">${escapeHtml(state.currentAnalysis.title)} at ${escapeHtml(state.currentAnalysis.company)}</p>
+      <div class="w-1/2 border-r border-white/5 flex flex-col h-full bg-gray-900">
+
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-white">Editing Room</h2>
+            <p class="text-xs text-gray-500">${escapeHtml(state.currentAnalysis.title)} at ${escapeHtml(state.currentAnalysis.company)}</p>
+          </div>
+          <div class="flex bg-gray-800 rounded-lg p-1 border border-white/5">
+            <button onclick="switchEditorTab('cv')" class="px-4 py-1.5 text-xs font-medium rounded-md ${activeTab === 'cv' ? 'bg-indigo-500/20 text-indigo-300' : 'text-gray-400 hover:text-white'}">CV</button>
+            <button onclick="switchEditorTab('coverletter')" class="px-4 py-1.5 text-xs font-medium rounded-md ${activeTab === 'coverletter' ? 'bg-indigo-500/20 text-indigo-300' : 'text-gray-400 hover:text-white'}">Cover Letter</button>
+          </div>
         </div>
+
+        <div class="flex-1 overflow-y-auto scrollbar p-6 ${activeTab !== 'cv' ? 'hidden' : ''}">
 
         <div class="editor-section">
           <h3 class="text-sm font-semibold text-gray-300 mb-2">Professional Summary</h3>
@@ -57,14 +68,28 @@ function renderEditor() {
           `).join('')}
         </div>
 
-        <div class="flex gap-2 mt-6">
-          <button onclick="downloadDraft('cv')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">⬇ Download CV</button>
-          <button onclick="saveToTracker()" class="btn-ghost text-white px-4 py-2 rounded-lg text-sm">💾 Save to Tracker</button>
+          <div class="flex gap-2 mt-6">
+            <button onclick="downloadDraft('cv')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">⬇ Download CV</button>
+            <button onclick="saveToTracker()" class="btn-ghost text-white px-4 py-2 rounded-lg text-sm">💾 Save to Tracker</button>
+          </div>
         </div>
+
+        <div class="flex-1 overflow-y-auto scrollbar p-6 ${activeTab !== 'coverletter' ? 'hidden' : ''}">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-semibold text-gray-300">Cover Letter Draft</h3>
+            <button onclick="generateCoverLetter()" class="btn-primary text-white px-3 py-1.5 rounded-lg text-xs font-medium">✨ Generate with AI</button>
+          </div>
+          <textarea id="edit-coverletter" rows="20" onchange="updateDraft('coverLetter', this.value)" class="w-full px-4 py-3 rounded-lg text-sm font-mono leading-relaxed" placeholder="Click 'Generate with AI' to draft a tailored cover letter, or paste one here...">${escapeHtml(state.draftVersion.coverLetter || '')}</textarea>
+
+          <div class="flex gap-2 mt-4">
+            <button onclick="downloadDraft('coverletter')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">⬇ Download Cover Letter</button>
+          </div>
+        </div>
+
       </div>
 
       <!-- Right Pane: Live Preview -->
-      <div class="w-1/2 bg-gray-100 overflow-y-auto scrollbar p-6">
+      <div class="w-1/2 bg-gray-100 overflow-y-auto scrollbar p-6 relative">
         <div class="match-widget mb-4">
           <div class="text-xs text-gray-500 uppercase mb-2">Live Match Rate</div>
           <div class="flex items-center gap-3">
@@ -105,6 +130,76 @@ function addBullet(expIndex) {
   state.draftVersion.experience[expIndex].bullets = current + '\nNew bullet point here';
   saveState();
   renderEditor();
+}
+
+function switchEditorTab(tabName) {
+  state.draftVersion.editorTab = tabName;
+  saveState();
+  renderEditor();
+}
+
+async function generateCoverLetter() {
+  if (!isAIConfigured()) {
+    toast('⚠ AI provider not configured. Please set one up in Settings.');
+    return;
+  }
+
+  const btn = document.querySelector('button[onclick="generateCoverLetter()"]');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    const a = state.currentAnalysis;
+    const p = state.draftVersion;
+
+    const matchedConcepts = a.matched.map(m => m.concept || m).join(', ');
+    const gaps = a.gaps ? a.gaps.map(g => g.concept).join(', ') : '';
+
+    const prompt = `You are an expert career coach writing a highly tailored cover letter.
+Write a professional, persuasive cover letter for ${p.name} applying for the ${a.title} position at ${a.company}.
+
+Here is the job description:
+"""
+${a.jd}
+"""
+
+Here is the candidate's profile:
+"""
+${JSON.stringify(p, null, 2)}
+"""
+
+Instructions:
+1. Highlight these exact matching skills seamlessly in the text: ${matchedConcepts}.
+2. If there are gaps (${gaps}), frame the candidate's existing experience positively to compensate. Do not explicitly state they lack the skill.
+3. Use a confident, professional tone. Keep it to 3-4 paragraphs.
+4. Output valid JSON only, using this schema: { "coverLetter": "The full text of the cover letter with line breaks." }`;
+
+    const result = await callAI(prompt);
+
+    let generatedText = '';
+    if (typeof result === 'string') {
+      generatedText = JSON.parse(result).coverLetter;
+    } else {
+      generatedText = result.coverLetter;
+    }
+
+    if (generatedText) {
+      state.draftVersion.coverLetter = generatedText;
+      saveState();
+      renderEditor();
+      toast('✓ Cover letter generated');
+    } else {
+      throw new Error("No coverLetter field returned");
+    }
+
+  } catch (err) {
+    console.error(err);
+    toast('✕ Generation failed: ' + err.message);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 }
 
 function showAIMenu(expIndex, bulletIndex) {
@@ -235,6 +330,20 @@ function highlightKeywords(text, keywords) {
 
 function downloadDraft(type) {
   if (!state.draftVersion) return;
+
+  if (type === 'coverletter') {
+    if (!state.draftVersion.coverLetter) {
+      toast('⚠ Generate or write a cover letter first');
+      return;
+    }
+    const text = state.draftVersion.coverLetter;
+    const filename = `${state.currentAnalysis.company.replace(/\s+/g,'_')}_Cover_Letter.txt`;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, filename);
+    toast(`✓ Cover Letter downloaded`);
+    return;
+  }
+
   const html = buildCVHTML(state.draftVersion, []);
   const filename = `${state.currentAnalysis.company.replace(/\s+/g,'_')}_CV.doc`;
   const fullHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">

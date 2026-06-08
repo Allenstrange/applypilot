@@ -500,7 +500,7 @@ const AI_PROVIDERS = {
     async call(prompt, model, apiKey) {
       const isReasoning = model.startsWith('o3') || model.startsWith('o4');
       const body = { model, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } };
-      if (!isReasoning) body.temperature = 0;
+      if (!isReasoning) body.temperature = 0.1;
       const resp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
@@ -529,7 +529,7 @@ const AI_PROVIDERS = {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] })
+        body: JSON.stringify({ model, max_tokens: 8192, temperature: 0.1, messages: [{ role: 'user', content: prompt }] })
       });
       if (!resp.ok) throw new Error('Anthropic error: ' + resp.status);
       const data = await resp.json();
@@ -555,7 +555,7 @@ const AI_PROVIDERS = {
       const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0 } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.1 } })
       });
       if (!resp.ok) throw new Error('Gemini error: ' + resp.status);
       const data = await resp.json();
@@ -570,7 +570,7 @@ const AI_PROVIDERS = {
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': apiKey ? 'Bearer ' + apiKey : '' },
-        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' }, temperature: 0 })
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' }, temperature: 0.1 })
       });
       if (!resp.ok) throw new Error('Custom API error: ' + resp.status);
       const data = await resp.json();
@@ -1116,7 +1116,46 @@ async function testProviderConnection() {
 }
 
 // ============== JOB ANALYSIS (STEP 1) ==============
-function analyseJob() {
+async function analyseJDSemantically(jd, profile) {
+  const schema = {
+    requiredCompetencies: [{ concept: "string", importance: "must-have | nice-to-have", evidence: "short verbatim quote from JD" }],
+    matched: [{ concept: "string", profileEvidence: "string — verbatim from profile that supports this match" }],
+    gaps: [{ concept: "string", importance: "must-have | nice-to-have", suggestion: "one-sentence actionable suggestion for the candidate" }],
+    senioritySignal: "entry | mid | senior | lead",
+    domainTags: ["string"],
+    overallFit: 0 // integer 0..100
+  };
+
+  const prompt = `You are an expert technical recruiter analyzing a job description against a candidate's profile.
+Your task is to extract the concepts and required competencies from the JD, then semantically match them to the candidate's profile — recognising synonyms, paraphrases, and implicit matches.
+
+Follow these strict instructions:
+"You may only identify matches and gaps that are EVIDENT in the candidate's actual profile text. Do not infer skills the candidate did not write down."
+"Return verbatim quotes from the JD (≤ 15 words) as evidence for each required competency."
+"For profileEvidence, quote the candidate's actual text verbatim (≤ 15 words). Do not paraphrase."
+"Respond with valid JSON only. No prose, no markdown."
+
+Target JSON schema:
+${JSON.stringify(schema, null, 2)}
+
+Job Description:
+"""
+${jd}
+"""
+
+Candidate Profile:
+"""
+${JSON.stringify(profile, null, 2)}
+"""`;
+
+  const result = await callAI(prompt);
+  if (typeof result === 'string') {
+    return JSON.parse(result);
+  }
+  return result;
+}
+
+async function analyseJob() {
   const company = document.getElementById('j-company').value.trim();
   const title = document.getElementById('j-title').value.trim();
   const location = document.getElementById('j-location').value.trim();
@@ -1130,16 +1169,54 @@ function analyseJob() {
     return;
   }
 
-  // Extract keywords
-  const jdKeywords = extractKeywords(jd);
-  const profileKeywords = extractKeywords(state.profile.skills + ' ' + state.profile.experience.map(e => e.tools + ' ' + e.bullets).join(' '));
-  const matched = jdKeywords.filter(k => profileKeywords.includes(k));
-  const missing = jdKeywords.filter(k => !profileKeywords.includes(k));
+  let jdKeywords = [];
+  let matched = [];
+  let missing = [];
+  let gaps = [];
+  let senioritySignal = "";
+  let domainTags = [];
+  let overallFit = 0;
+
+  if (isAIConfigured()) {
+    try {
+      toast('⏳ Semantically analysing JD...');
+      const semanticResult = await analyseJDSemantically(jd, state.profile);
+
+      overallFit = semanticResult.overallFit || 0;
+      senioritySignal = semanticResult.senioritySignal || "";
+      domainTags = semanticResult.domainTags || [];
+
+      matched = semanticResult.matched || [];
+      gaps = semanticResult.gaps || [];
+
+      // Flatten matched concepts for the highlight widget
+      jdKeywords = matched.map(m => m.concept);
+
+      toast('✓ Analysis complete');
+    } catch (err) {
+      console.error(err);
+      toast('⚠ Semantic analysis unavailable — falling back to keyword match. Configure an AI provider in Settings for better results.');
+      // Fallback
+      jdKeywords = extractKeywords(jd);
+      const profileKeywords = extractKeywords(state.profile.skills + ' ' + state.profile.experience.map(e => e.tools + ' ' + e.bullets).join(' '));
+      matched = jdKeywords.filter(k => profileKeywords.includes(k));
+      missing = jdKeywords.filter(k => !profileKeywords.includes(k));
+    }
+  } else {
+    toast('⚠ Semantic analysis unavailable — falling back to keyword match. Configure an AI provider in Settings for better results.');
+    jdKeywords = extractKeywords(jd);
+    const profileKeywords = extractKeywords(state.profile.skills + ' ' + state.profile.experience.map(e => e.tools + ' ' + e.bullets).join(' '));
+    matched = jdKeywords.filter(k => profileKeywords.includes(k));
+    missing = jdKeywords.filter(k => !profileKeywords.includes(k));
+  }
 
   // ATS Safety Scan
   const atsWarnings = performATSScan(state.profile);
 
-  state.currentAnalysis = { company, title, location, url, jd, jdKeywords, matched, missing, atsWarnings };
+  state.currentAnalysis = {
+    company, title, location, url, jd, jdKeywords, matched, missing, gaps,
+    overallFit, senioritySignal, domainTags, atsWarnings
+  };
   
   // Create draft version (copy of master profile)
   state.draftVersion = JSON.parse(JSON.stringify(state.profile));
@@ -1207,20 +1284,34 @@ function renderAnalysisResults() {
   if (!container || !state.currentAnalysis) return;
   
   const a = state.currentAnalysis;
-  const matchScore = a.jdKeywords.length ? Math.round((a.matched.length / a.jdKeywords.length) * 100) : 0;
+  const isSemantic = a.overallFit !== undefined && a.overallFit >= 0;
+
+  const matchScore = isSemantic ? a.overallFit : (a.jdKeywords.length ? Math.round((a.matched.length / a.jdKeywords.length) * 100) : 0);
+  const matchLabel = isSemantic ? 'Semantic Fit' : 'Match Rate';
+  const matchDetail = isSemantic ? 'Semantic fit: %' : `${a.matched.length} of ${a.jdKeywords.length} keywords matched`;
+
+  let headerBadges = '';
+  if (isSemantic) {
+    if (a.senioritySignal) {
+      headerBadges += `<span class="status-pill bg-purple-500/20 text-purple-300 ml-3">${escapeHtml(a.senioritySignal)}</span>`;
+    }
+    if (a.domainTags && a.domainTags.length) {
+      headerBadges += a.domainTags.map(t => `<span class="status-pill bg-indigo-500/20 text-indigo-300 ml-1">${escapeHtml(t)}</span>`).join('');
+    }
+  }
   
   container.classList.remove('hidden');
   container.innerHTML = `
     <div class="fade-in">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-white">Analysis Complete</h2>
+        <h2 class="text-xl font-bold text-white flex items-center">Analysis Complete ${headerBadges}</h2>
         <button onclick="showPage('editor')" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-medium">✍ Enter Editing Room →</button>
       </div>
 
       <div class="grid grid-cols-2 gap-6 mb-6">
         <!-- Match Score -->
         <div class="card rounded-xl p-5">
-          <div class="text-xs text-gray-500 uppercase mb-3">Match Rate</div>
+          <div class="text-xs text-gray-500 uppercase mb-3">${matchLabel}</div>
           <div class="flex items-center gap-4">
             <svg width="80" height="80" viewBox="0 0 80 80">
               <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
@@ -1231,7 +1322,7 @@ function renderAnalysisResults() {
             </svg>
             <div>
               <div class="text-3xl font-bold text-white">${matchScore}%</div>
-              <div class="text-xs text-gray-500">${a.matched.length} of ${a.jdKeywords.length} keywords matched</div>
+              <div class="text-xs text-gray-500">${matchDetail.replace('%', matchScore + '%')}</div>
             </div>
           </div>
         </div>
@@ -1249,18 +1340,28 @@ function renderAnalysisResults() {
         </div>
       </div>
 
-      <!-- Keywords -->
+      <!-- Keywords / Gaps -->
       <div class="grid grid-cols-2 gap-6">
         <div class="card rounded-xl p-5">
-          <h3 class="font-semibold text-white mb-3">✓ Matched Keywords (${a.matched.length})</h3>
+          <h3 class="font-semibold text-white mb-3">✓ Matched Concepts (${a.matched.length})</h3>
           <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-            ${a.matched.length ? a.matched.map(k => `<span class="chip chip-match">${k}</span>`).join('') : '<span class="text-gray-500 text-sm">None matched</span>'}
+            ${a.matched.length ? a.matched.map(m => {
+              const conceptName = typeof m === 'string' ? m : m.concept;
+              const evidence = typeof m === 'string' ? '' : ` title="Evidence: ${escapeAttr(m.profileEvidence)}"`;
+              return `<span class="chip chip-match" ${evidence}>${escapeHtml(conceptName)}</span>`;
+            }).join('') : '<span class="text-gray-500 text-sm">None matched</span>'}
           </div>
         </div>
         <div class="card rounded-xl p-5">
-          <h3 class="font-semibold text-white mb-3">⚠ Missing Keywords (${a.missing.length})</h3>
-          <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-            ${a.missing.length ? a.missing.map(k => `<span class="chip chip-gap">${k}</span>`).join('') : '<span class="text-gray-500 text-sm">Great, no gaps found</span>'}
+          <h3 class="font-semibold text-white mb-3">⚠ Areas to Strengthen</h3>
+          <div class="flex flex-col gap-2 max-h-48 overflow-y-auto">
+            ${isSemantic && a.gaps && a.gaps.length ? a.gaps.map(g => `
+              <div class="p-2 rounded bg-red-500/10 border border-red-500/20 text-sm">
+                <div class="font-semibold text-red-400">${escapeHtml(g.concept)} <span class="text-xs text-gray-500 ml-1">(${escapeHtml(g.importance)})</span></div>
+                <div class="text-xs text-gray-400 mt-1">${escapeHtml(g.suggestion)}</div>
+              </div>
+            `).join('') :
+            (!isSemantic && a.missing.length ? a.missing.map(k => `<span class="chip chip-gap inline-block w-max">${escapeHtml(k)}</span>`).join('') : '<span class="text-gray-500 text-sm">Great, no gaps found</span>')}
           </div>
         </div>
       </div>

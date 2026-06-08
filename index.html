@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ApplyPilot - AI Job Application Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  body { background: #0a0a0f; color: #e5e7eb; }
+  .gradient-bg { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); }
+  .sidebar-item.active { background: linear-gradient(90deg, rgba(99,102,241,0.2), transparent); border-left: 3px solid #6366f1; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.04); }
+  .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); transition: all 0.2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(99,102,241,0.3); }
+  .btn-ghost { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+  textarea, input, select { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #e5e7eb; }
+  textarea:focus, input:focus, select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+  select option { background: #1f2937; color: #e5e7eb; }
+  select optgroup { background: #111827; color: #a5b4fc; font-weight: 600; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .chip-match { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .chip-gap { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .status-pill { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-planned { background: rgba(156,163,175,0.2); color: #d1d5db; }
+  .status-applied { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .status-interview { background: rgba(234,179,8,0.2); color: #fbbf24; }
+  .status-offer { background: rgba(34,197,94,0.2); color: #4ade80; }
+  .status-rejected { background: rgba(239,68,68,0.2); color: #f87171; }
+  .scrollbar::-webkit-scrollbar { width: 6px; }
+  .scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1f2937; border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; z-index: 100; max-width: 400px; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .progress-ring { transition: stroke-dashoffset 0.8s ease-out; }
+  .doc-preview { background: #fff; color: #111; padding: 48px; line-height: 1.6; font-size: 14px; max-height: 80vh; overflow-y: auto; font-family: 'Calibri', sans-serif; }
+  .doc-preview h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #000; }
+  .doc-preview h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; color: #222; }
+  .doc-preview h3 { font-size: 14px; font-weight: 700; margin-top: 10px; color: #111; }
+  .doc-preview ul { list-style: disc; padding-left: 20px; margin: 6px 0; }
+  .doc-preview li { margin-bottom: 4px; }
+  .doc-preview mark { background: rgba(34, 197, 94, 0.3); color: #000; padding: 1px 2px; border-radius: 2px; }
+  .dropzone { border: 2px dashed rgba(99,102,241,0.4); border-radius: 12px; transition: all 0.2s; cursor: pointer; }
+  .dropzone.dragover { border-color: #6366f1; background: rgba(99,102,241,0.1); transform: scale(1.01); }
+  .dropzone:hover { border-color: #6366f1; background: rgba(99,102,241,0.05); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .provider-card { background: rgba(255,255,255,0.02); border: 2px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; transition: all 0.2s; cursor: pointer; }
+  .provider-card.selected { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+  .provider-card:hover { border-color: rgba(99,102,241,0.5); }
+  
+  /* Editor specific */
+  .editor-section { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 16px; margin-bottom: 16px; }
+  .bullet-editor { position: relative; padding-right: 40px; }
+  .bullet-editor textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; font-size: 13px; resize: vertical; min-height: 40px; }
+  .ai-btn { position: absolute; top: 4px; right: 4px; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .ai-btn:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(139,92,246,0.4); }
+  .ai-menu { position: absolute; top: 30px; right: 0; background: #1f2937; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px; z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-width: 200px; }
+  .ai-menu button { display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; color: #e5e7eb; background: transparent; border: none; border-radius: 4px; cursor: pointer; }
+  .ai-menu button:hover { background: rgba(99,102,241,0.2); }
+  
+  .ats-warning { background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .ats-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+  .ats-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+  
+  .match-widget { position: sticky; top: 20px; background: #1f2937; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="flex min-h-screen">
+  <aside class="w-64 border-r border-white/5 p-5 flex flex-col">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-lg">AP</div>
+      <div>
+        <div class="font-bold text-white">ApplyPilot</div>
+        <div class="text-xs text-gray-500">AI Application Assistant</div>
+      </div>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <button onclick="showPage('dashboard')" data-page="dashboard" class="sidebar-item active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>📊</span> Dashboard
+      </button>
+      <button onclick="showPage('profile')" data-page="profile" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>👤</span> Master Profile
+      </button>
+      <button onclick="showPage('analysis')" data-page="analysis" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>🔍</span> Job Analysis
+      </button>
+      <button onclick="showPage('editor')" data-page="editor" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>✍</span> Editing Room
+      </button>
+      <button onclick="showPage('tracker')" data-page="tracker" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>📋</span> Application Tracker
+      </button>
+      <button onclick="showPage('settings')" data-page="settings" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+        <span>⚙</span> AI Settings
+      </button>
+    </nav>
+    <div class="pt-4 border-t border-white/5 text-xs text-gray-500">
+      <div>Data stored locally</div>
+      <div class="mt-1">v3.0 - Two-Step Workflow</div>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto scrollbar">
+
+    <!-- Dashboard -->
+    <section id="page-dashboard" class="page p-8 fade-in">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Welcome back 👋</h1>
+        <p class="text-gray-400 mt-1">Your AI-powered job application command centre.</p>
+      </div>
+
+      <div class="grid grid-cols-4 gap-4 mb-8">
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase tracking-wider">Applications</div>
+          <div class="text-3xl font-bold text-white mt-2" id="stat-apps">0</div>
+        </div>
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase tracking-wider">Interviews</div>
+          <div class="text-3xl font-bold text-yellow-400 mt-2" id="stat-interviews">0</div>
+        </div>
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase tracking-wider">Offers</div>
+          <div class="text-3xl font-bold text-green-400 mt-2" id="stat-offers">0</div>
+        </div>
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase tracking-wider">This Week</div>
+          <div class="text-3xl font-bold text-indigo-400 mt-2" id="stat-week">0</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div class="card rounded-xl p-6">
+          <h2 class="font-semibold text-white mb-4">Quick Actions</h2>
+          <div class="space-y-2">
+            <button onclick="showPage('analysis')" class="w-full btn-primary text-white py-3 px-4 rounded-lg text-sm font-medium">🔍 Analyse a New Job</button>
+            <button onclick="showPage('profile')" class="w-full btn-ghost text-white py-3 px-4 rounded-lg text-sm font-medium">👤 Edit Master Profile</button>
+            <button onclick="showPage('tracker')" class="w-full btn-ghost text-white py-3 px-4 rounded-lg text-sm font-medium">📋 View All Applications</button>
+            <button onclick="showPage('settings')" class="w-full btn-ghost text-white py-3 px-4 rounded-lg text-sm font-medium">⚙ Configure AI Provider</button>
+          </div>
+        </div>
+
+        <div class="card rounded-xl p-6">
+          <h2 class="font-semibold text-white mb-4">Recent Activity</h2>
+          <div id="recent-activity" class="space-y-3 text-sm">
+            <div class="text-gray-500 text-center py-4">No recent activity. Start by analysing a job.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-xl p-6 mt-6">
+        <h2 class="font-semibold text-white mb-4">How ApplyPilot Works</h2>
+        <div class="grid grid-cols-4 gap-4 text-sm">
+          <div class="text-center">
+            <div class="w-12 h-12 rounded-full gradient-bg mx-auto flex items-center justify-center text-xl mb-2">1</div>
+            <div class="font-medium text-white">Build Profile</div>
+            <div class="text-gray-500 text-xs mt-1">Upload CV or fill manually</div>
+          </div>
+          <div class="text-center">
+            <div class="w-12 h-12 rounded-full gradient-bg mx-auto flex items-center justify-center text-xl mb-2">2</div>
+            <div class="font-medium text-white">Analyse JD</div>
+            <div class="text-gray-500 text-xs mt-1">Get keyword gaps & ATS checks</div>
+          </div>
+          <div class="text-center">
+            <div class="w-12 h-12 rounded-full gradient-bg mx-auto flex items-center justify-center text-xl mb-2">3</div>
+            <div class="font-medium text-white">Edit & Tailor</div>
+            <div class="text-gray-500 text-xs mt-1">Split-screen editor with AI</div>
+          </div>
+          <div class="text-center">
+            <div class="w-12 h-12 rounded-full gradient-bg mx-auto flex items-center justify-center text-xl mb-2">4</div>
+            <div class="font-medium text-white">Download & Apply</div>
+            <div class="text-gray-500 text-xs mt-1">ATS-safe DOCX files</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Master Profile -->
+    <section id="page-profile" class="page p-8 fade-in hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Master Profile</h1>
+        <p class="text-gray-400 mt-1">Your baseline CV data. Used to tailor every application truthfully.</p>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h2 class="font-semibold text-white">📤 Auto-Import from CV</h2>
+            <p class="text-xs text-gray-500 mt-1">Upload your CV. Uses AI if configured, otherwise robust local parser. Supports DOCX, PDF, JSON, TXT.</p>
+          </div>
+          <button onclick="downloadProfileJSON()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">⬇ Export as JSON</button>
+        </div>
+
+        <div id="dropzone" class="dropzone p-8 text-center">
+          <input type="file" id="cv-upload" class="hidden" accept=".docx,.pdf,.json,.txt" />
+          <div class="text-4xl mb-2">📎</div>
+          <div class="font-medium text-white">Drop your CV here or click to browse</div>
+          <div class="text-xs text-gray-500 mt-2">Accepted formats: .docx .pdf .json .txt (max 10MB)</div>
+          <div id="upload-status" class="mt-3 text-sm"></div>
+        </div>
+
+        <div id="parse-options" class="mt-4 hidden">
+          <div class="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+            <div class="text-indigo-300 font-semibold text-sm mb-3">How should this data be applied?</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-apply-overwrite" type="button" class="btn-primary text-white px-4 py-2 rounded-lg text-xs font-medium">
+                Replace current profile
+              </button>
+              <button id="btn-apply-merge" type="button" class="btn-ghost text-white px-4 py-2 rounded-lg text-xs font-medium">
+                Fill blank fields only
+              </button>
+              <button id="btn-cancel-parse" type="button" class="btn-ghost text-white px-4 py-2 rounded-lg text-xs">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-white mb-4">Personal Details</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Full Name</label>
+            <input id="p-name" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="John Smith"/>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Professional Title</label>
+            <input id="p-title" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="IT Support Analyst"/>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Email</label>
+            <input id="p-email" type="email" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="you@example.com"/>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Phone</label>
+            <input id="p-phone" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="+44 7700 900000"/>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Location</label>
+            <input id="p-location" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Birmingham, UK"/>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">LinkedIn URL</label>
+            <input id="p-linkedin" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="linkedin.com/in/you"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-white mb-4">Professional Summary</h2>
+        <textarea id="p-summary" rows="4" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="A brief 3-4 line summary of your experience and strengths..."></textarea>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-white mb-4">Skills & Tools</h2>
+        <p class="text-xs text-gray-500 mb-3">Comma-separated. Used for keyword matching.</p>
+        <textarea id="p-skills" rows="3" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Active Directory, Azure AD, Office 365, SCCM, Intune, Windows 10/11, ServiceNow, PowerShell, TCP/IP, DHCP, DNS"></textarea>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-semibold text-white">Work Experience</h2>
+          <button onclick="addExperience()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">+ Add Role</button>
+        </div>
+        <div id="experience-list" class="space-y-4"></div>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-semibold text-white">Education</h2>
+          <button onclick="addEducation()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">+ Add Education</button>
+        </div>
+        <div id="education-list" class="space-y-4"></div>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-white mb-4">Certifications</h2>
+        <textarea id="p-certs" rows="2" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="One per line: CompTIA A+, Microsoft MD-102, ITIL Foundation"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button onclick="saveProfile()" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-medium">💾 Save Profile</button>
+      </div>
+    </section>
+
+    <!-- Job Analysis (Step 1) -->
+    <section id="page-analysis" class="page p-8 fade-in hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">🔍 Job Analysis</h1>
+        <p class="text-gray-400 mt-1">Paste a job description to diagnose gaps and ATS issues before you start editing.</p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6">
+        <div class="col-span-2 card rounded-xl p-6">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Company Name *</label>
+              <input id="j-company" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Tetra Tech"/>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Job Title *</label>
+              <input id="j-title" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="1st/2nd Line Support Analyst"/>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Location</label>
+              <input id="j-location" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Birmingham, UK"/>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Source URL (optional)</label>
+              <input id="j-url" type="text" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="https://..."/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Job Description *</label>
+            <textarea id="j-jd" rows="16" class="w-full px-3 py-2 rounded-lg text-sm font-mono text-xs" placeholder="Paste the full job description here..."></textarea>
+          </div>
+          <div class="flex justify-between items-center mt-4">
+            <button onclick="loadSampleJD()" class="text-xs text-indigo-400 hover:text-indigo-300">Load sample JD for testing</button>
+            <div class="flex gap-2">
+              <button onclick="clearJobForm()" class="btn-ghost px-4 py-2 rounded-lg text-sm">Clear</button>
+              <button onclick="analyseJob()" class="btn-primary text-white px-6 py-2 rounded-lg text-sm font-medium">🔍 Analyse</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card rounded-xl p-6">
+          <h2 class="font-semibold text-white mb-4">Analysis Tips</h2>
+          <div class="space-y-3 text-sm text-gray-400">
+            <div class="flex gap-2"><span>✅</span><span>Paste the full JD including responsibilities and requirements</span></div>
+            <div class="flex gap-2"><span>✅</span><span>Keep your master profile up to date first</span></div>
+            <div class="flex gap-2"><span>✅</span><span>Review the ATS safety scan before entering the editor</span></div>
+          </div>
+
+          <div class="mt-6 p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+            <div class="text-xs text-indigo-300 font-semibold mb-1">PROFILE STATUS</div>
+            <div id="profile-status" class="text-sm">Checking...</div>
+          </div>
+
+          <div class="mt-4 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+            <div class="text-xs text-purple-300 font-semibold mb-1">AI PROVIDER</div>
+            <div id="ai-provider-status" class="text-sm">Checking...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="analysis-results" class="mt-8 hidden"></div>
+    </section>
+
+    <!-- Editing Room (Step 2) -->
+    <section id="page-editor" class="page p-0 fade-in hidden">
+      <div id="editor-content">
+        <div class="p-12 text-center text-gray-500">
+          <div class="text-4xl mb-2">✍</div>
+          <div>No job selected for editing.</div>
+          <button onclick="showPage('analysis')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm mt-4">Analyse a Job First</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Application Tracker -->
+    <section id="page-tracker" class="page p-8 fade-in hidden">
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-white">Application Tracker</h1>
+          <p class="text-gray-400 mt-1">All your job applications in one place.</p>
+        </div>
+        <button onclick="exportTrackerCSV()" class="btn-ghost px-4 py-2 rounded-lg text-sm">⬇ Export CSV</button>
+      </div>
+      <div id="tracker-table" class="card rounded-xl overflow-hidden"></div>
+    </section>
+
+    <!-- AI Provider Settings -->
+    <section id="page-settings" class="page p-8 fade-in hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">⚙ AI Provider Settings</h1>
+        <p class="text-gray-400 mt-1">Configure which AI service powers CV parsing and bullet enhancement.</p>
+      </div>
+
+      <div class="card rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-white mb-4">Select AI Provider</h2>
+        <div class="grid grid-cols-2 gap-4" id="provider-selector">
+          <div class="provider-card" data-provider="openai" onclick="selectProvider('openai')">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-xl">🤖</div>
+              <div>
+                <div class="font-semibold text-white">OpenAI</div>
+                <div class="text-xs text-gray-500">GPT-5, GPT-4.1, o3</div>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400">Latest GPT-5 and reasoning models. Best all-round accuracy.</div>
+          </div>
+
+          <div class="provider-card" data-provider="anthropic" onclick="selectProvider('anthropic')">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-xl">🧠</div>
+              <div>
+                <div class="font-semibold text-white">Anthropic Claude</div>
+                <div class="text-xs text-gray-500">Claude 4.5, 4, 3.7</div>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400">Latest Claude 4.5 Sonnet. Excellent structured extraction.</div>
+          </div>
+
+          <div class="provider-card" data-provider="gemini" onclick="selectProvider('gemini')">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-xl">💎</div>
+              <div>
+                <div class="font-semibold text-white">Google Gemini</div>
+                <div class="text-xs text-gray-500">Gemini 2.5 Pro, Flash</div>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400">Latest Gemini 2.5. Fast with generous free tier.</div>
+          </div>
+
+          <div class="provider-card" data-provider="custom" onclick="selectProvider('custom')">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-xl">🔧</div>
+              <div>
+                <div class="font-semibold text-white">Custom Endpoint</div>
+                <div class="text-xs text-gray-500">Local LLM, Azure, etc.</div>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400">Connect to any OpenAI-compatible API (Ollama, LM Studio, etc.)</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="provider-config" class="card rounded-xl p-6 mb-6 hidden">
+        <h2 class="font-semibold text-white mb-4" id="config-title">Configure Provider</h2>
+        <div id="config-fields"></div>
+        <div class="flex gap-2 mt-4">
+          <button onclick="saveProviderConfig()" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">💾 Save Configuration</button>
+          <button onclick="testProviderConnection()" class="btn-ghost text-white px-4 py-2 rounded-lg text-sm">🔌 Test Connection</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ============== STATE ==============
+let state = {
+  profile: { name: '', title: '', email: '', phone: '', location: '', linkedin: '', summary: '', skills: '', certs: '', experience: [], education: [] },
+  applications: [],
+  currentAnalysis: null, // { company, title, location, url, jd, jdKeywords, matched, missing, atsWarnings }
+  draftVersion: null // The working copy being edited
+};
+
+let providerSettings = {
+  activeProvider: 'openai',
+  openai: { apiKey: '', model: 'gpt-4o-mini' },
+  anthropic: { apiKey: '', model: 'claude-3-5-sonnet-20241022' },
+  gemini: { apiKey: '', model: 'gemini-1.5-flash' },
+  custom: { endpoint: '', apiKey: '', model: '' }
+};
+
+let pendingParsedData = null;
+
+// ============== AI PROVIDERS ==============
+const AI_PROVIDERS = {
+  openai: {
+    name: 'OpenAI',
+    modelGroups: [
+      { label: '🚀 GPT-5 Family (Latest)', models: [
+        { value: 'gpt-5', label: 'GPT-5 - Most capable', badge: 'new' },
+        { value: 'gpt-5-mini', label: 'GPT-5 Mini - Best balance', badge: 'recommended' }
+      ]},
+      { label: '🧠 Reasoning Models', models: [
+        { value: 'o3', label: 'o3 - Advanced reasoning', badge: 'reasoning' },
+        { value: 'o4-mini', label: 'o4 Mini - Latest reasoning', badge: 'new' }
+      ]},
+      { label: '⚡ GPT-4.1 Family', models: [
+        { value: 'gpt-4.1', label: 'GPT-4.1' },
+        { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' }
+      ]},
+      { label: '🔹 GPT-4o Family', models: [
+        { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini' }
+      ]}
+    ],
+    async call(prompt, model, apiKey) {
+      const isReasoning = model.startsWith('o3') || model.startsWith('o4');
+      const body = { model, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } };
+      if (!isReasoning) body.temperature = 0;
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error('OpenAI error: ' + resp.status);
+      const data = await resp.json();
+      return JSON.parse(data.choices[0].message.content);
+    }
+  },
+  anthropic: {
+    name: 'Anthropic Claude',
+    modelGroups: [
+      { label: '🚀 Claude 4.5 (Latest)', models: [
+        { value: 'claude-sonnet-4-5', label: 'Claude 4.5 Sonnet', badge: 'recommended' }
+      ]},
+      { label: '🔸 Claude 4', models: [
+        { value: 'claude-sonnet-4', label: 'Claude 4 Sonnet' }
+      ]},
+      { label: '⚡ Claude 3.5', models: [
+        { value: 'claude-3-5-sonnet-latest', label: 'Claude 3.5 Sonnet' },
+        { value: 'claude-3-5-haiku-latest', label: 'Claude 3.5 Haiku' }
+      ]}
+    ],
+    async call(prompt, model, apiKey) {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] })
+      });
+      if (!resp.ok) throw new Error('Anthropic error: ' + resp.status);
+      const data = await resp.json();
+      const text = data.content[0].text;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON in response');
+      return JSON.parse(jsonMatch[0]);
+    }
+  },
+  gemini: {
+    name: 'Google Gemini',
+    modelGroups: [
+      { label: '🚀 Gemini 2.5 (Latest)', models: [
+        { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', badge: 'recommended' },
+        { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', badge: 'new' }
+      ]},
+      { label: '🔹 Gemini 1.5', models: [
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' }
+      ]}
+    ],
+    async call(prompt, model, apiKey) {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0 } })
+      });
+      if (!resp.ok) throw new Error('Gemini error: ' + resp.status);
+      const data = await resp.json();
+      const text = data.candidates[0].content.parts[0].text;
+      return JSON.parse(text);
+    }
+  },
+  custom: {
+    name: 'Custom Endpoint',
+    modelGroups: [],
+    async call(prompt, model, apiKey, endpoint) {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': apiKey ? 'Bearer ' + apiKey : '' },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' }, temperature: 0 })
+      });
+      if (!resp.ok) throw new Error('Custom API error: ' + resp.status);
+      const data = await resp.json();
+      return JSON.parse(data.choices[0].message.content);
+    }
+  }
+};
+
+async function callAI(prompt) {
+  const provider = providerSettings.activeProvider;
+  const config = providerSettings[provider];
+  if (!config.apiKey && provider !== 'custom') throw new Error('No API key configured for ' + AI_PROVIDERS[provider].name);
+  if (provider === 'custom' && !config.endpoint) throw new Error('No endpoint configured');
+  const model = config.model;
+  if (provider === 'custom') return await AI_PROVIDERS.custom.call(prompt, model, config.apiKey, config.endpoint);
+  return await AI_PROVIDERS[provider].call(prompt, model, config.apiKey);
+}
+
+function isAIConfigured() {
+  const provider = providerSettings.activeProvider;
+  const config = providerSettings[provider];
+  return !!(config.apiKey || (provider === 'custom' && config.endpoint));
+}
+
+// ============== PERSISTENCE ==============
+function loadState() {
+  try {
+    const saved = localStorage.getItem('applypilot_state_v3');
+    if (saved) {
+      const loaded = JSON.parse(saved);
+      state.profile = { ...state.profile, ...(loaded.profile || {}) };
+      state.applications = loaded.applications || [];
+      state.currentAnalysis = loaded.currentAnalysis || null;
+      state.draftVersion = loaded.draftVersion || null;
+    }
+  } catch(e) { console.error('loadState', e); }
+  try {
+    const ps = localStorage.getItem('applypilot_providers_v3');
+    if (ps) {
+      const loaded = JSON.parse(ps);
+      providerSettings.activeProvider = loaded.activeProvider || providerSettings.activeProvider;
+      ['openai', 'anthropic', 'gemini', 'custom'].forEach(p => {
+        if (loaded[p]) providerSettings[p] = { ...providerSettings[p], ...loaded[p] };
+      });
+    }
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('applypilot_state_v3', JSON.stringify(state)); } catch(e) { console.error('saveState', e); }
+}
+function saveProviderSettings() {
+  localStorage.setItem('applypilot_providers_v3', JSON.stringify(providerSettings));
+}
+
+// ============== NAVIGATION ==============
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.remove('hidden');
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-page="${page}"]`);
+  if (btn) btn.classList.add('active');
+  if (page === 'dashboard') updateDashboard();
+  if (page === 'profile') populateProfileForm();
+  if (page === 'tracker') renderTracker();
+  if (page === 'analysis') { checkProfileStatus(); checkAIProviderStatus(); }
+  if (page === 'editor') renderEditor();
+  if (page === 'settings') loadProviderSettingsUI();
+  window.scrollTo(0, 0);
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'all 0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+// ============== CV UPLOAD & PARSING ==============
+function setupDropzone() {
+  const dz = document.getElementById('dropzone');
+  const input = document.getElementById('cv-upload');
+  if (!dz || !input) return;
+  dz.addEventListener('click', (e) => {
+    if (e.target.closest('#parse-options') || e.target.closest('#upload-status')) return;
+    input.click();
+  });
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleCVFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', (e) => {
+    if (e.target.files.length) handleCVFile(e.target.files[0]);
+    e.target.value = '';
+  });
+}
+
+function setupParseButtons() {
+  const btnOverwrite = document.getElementById('btn-apply-overwrite');
+  const btnMerge = document.getElementById('btn-apply-merge');
+  const btnCancel = document.getElementById('btn-cancel-parse');
+
+  if (btnOverwrite) btnOverwrite.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); applyParsedData('overwrite'); });
+  if (btnMerge) btnMerge.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); applyParsedData('merge'); });
+  if (btnCancel) btnCancel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); cancelParse(); });
+}
+
+async function handleCVFile(file) {
+  const status = document.getElementById('upload-status');
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    status.innerHTML = '<span class="text-red-400">✕ File too large (max 10MB)</span>';
+    return;
+  }
+  status.innerHTML = '<span class="text-indigo-400"><span class="spinner"></span>Reading ' + file.name + '...</span>';
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    let text = '';
+    let jsonData = null;
+
+    if (ext === 'json') {
+      text = await file.text();
+      try { jsonData = JSON.parse(text); }
+      catch (e) { throw new Error('Invalid JSON format: ' + e.message); }
+    } else if (ext === 'txt') {
+      text = await file.text();
+    } else if (ext === 'docx') {
+      text = await readDocxText(file);
+    } else if (ext === 'pdf') {
+      text = await readPdfText(file);
+    } else {
+      throw new Error('Unsupported file type: ' + ext);
+    }
+
+    let parsed;
+    if (jsonData) {
+      parsed = normaliseJsonProfile(jsonData);
+    } else if (isAIConfigured()) {
+      status.innerHTML = '<span class="text-indigo-400"><span class="spinner"></span>AI extracting profile data...</span>';
+      try {
+        parsed = await parseCVWithAI(text);
+      } catch (err) {
+        console.warn('AI parse failed:', err);
+        toast('⚠ AI parse failed, using local parser');
+        parsed = parseCVText(text);
+      }
+    } else {
+      status.innerHTML = '<span class="text-indigo-400"><span class="spinner"></span>Parsing with local parser...</span>';
+      parsed = parseCVText(text);
+    }
+
+    pendingParsedData = parsed;
+
+    const stats = [];
+    if (parsed.name) stats.push('name');
+    if (parsed.email) stats.push('email');
+    if (parsed.skills) stats.push('skills');
+    if (parsed.experience && parsed.experience.length) stats.push(parsed.experience.length + ' roles');
+
+    status.innerHTML = '<span class="text-green-400">✓ Parsed <strong>' + escapeHtml(file.name) + '</strong>. Found: ' + (stats.length ? stats.join(', ') : 'no recognised fields') + '</span>';
+
+    const parseOpts = document.getElementById('parse-options');
+    if (parseOpts) parseOpts.classList.remove('hidden');
+
+  } catch (err) {
+    console.error('handleCVFile', err);
+    status.innerHTML = '<span class="text-red-400">✕ Error: ' + escapeHtml(err.message) + '</span>';
+  }
+}
+
+async function readDocxText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value || '';
+}
+
+async function readPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const items = content.items;
+    let lastY = null;
+    let pageText = '';
+    items.forEach(item => {
+      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+        pageText += '\n';
+      } else if (lastY !== null) {
+        pageText += ' ';
+      }
+      pageText += item.str;
+      lastY = item.transform[5];
+    });
+    fullText += pageText + '\n\n';
+  }
+  return fullText;
+}
+
+async function parseCVWithAI(text) {
+  const schema = {
+    name: 'string',
+    title: 'string',
+    email: 'string',
+    phone: 'string',
+    location: 'string',
+    linkedin: 'string',
+    summary: 'string',
+    skills: 'comma-separated string',
+    certs: 'newline-separated string',
+    experience: [{ company: 'string', role: 'string', start: 'string', end: 'string', bullets: 'string with one bullet per line', tools: 'comma-separated string' }],
+    education: [{ institution: 'string', degree: 'string', year: 'string' }]
+  };
+
+  const prompt = `Extract structured data from this CV. Only output data EXPLICITLY present. Return JSON matching this schema: ${JSON.stringify(schema)}
+
+CV TEXT:
+"""
+${text}
+"""`;
+
+  const result = await callAI(prompt);
+  return normaliseJsonProfile(result);
+}
+
+// ============== LOCAL PARSER (simplified) ==============
+function parseCVText(text) {
+  return { name: '', title: '', email: '', phone: '', location: '', linkedin: '', summary: '', skills: '', certs: '', experience: [], education: [] };
+}
+
+function normaliseJsonProfile(data) {
+  const d = data || {};
+  const normaliseSkills = (s) => Array.isArray(s) ? s.join(', ') : (s || '');
+  const normaliseCerts = (c) => Array.isArray(c) ? c.join('\n') : (c || '');
+  const normaliseExp = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.map(e => ({
+      company: e.company || '',
+      role: e.role || '',
+      start: e.start || '',
+      end: e.end || '',
+      bullets: Array.isArray(e.bullets) ? e.bullets.join('\n') : (e.bullets || ''),
+      tools: Array.isArray(e.tools) ? e.tools.join(', ') : (e.tools || '')
+    }));
+  };
+  const normaliseEdu = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.map(e => ({ institution: e.institution || '', degree: e.degree || '', year: e.year || '' }));
+  };
+
+  return {
+    name: d.name || '',
+    title: d.title || '',
+    email: d.email || '',
+    phone: d.phone || '',
+    location: d.location || '',
+    linkedin: d.linkedin || '',
+    summary: d.summary || '',
+    skills: normaliseSkills(d.skills),
+    certs: normaliseCerts(d.certifications || d.certs),
+    experience: normaliseExp(d.experience || []),
+    education: normaliseEdu(d.education || [])
+  };
+}
+
+function applyParsedData(mode) {
+  if (!pendingParsedData) { toast('⚠ No parsed data available'); return; }
+  const parsed = pendingParsedData;
+  captureFormEdits();
+
+  if (mode === 'overwrite') {
+    state.profile = { ...parsed };
+  } else {
+    ['name','title','email','phone','location','linkedin','summary','skills','certs'].forEach(key => {
+      if (!state.profile[key] && parsed[key]) state.profile[key] = parsed[key];
+    });
+    if (state.profile.experience.length === 0 && parsed.experience.length > 0) state.profile.experience = parsed.experience;
+    if (state.profile.education.length === 0 && parsed.education.length > 0) state.profile.education = parsed.education;
+  }
+
+  saveState();
+  populateProfileForm();
+  document.getElementById('parse-options').classList.add('hidden');
+  toast('✓ Profile ' + (mode === 'overwrite' ? 'replaced' : 'updated'));
+  pendingParsedData = null;
+}
+
+function cancelParse() {
+  pendingParsedData = null;
+  document.getElementById('parse-options').classList.add('hidden');
+  document.getElementById('upload-status').innerHTML = '';
+}
+
+function downloadProfileJSON() {
+  captureFormEdits();
+  const blob = new Blob([JSON.stringify(state.profile, null, 2)], { type: 'application/json' });
+  saveAs(blob, 'master_profile.json');
+  toast('✓ Profile exported as JSON');
+}
+
+// ============== PROFILE FORM ==============
+function populateProfileForm() {
+  const p = state.profile || {};
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('p-name', p.name);
+  set('p-title', p.title);
+  set('p-email', p.email);
+  set('p-phone', p.phone);
+  set('p-location', p.location);
+  set('p-linkedin', p.linkedin);
+  set('p-summary', p.summary);
+  set('p-skills', p.skills);
+  set('p-certs', p.certs);
+  renderExperienceList();
+  renderEducationList();
+}
+
+function addExperience() {
+  state.profile.experience.push({ company: '', role: '', start: '', end: '', bullets: '', tools: '' });
+  renderExperienceList();
+}
+
+function removeExperience(i) {
+  state.profile.experience.splice(i, 1);
+  renderExperienceList();
+}
+
+function escapeAttr(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderExperienceList() {
+  const container = document.getElementById('experience-list');
+  if (!container) return;
+  if (state.profile.experience.length === 0) {
+    container.innerHTML = '<div class="text-gray-500 text-sm text-center py-4">No experience added yet.</div>';
+    return;
+  }
+  container.innerHTML = state.profile.experience.map((exp, i) => `
+    <div class="p-4 rounded-lg bg-white/5 border border-white/5">
+      <div class="flex justify-between items-start mb-3">
+        <div class="text-xs text-gray-500">Role #${i+1}</div>
+        <button type="button" onclick="removeExperience(${i})" class="text-red-400 text-xs hover:text-red-300">Remove</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <input type="text" onchange="state.profile.experience[${i}].company=this.value" value="${escapeAttr(exp.company)}" placeholder="Company" class="px-3 py-2 rounded-lg text-sm"/>
+        <input type="text" onchange="state.profile.experience[${i}].role=this.value" value="${escapeAttr(exp.role)}" placeholder="Role title" class="px-3 py-2 rounded-lg text-sm"/>
+        <input type="text" onchange="state.profile.experience[${i}].start=this.value" value="${escapeAttr(exp.start)}" placeholder="Start" class="px-3 py-2 rounded-lg text-sm"/>
+        <input type="text" onchange="state.profile.experience[${i}].end=this.value" value="${escapeAttr(exp.end)}" placeholder="End" class="px-3 py-2 rounded-lg text-sm"/>
+      </div>
+      <textarea onchange="state.profile.experience[${i}].bullets=this.value" rows="3" placeholder="Key responsibilities (one per line)" class="w-full px-3 py-2 rounded-lg text-sm mb-2">${escapeHtml(exp.bullets)}</textarea>
+      <input type="text" onchange="state.profile.experience[${i}].tools=this.value" value="${escapeAttr(exp.tools)}" placeholder="Tools used (comma separated)" class="w-full px-3 py-2 rounded-lg text-sm"/>
+    </div>
+  `).join('');
+}
+
+function addEducation() {
+  state.profile.education.push({ institution: '', degree: '', year: '' });
+  renderEducationList();
+}
+
+function removeEducation(i) {
+  state.profile.education.splice(i, 1);
+  renderEducationList();
+}
+
+function renderEducationList() {
+  const container = document.getElementById('education-list');
+  if (!container) return;
+  if (state.profile.education.length === 0) {
+    container.innerHTML = '<div class="text-gray-500 text-sm text-center py-4">No education added yet.</div>';
+    return;
+  }
+  container.innerHTML = state.profile.education.map((ed, i) => `
+    <div class="grid grid-cols-4 gap-3 items-center">
+      <input type="text" onchange="state.profile.education[${i}].institution=this.value" value="${escapeAttr(ed.institution)}" placeholder="Institution" class="col-span-2 px-3 py-2 rounded-lg text-sm"/>
+      <input type="text" onchange="state.profile.education[${i}].degree=this.value" value="${escapeAttr(ed.degree)}" placeholder="Degree" class="px-3 py-2 rounded-lg text-sm"/>
+      <div class="flex gap-2">
+        <input type="text" onchange="state.profile.education[${i}].year=this.value" value="${escapeAttr(ed.year)}" placeholder="Year" class="flex-1 px-3 py-2 rounded-lg text-sm"/>
+        <button type="button" onclick="removeEducation(${i})" class="text-red-400 text-xs">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveProfile() {
+  captureFormEdits();
+  saveState();
+  toast('✓ Profile saved');
+}
+
+function captureFormEdits() {
+  const get = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  state.profile.name = get('p-name');
+  state.profile.title = get('p-title');
+  state.profile.email = get('p-email');
+  state.profile.phone = get('p-phone');
+  state.profile.location = get('p-location');
+  state.profile.linkedin = get('p-linkedin');
+  state.profile.summary = get('p-summary');
+  state.profile.skills = get('p-skills');
+  state.profile.certs = get('p-certs');
+}
+
+function checkProfileStatus() {
+  const p = state.profile;
+  const el = document.getElementById('profile-status');
+  if (!el) return;
+  const complete = p.name && p.title && p.skills && p.experience.length > 0;
+  if (complete) {
+    el.innerHTML = '<span class="text-green-400">✓ Ready to analyse</span>';
+  } else {
+    el.innerHTML = '<span class="text-yellow-400">⚠ Profile incomplete</span>';
+  }
+}
+
+function checkAIProviderStatus() {
+  const el = document.getElementById('ai-provider-status');
+  if (!el) return;
+  if (isAIConfigured()) {
+    const provider = providerSettings.activeProvider;
+    const config = providerSettings[provider];
+    el.innerHTML = `<span class="text-green-400">✓ ${AI_PROVIDERS[provider].name}</span><div class="text-xs text-gray-500 mt-1">Model: ${config.model}</div>`;
+  } else {
+    el.innerHTML = `<span class="text-yellow-400">⚠ Not configured</span>`;
+  }
+}
+
+// ============== AI PROVIDER SETTINGS ==============
+function selectProvider(provider) {
+  providerSettings.activeProvider = provider;
+  document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-provider="${provider}"]`).classList.add('selected');
+  renderProviderConfig(provider);
+}
+
+function renderProviderConfig(provider) {
+  const configDiv = document.getElementById('provider-config');
+  const titleDiv = document.getElementById('config-title');
+  const fieldsDiv = document.getElementById('config-fields');
+  configDiv.classList.remove('hidden');
+
+  const config = providerSettings[provider];
+  const providerInfo = AI_PROVIDERS[provider];
+
+  titleDiv.textContent = `Configure ${providerInfo.name}`;
+
+  let html = '';
+
+  if (provider === 'custom') {
+    html = `
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">API Endpoint URL</label>
+          <input id="cfg-endpoint" type="text" value="${escapeAttr(config.endpoint)}" placeholder="http://localhost:11434/v1/chat/completions" class="w-full px-3 py-2 rounded-lg text-sm"/>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">API Key (optional)</label>
+          <input id="cfg-apiKey" type="password" value="${escapeAttr(config.apiKey)}" placeholder="Leave blank if not required" class="w-full px-3 py-2 rounded-lg text-sm"/>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Model Name</label>
+          <input id="cfg-model" type="text" value="${escapeAttr(config.model)}" placeholder="llama3.1, mistral, etc." class="w-full px-3 py-2 rounded-lg text-sm"/>
+        </div>
+      </div>
+    `;
+  } else {
+    let optionsHtml = '';
+    providerInfo.modelGroups.forEach(group => {
+      optionsHtml += `<optgroup label="${group.label}">`;
+      group.models.forEach(m => {
+        const selected = config.model === m.value ? 'selected' : '';
+        optionsHtml += `<option value="${m.value}" ${selected}>${m.label}</option>`;
+      });
+      optionsHtml += `</optgroup>`;
+    });
+
+    html = `
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">API Key</label>
+          <input id="cfg-apiKey" type="password" value="${escapeAttr(config.apiKey)}" placeholder="sk-..." class="w-full px-3 py-2 rounded-lg text-sm"/>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Model</label>
+          <select id="cfg-model" class="w-full px-3 py-2 rounded-lg text-sm">
+            ${optionsHtml}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  fieldsDiv.innerHTML = html;
+}
+
+function loadProviderSettingsUI() {
+  document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('selected'));
+  const active = document.querySelector(`[data-provider="${providerSettings.activeProvider}"]`);
+  if (active) active.classList.add('selected');
+  renderProviderConfig(providerSettings.activeProvider);
+}
+
+function saveProviderConfig() {
+  const provider = providerSettings.activeProvider;
+  const config = providerSettings[provider];
+
+  if (provider === 'custom') {
+    config.endpoint = document.getElementById('cfg-endpoint').value.trim();
+    config.apiKey = document.getElementById('cfg-apiKey').value.trim();
+    config.model = document.getElementById('cfg-model').value.trim();
+  } else {
+    config.apiKey = document.getElementById('cfg-apiKey').value.trim();
+    config.model = document.getElementById('cfg-model').value;
+  }
+
+  saveProviderSettings();
+  toast('✓ Configuration saved');
+}
+
+async function testProviderConnection() {
+  toast('⏳ Testing connection...');
+  try {
+    await callAI('Reply with {"status": "ok"}');
+    toast('✓ Connection successful');
+  } catch (err) {
+    toast('✕ Connection failed: ' + err.message);
+  }
+}
+
+// ============== JOB ANALYSIS (STEP 1) ==============
+function analyseJob() {
+  const company = document.getElementById('j-company').value.trim();
+  const title = document.getElementById('j-title').value.trim();
+  const location = document.getElementById('j-location').value.trim();
+  const url = document.getElementById('j-url').value.trim();
+  const jd = document.getElementById('j-jd').value.trim();
+
+  if (!company || !title || !jd) { toast('⚠ Please fill in company, title and JD'); return; }
+  if (!state.profile.name || !state.profile.skills) {
+    toast('⚠ Please complete your master profile first');
+    showPage('profile');
+    return;
+  }
+
+  // Extract keywords
+  const jdKeywords = extractKeywords(jd);
+  const profileKeywords = extractKeywords(state.profile.skills + ' ' + state.profile.experience.map(e => e.tools + ' ' + e.bullets).join(' '));
+  const matched = jdKeywords.filter(k => profileKeywords.includes(k));
+  const missing = jdKeywords.filter(k => !profileKeywords.includes(k));
+
+  // ATS Safety Scan
+  const atsWarnings = performATSScan(state.profile);
+
+  state.currentAnalysis = { company, title, location, url, jd, jdKeywords, matched, missing, atsWarnings };
+  
+  // Create draft version (copy of master profile)
+  state.draftVersion = JSON.parse(JSON.stringify(state.profile));
+  
+  saveState();
+  renderAnalysisResults();
+}
+
+function extractKeywords(text) {
+  const IT_KEYWORDS = [
+    'active directory','azure ad','azure','office 365','o365','microsoft 365','m365',
+    'sccm','intune','endpoint','windows 10','windows 11','windows server',
+    'servicenow','jira','zendesk','powershell','bash','scripting','automation',
+    'tcp/ip','dhcp','dns','vpn','lan','wan','wi-fi','wifi','network','firewall',
+    'exchange','outlook','teams','sharepoint','onedrive','vmware','hyper-v',
+    'itil','gdpr','compliance','security','troubleshooting','diagnostics','incident',
+    '1st line','2nd line','3rd line','customer service','stakeholder','communication',
+    'ticketing','escalation','comptia','md-102','az-900','az-104','itil foundation',
+    'sql','python','api','cloud','aws','gcp','agile','scrum'
+  ];
+  const lower = text.toLowerCase();
+  const found = [];
+  IT_KEYWORDS.forEach(kw => {
+    const regex = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (regex.test(lower)) found.push(kw);
+  });
+  const acronyms = text.match(/\b[A-Z]{2,6}\b/g) || [];
+  return [...new Set([...found, ...acronyms.map(a => a.toLowerCase())])];
+}
+
+function performATSScan(profile) {
+  const warnings = [];
+  
+  // Check for missing sections
+  if (!profile.summary) warnings.push({ type: 'error', msg: 'Missing Professional Summary section' });
+  if (!profile.skills) warnings.push({ type: 'error', msg: 'Missing Skills section' });
+  if (profile.experience.length === 0) warnings.push({ type: 'error', msg: 'Missing Work Experience section' });
+  
+  // Check bullet length
+  profile.experience.forEach((exp, i) => {
+    const bullets = exp.bullets.split('\n').filter(b => b.trim());
+    bullets.forEach(bullet => {
+      if (bullet.length > 200) {
+        warnings.push({ type: 'warning', msg: `Role #${i+1}: Bullet point is too long (${bullet.length} chars). Keep under 200.` });
+      }
+    });
+  });
+  
+  // Check for metrics
+  const allBullets = profile.experience.flatMap(e => e.bullets.split('\n')).join(' ');
+  const hasMetrics = /\d+%|\d+\s*(users|tickets|systems|devices|projects)/i.test(allBullets);
+  if (!hasMetrics) {
+    warnings.push({ type: 'warning', msg: 'No quantifiable metrics found. Add numbers like "reduced tickets by 20%" or "supported 150 users".' });
+  }
+  
+  if (warnings.length === 0) {
+    warnings.push({ type: 'success', msg: '✓ No major ATS issues detected. Your profile looks good!' });
+  }
+  
+  return warnings;
+}
+
+function renderAnalysisResults() {
+  const container = document.getElementById('analysis-results');
+  if (!container || !state.currentAnalysis) return;
+  
+  const a = state.currentAnalysis;
+  const matchScore = a.jdKeywords.length ? Math.round((a.matched.length / a.jdKeywords.length) * 100) : 0;
+  
+  container.classList.remove('hidden');
+  container.innerHTML = `
+    <div class="fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-white">Analysis Complete</h2>
+        <button onclick="showPage('editor')" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-medium">✍ Enter Editing Room →</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 mb-6">
+        <!-- Match Score -->
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase mb-3">Match Rate</div>
+          <div class="flex items-center gap-4">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="${matchScore > 70 ? '#4ade80' : matchScore > 40 ? '#fbbf24' : '#f87171'}" stroke-width="8"
+                stroke-dasharray="${2*Math.PI*32}"
+                stroke-dashoffset="${2*Math.PI*32 * (1 - matchScore/100)}"
+                transform="rotate(-90 40 40)" class="progress-ring" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <div class="text-3xl font-bold text-white">${matchScore}%</div>
+              <div class="text-xs text-gray-500">${a.matched.length} of ${a.jdKeywords.length} keywords matched</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATS Safety -->
+        <div class="card rounded-xl p-5">
+          <div class="text-xs text-gray-500 uppercase mb-3">ATS Safety Scan</div>
+          <div class="space-y-2 max-h-48 overflow-y-auto">
+            ${a.atsWarnings.map(w => `
+              <div class="ats-${w.type} rounded-lg p-3">
+                <div class="text-xs font-semibold">${w.type === 'error' ? '🚨' : w.type === 'warning' ? '⚠️' : '✓'} ${escapeHtml(w.msg)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Keywords -->
+      <div class="grid grid-cols-2 gap-6">
+        <div class="card rounded-xl p-5">
+          <h3 class="font-semibold text-white mb-3">✓ Matched Keywords (${a.matched.length})</h3>
+          <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+            ${a.matched.length ? a.matched.map(k => `<span class="chip chip-match">${k}</span>`).join('') : '<span class="text-gray-500 text-sm">None matched</span>'}
+          </div>
+        </div>
+        <div class="card rounded-xl p-5">
+          <h3 class="font-semibold text-white mb-3">⚠ Missing Keywords (${a.missing.length})</h3>
+          <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+            ${a.missing.length ? a.missing.map(k => `<span class="chip chip-gap">${k}</span>`).join('') : '<span class="text-gray-500 text-sm">Great, no gaps found</span>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ============== EDITING ROOM (STEP 2) ==============
+function renderEditor() {
+  const container = document.getElementById('editor-content');
+  if (!container) return;
+  
+  if (!state.draftVersion || !state.currentAnalysis) {
+    container.innerHTML = '<div class="p-12 text-center text-gray-500"><div class="text-4xl mb-2">✍</div><div>No job selected for editing.</div><button onclick="showPage(\'analysis\')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm mt-4">Analyse a Job First</button></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="flex h-screen">
+      <!-- Left Pane: Editor -->
+      <div class="w-1/2 border-r border-white/5 overflow-y-auto scrollbar p-6">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-white">Editing Room</h2>
+          <p class="text-xs text-gray-500">${escapeHtml(state.currentAnalysis.title)} at ${escapeHtml(state.currentAnalysis.company)}</p>
+        </div>
+
+        <div class="editor-section">
+          <h3 class="text-sm font-semibold text-gray-300 mb-2">Professional Summary</h3>
+          <textarea id="edit-summary" rows="4" onchange="updateDraft('summary', this.value)" class="w-full px-3 py-2 rounded-lg text-sm">${escapeHtml(state.draftVersion.summary)}</textarea>
+        </div>
+
+        <div class="editor-section">
+          <h3 class="text-sm font-semibold text-gray-300 mb-2">Skills</h3>
+          <textarea id="edit-skills" rows="2" onchange="updateDraft('skills', this.value)" class="w-full px-3 py-2 rounded-lg text-sm">${escapeHtml(state.draftVersion.skills)}</textarea>
+        </div>
+
+        <div class="editor-section">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-semibold text-gray-300">Work Experience</h3>
+          </div>
+          ${state.draftVersion.experience.map((exp, i) => `
+            <div class="mb-4 p-3 rounded-lg bg-white/5">
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <input type="text" value="${escapeAttr(exp.role)}" onchange="updateExp(${i}, 'role', this.value)" placeholder="Role" class="px-2 py-1 rounded text-xs"/>
+                <input type="text" value="${escapeAttr(exp.company)}" onchange="updateExp(${i}, 'company', this.value)" placeholder="Company" class="px-2 py-1 rounded text-xs"/>
+                <input type="text" value="${escapeAttr(exp.start)}" onchange="updateExp(${i}, 'start', this.value)" placeholder="Start" class="px-2 py-1 rounded text-xs"/>
+                <input type="text" value="${escapeAttr(exp.end)}" onchange="updateExp(${i}, 'end', this.value)" placeholder="End" class="px-2 py-1 rounded text-xs"/>
+              </div>
+              <div class="space-y-2">
+                ${exp.bullets.split('\n').filter(b => b.trim()).map((bullet, j) => `
+                  <div class="bullet-editor">
+                    <textarea onchange="updateBullet(${i}, ${j}, this.value)">${escapeHtml(bullet)}</textarea>
+                    <button class="ai-btn" onclick="showAIMenu(${i}, ${j})">✨ AI</button>
+                    <div id="ai-menu-${i}-${j}" class="ai-menu hidden">
+                      <button onclick="enhanceBullet(${i}, ${j}, 'star')">Rewrite in STAR format</button>
+                      <button onclick="enhanceBullet(${i}, ${j}, 'professional')">Make more professional</button>
+                      <button onclick="enhanceBullet(${i}, ${j}, 'metrics')">Add metric placeholders</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <button onclick="addBullet(${i})" class="mt-2 text-xs text-indigo-400 hover:text-indigo-300">+ Add bullet</button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button onclick="downloadDraft('cv')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">⬇ Download CV</button>
+          <button onclick="saveToTracker()" class="btn-ghost text-white px-4 py-2 rounded-lg text-sm">💾 Save to Tracker</button>
+        </div>
+      </div>
+
+      <!-- Right Pane: Live Preview -->
+      <div class="w-1/2 bg-gray-100 overflow-y-auto scrollbar p-6">
+        <div class="match-widget mb-4">
+          <div class="text-xs text-gray-500 uppercase mb-2">Live Match Rate</div>
+          <div class="flex items-center gap-3">
+            <div class="text-2xl font-bold" id="live-match-score">0%</div>
+            <div class="text-xs text-gray-600" id="live-match-detail">0 keywords matched</div>
+          </div>
+        </div>
+        <div id="live-preview" class="doc-preview"></div>
+      </div>
+    </div>
+  `;
+
+  updateLivePreview();
+}
+
+function updateDraft(field, value) {
+  state.draftVersion[field] = value;
+  saveState();
+  updateLivePreview();
+}
+
+function updateExp(index, field, value) {
+  state.draftVersion.experience[index][field] = value;
+  saveState();
+  updateLivePreview();
+}
+
+function updateBullet(expIndex, bulletIndex, value) {
+  const bullets = state.draftVersion.experience[expIndex].bullets.split('\n');
+  bullets[bulletIndex] = value;
+  state.draftVersion.experience[expIndex].bullets = bullets.join('\n');
+  saveState();
+  updateLivePreview();
+}
+
+function addBullet(expIndex) {
+  const current = state.draftVersion.experience[expIndex].bullets;
+  state.draftVersion.experience[expIndex].bullets = current + '\nNew bullet point here';
+  saveState();
+  renderEditor();
+}
+
+function showAIMenu(expIndex, bulletIndex) {
+  const menu = document.getElementById(`ai-menu-${expIndex}-${bulletIndex}`);
+  menu.classList.toggle('hidden');
+}
+
+async function enhanceBullet(expIndex, bulletIndex, mode) {
+  const menu = document.getElementById(`ai-menu-${expIndex}-${bulletIndex}`);
+  menu.classList.add('hidden');
+
+  const bullets = state.draftVersion.experience[expIndex].bullets.split('\n');
+  const originalBullet = bullets[bulletIndex];
+
+  if (!isAIConfigured()) {
+    toast('⚠ AI provider not configured');
+    return;
+  }
+
+  toast('⏳ Enhancing bullet...');
+
+  let prompt = '';
+  if (mode === 'star') {
+    prompt = `Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise. Return JSON: {"enhanced": "rewritten bullet"}
+
+Original: "${originalBullet}"`;
+  } else if (mode === 'professional') {
+    prompt = `Make this CV bullet point more professional and impactful. Use strong action verbs. Return JSON: {"enhanced": "rewritten bullet"}
+
+Original: "${originalBullet}"`;
+  } else if (mode === 'metrics') {
+    prompt = `Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]). Return JSON: {"enhanced": "rewritten bullet"}
+
+Original: "${originalBullet}"`;
+  }
+
+  try {
+    const result = await callAI(prompt);
+    bullets[bulletIndex] = result.enhanced;
+    state.draftVersion.experience[expIndex].bullets = bullets.join('\n');
+    saveState();
+    renderEditor();
+    toast('✓ Bullet enhanced');
+  } catch (err) {
+    toast('✕ Enhancement failed: ' + err.message);
+  }
+}
+
+function updateLivePreview() {
+  if (!state.draftVersion || !state.currentAnalysis) return;
+
+  const preview = document.getElementById('live-preview');
+  const scoreEl = document.getElementById('live-match-score');
+  const detailEl = document.getElementById('live-match-detail');
+
+  // Recalculate matches
+  const draftKeywords = extractKeywords(state.draftVersion.skills + ' ' + state.draftVersion.experience.map(e => e.tools + ' ' + e.bullets).join(' '));
+  const matched = state.currentAnalysis.jdKeywords.filter(k => draftKeywords.includes(k));
+  const matchScore = state.currentAnalysis.jdKeywords.length ? Math.round((matched.length / state.currentAnalysis.jdKeywords.length) * 100) : 0;
+
+  scoreEl.textContent = matchScore + '%';
+  scoreEl.style.color = matchScore > 70 ? '#4ade80' : matchScore > 40 ? '#fbbf24' : '#f87171';
+  detailEl.textContent = matched.length + ' of ' + state.currentAnalysis.jdKeywords.length + ' keywords matched';
+
+  // Build preview HTML with highlighting
+  let html = buildCVHTML(state.draftVersion, matched);
+  preview.innerHTML = html;
+}
+
+function buildCVHTML(profile, matchedKeywords) {
+  const skillsList = (profile.skills || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  let html = `<h1>${escapeHtml(profile.name || 'Your Name')}</h1>`;
+  html += `<div>${escapeHtml(profile.title || '')} | ${escapeHtml(profile.location || '')}</div>`;
+  html += `<div>${escapeHtml(profile.email || '')} | ${escapeHtml(profile.phone || '')}${profile.linkedin ? ' | ' + escapeHtml(profile.linkedin) : ''}</div>`;
+
+  if (profile.summary) {
+    html += `<h2>Professional Summary</h2><p>${highlightKeywords(profile.summary, matchedKeywords)}</p>`;
+  }
+
+  html += `<h2>Core Skills</h2><p>${skillsList.map(s => highlightKeywords(s, matchedKeywords)).join(' • ')}</p>`;
+
+  html += `<h2>Professional Experience</h2>`;
+  profile.experience.forEach(exp => {
+    html += `<h3>${escapeHtml(exp.role)} - ${escapeHtml(exp.company)}</h3>`;
+    html += `<div><em>${escapeHtml(exp.start)}${exp.end ? ' - ' + escapeHtml(exp.end) : ''}</em></div>`;
+    if (exp.bullets) {
+      html += `<ul>`;
+      exp.bullets.split('\n').filter(b => b.trim()).forEach(b => {
+        const clean = b.replace(/^[-•]\s*/, '');
+        html += `<li>${highlightKeywords(clean, matchedKeywords)}</li>`;
+      });
+      html += `</ul>`;
+    }
+    if (exp.tools) {
+      html += `<div><strong>Tools:</strong> ${highlightKeywords(exp.tools, matchedKeywords)}</div>`;
+    }
+  });
+
+  if (profile.education && profile.education.length) {
+    html += `<h2>Education</h2>`;
+    profile.education.forEach(ed => {
+      html += `<h3>${escapeHtml(ed.degree)}</h3>`;
+      html += `<div>${escapeHtml(ed.institution)}${ed.year ? ', ' + escapeHtml(ed.year) : ''}</div>`;
+    });
+  }
+
+  if (profile.certs) {
+    html += `<h2>Certifications</h2><ul>`;
+    profile.certs.split('\n').filter(Boolean).forEach(c => {
+      html += `<li>${escapeHtml(c.trim())}</li>`;
+    });
+    html += `</ul>`;
+  }
+
+  return html;
+}
+
+function highlightKeywords(text, keywords) {
+  if (!text || !keywords.length) return escapeHtml(text);
+  let result = escapeHtml(text);
+  keywords.forEach(kw => {
+    const regex = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+    result = result.replace(regex, match => `<mark>${match}</mark>`);
+  });
+  return result;
+}
+
+function downloadDraft(type) {
+  if (!state.draftVersion) return;
+  const html = buildCVHTML(state.draftVersion, []);
+  const filename = `${state.currentAnalysis.company.replace(/\s+/g,'_')}_CV.doc`;
+  const fullHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>CV</title>
+<style>
+body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #111; }
+h1 { font-size: 18pt; font-weight: bold; margin: 0 0 4pt 0; }
+h2 { font-size: 11pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #333; padding-bottom: 2pt; margin-top: 14pt; margin-bottom: 6pt; }
+h3 { font-size: 11pt; font-weight: bold; margin: 8pt 0 2pt 0; }
+ul { margin: 4pt 0; padding-left: 20pt; }
+li { margin-bottom: 3pt; }
+p { margin: 4pt 0; }
+</style></head><body>${html}</body></html>`;
+  const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+  saveAs(blob, filename);
+  toast(`✓ CV downloaded`);
+}
+
+function saveToTracker() {
+  if (!state.currentAnalysis || !state.draftVersion) return;
+  
+  const app = {
+    id: Date.now(),
+    company: state.currentAnalysis.company,
+    title: state.currentAnalysis.title,
+    location: state.currentAnalysis.location,
+    url: state.currentAnalysis.url,
+    status: 'planned',
+    createdAt: new Date().toISOString(),
+    notes: ''
+  };
+
+  if (!state.applications.find(a => a.company === app.company && a.title === app.title)) {
+    state.applications.unshift(app);
+    saveState();
+    toast('✓ Saved to tracker');
+  } else {
+    toast('ℹ Already in tracker');
+  }
+}
+
+// ============== TRACKER ==============
+function renderTracker() {
+  const container = document.getElementById('tracker-table');
+  if (!container) return;
+  if (state.applications.length === 0) {
+    container.innerHTML = '<div class="p-12 text-center text-gray-500">No applications tracked yet.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-white/5 text-left text-xs uppercase text-gray-500">
+          <th class="p-4">Company</th><th class="p-4">Role</th><th class="p-4">Location</th>
+          <th class="p-4">Status</th><th class="p-4">Date</th><th class="p-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${state.applications.map(app => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="p-4 font-medium text-white">${escapeHtml(app.company)}</td>
+            <td class="p-4">${escapeHtml(app.title)}</td>
+            <td class="p-4 text-gray-400">${escapeHtml(app.location || '-')}</td>
+            <td class="p-4">
+              <select onchange="changeStatus(${app.id}, this.value)" class="text-xs px-2 py-1 rounded status-pill status-${app.status}">
+                <option value="planned" ${app.status==='planned'?'selected':''}>Planned</option>
+                <option value="applied" ${app.status==='applied'?'selected':''}>Applied</option>
+                <option value="interview" ${app.status==='interview'?'selected':''}>Interview</option>
+                <option value="offer" ${app.status==='offer'?'selected':''}>Offer</option>
+                <option value="rejected" ${app.status==='rejected'?'selected':''}>Rejected</option>
+              </select>
+            </td>
+            <td class="p-4 text-gray-500 text-xs">${new Date(app.createdAt).toLocaleDateString('en-GB')}</td>
+            <td class="p-4">
+              <button type="button" onclick="deleteApp(${app.id})" class="text-red-400 text-xs hover:text-red-300">Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function changeStatus(id, status) {
+  const app = state.applications.find(a => a.id === id);
+  if (app) { app.status = status; saveState(); toast(`✓ Updated`); }
+}
+
+function deleteApp(id) {
+  if (!confirm('Delete this application?')) return;
+  state.applications = state.applications.filter(a => a.id !== id);
+  saveState();
+  renderTracker();
+  toast('✓ Deleted');
+}
+
+function exportTrackerCSV() {
+  if (state.applications.length === 0) { toast('⚠ No applications to export'); return; }
+  const rows = [['Company','Role','Location','Status','Date']];
+  state.applications.forEach(a => {
+    rows.push([a.company, a.title, a.location || '', a.status, new Date(a.createdAt).toLocaleDateString('en-GB')]);
+  });
+  const csv = rows.map(r => r.map(c => `"${(c+'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  saveAs(blob, 'applications.csv');
+  toast('✓ CSV exported');
+}
+
+function updateDashboard() {
+  const apps = state.applications || [];
+  document.getElementById('stat-apps').textContent = apps.length;
+  document.getElementById('stat-interviews').textContent = apps.filter(a => a.status === 'interview').length;
+  document.getElementById('stat-offers').textContent = apps.filter(a => a.status === 'offer').length;
+  const weekAgo = Date.now() - 7*24*60*60*1000;
+  document.getElementById('stat-week').textContent = apps.filter(a => new Date(a.createdAt).getTime() > weekAgo).length;
+
+  const recent = document.getElementById('recent-activity');
+  if (apps.length === 0) {
+    recent.innerHTML = '<div class="text-gray-500 text-center py-4">No recent activity.</div>';
+  } else {
+    recent.innerHTML = apps.slice(0, 5).map(a => `
+      <div class="flex items-center justify-between p-3 rounded-lg bg-white/5">
+        <div>
+          <div class="font-medium text-white text-sm">${escapeHtml(a.title)}</div>
+          <div class="text-xs text-gray-500">${escapeHtml(a.company)} • ${new Date(a.createdAt).toLocaleDateString('en-GB')}</div>
+        </div>
+        <span class="status-pill status-${a.status}">${a.status}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function loadSampleJD() {
+  document.getElementById('j-company').value = 'Tetra Tech';
+  document.getElementById('j-title').value = '1st/2nd Line Support Analyst';
+  document.getElementById('j-location').value = 'Birmingham, UK';
+  document.getElementById('j-url').value = 'https://careers.tetratech.com/jobs/12345';
+  document.getElementById('j-jd').value = `About the role:
+We are looking for a 1st/2nd Line Support Analyst to join our IT services team in Birmingham. You will provide technical support to internal users across multiple offices, handling incidents, service requests, and problems in line with SLA targets.
+
+Key responsibilities:
+- Provide 1st and 2nd line support via ServiceNow ticketing
+- Troubleshoot Windows 10/11, Office 365, Active Directory and Azure AD
+- Manage user onboarding and offboarding (provisioning accounts, laptops, mobile devices)
+- Support endpoint management via Intune and SCCM
+- Assist with network issues (TCP/IP, DNS, DHCP, VPN)
+- Maintain accurate documentation and knowledge base articles
+- Escalate complex issues to 3rd line with clear diagnostics
+- Participate in ITIL-aligned change and problem management
+
+Requirements:
+- 2+ years in IT support or service desk role
+- Strong experience with Active Directory, Office 365, Azure AD
+- Confident with ServiceNow or similar ITSM tool
+- Good knowledge of Windows 10/11 and common business applications
+- Understanding of networking fundamentals (TCP/IP, DNS, DHCP)
+- Excellent customer service and communication skills
+- ITIL Foundation desirable
+- PowerShell scripting experience desirable
+- Experience with Intune, SCCM, or similar endpoint tools
+
+Desirable:
+- CompTIA A+ or Microsoft MD-102
+- Experience with VMware or Hyper-V
+- Exposure to cloud services (Azure, AWS)`;
+  toast('✓ Sample JD loaded');
+}
+
+function clearJobForm() {
+  ['j-company','j-title','j-location','j-url','j-jd'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const r = document.getElementById('analysis-results');
+  if (r) r.classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  setupDropzone();
+  setupParseButtons();
+  updateDashboard();
+});
+</script>
+</body>
+</html>
+

@@ -12,6 +12,8 @@ import type {
   Analysis,
   Generations,
   GenerationMode,
+  ResumeDoc,
+  TemplateId,
 } from "./types";
 
 export const emptyProfile: Profile = {
@@ -42,11 +44,21 @@ interface AppState {
   currentAnalysis: Analysis | null;
   draftCV: Profile | null;
   generations: Generations;
+  resumes: ResumeDoc[];
   providers: ProviderSettings;
 
   // ----- profile -----
   setProfile: (patch: Partial<Profile>) => void;
   replaceProfile: (profile: Profile) => void;
+
+  // ----- resume library -----
+  addResume: (name: string, templateId: TemplateId, profile: Profile) => string;
+  updateResume: (
+    id: string,
+    patch: Partial<Pick<ResumeDoc, "name" | "templateId" | "profile">>,
+  ) => void;
+  removeResume: (id: string) => void;
+  duplicateResume: (id: string) => string | null;
 
   // ----- analysis / editor -----
   setAnalysis: (analysis: Analysis) => void;
@@ -77,11 +89,47 @@ export const useStore = create<AppState>()(
       currentAnalysis: null,
       draftCV: null,
       generations: {},
+      resumes: [],
       providers: defaultProviders,
 
       setProfile: (patch) =>
         set((s) => ({ profile: { ...s.profile, ...patch } })),
       replaceProfile: (profile) => set({ profile }),
+
+      addResume: (name, templateId, profile) => {
+        const id = crypto.randomUUID();
+        const now = new Date().toISOString();
+        set((s) => ({
+          resumes: [
+            { id, name, templateId, profile, createdAt: now, updatedAt: now },
+            ...s.resumes,
+          ],
+        }));
+        return id;
+      },
+      updateResume: (id, patch) =>
+        set((s) => ({
+          resumes: s.resumes.map((r) =>
+            r.id === id
+              ? { ...r, ...patch, updatedAt: new Date().toISOString() }
+              : r,
+          ),
+        })),
+      removeResume: (id) =>
+        set((s) => ({ resumes: s.resumes.filter((r) => r.id !== id) })),
+      duplicateResume: (id) => {
+        const r = get().resumes.find((x) => x.id === id);
+        if (!r) return null;
+        const newId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        set((s) => ({
+          resumes: [
+            { ...r, id: newId, name: `${r.name} (copy)`, createdAt: now, updatedAt: now },
+            ...s.resumes,
+          ],
+        }));
+        return newId;
+      },
 
       setAnalysis: (analysis) =>
         set((s) => ({

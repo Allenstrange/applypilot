@@ -143,3 +143,36 @@ export interface Application {
     generations: Generations;
   };
 }
+
+// ---------- Resume library ----------
+
+export type TemplateId = "classic" | "modern" | "compact";
+
+export interface ResumeDoc {
+  id: string;
+  name: string;
+  templateId: TemplateId;
+  profile: Profile;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------- Resume score ----------
+
+export interface ScoreIssue {
+  severity: "error" | "warning" | "tip";
+  message: string;
+  where?: string;
+}
+
+export interface ScoreCategory {
+  label: string;
+  score: number;
+  max: number;
+}
+
+export interface ResumeScore {
+  overall: number;
+  categories: ScoreCategory[];
+  issues: ScoreIssue[];
+}

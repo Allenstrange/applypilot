@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { AI_PROVIDERS, callAI, isAIConfigured } from "@/lib/ai";
@@ -8,7 +9,7 @@ import type { ProviderId } from "@/lib/types";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 
-const PROVIDER_ORDER: ProviderId[] = ["openai", "anthropic", "gemini", "custom"];
+const PROVIDER_ORDER: ProviderId[] = ["openai", "anthropic", "gemini", "grok", "custom"];
 
 export default function SettingsPage() {
   const hydrated = useHydrated();
@@ -152,9 +153,15 @@ export default function SettingsPage() {
           >
             🔌 Test Connection
           </button>
+          {config.apiKey || config.endpoint ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 px-2">
+              <Check className="w-3.5 h-3.5" /> Key saved
+            </span>
+          ) : null}
         </div>
         <p className="text-xs text-slate-500 mt-3 dark:text-slate-400">
-          Settings save automatically and are stored only in this browser.
+          Keys are saved automatically in this browser and persist across visits —
+          never sent anywhere except the provider&apos;s API.
         </p>
       </div>
     </div>

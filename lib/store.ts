@@ -35,6 +35,7 @@ const defaultProviders: ProviderSettings = {
   openai: { apiKey: "", model: "gpt-4o-mini" },
   anthropic: { apiKey: "", model: "claude-3-5-sonnet-latest" },
   gemini: { apiKey: "", model: "gemini-1.5-flash" },
+  grok: { apiKey: "", model: "grok-4" },
   custom: { endpoint: "", apiKey: "", model: "" },
 };
 
@@ -207,6 +208,19 @@ export const useStore = create<AppState>()(
     {
       name: "applypilot_v4",
       storage: createJSONStorage(() => localStorage),
+      // Deep-merge persisted state so newly added providers (e.g. Grok) appear
+      // for returning users without wiping their saved keys.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...p,
+          providers: {
+            ...current.providers,
+            ...(p.providers ?? {}),
+          },
+        };
+      },
     },
   ),
 );

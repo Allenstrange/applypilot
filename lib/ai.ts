@@ -179,6 +179,48 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     },
   },
 
+  grok: {
+    name: "xAI Grok",
+    description: "Grok 4, Grok 3",
+    icon: "✴️",
+    blurb: "xAI's Grok models — strong reasoning, OpenAI-compatible API.",
+    modelGroups: [
+      {
+        label: "🚀 Grok 4 (Latest)",
+        models: [{ value: "grok-4", label: "Grok 4 — Most capable", badge: "recommended" }],
+      },
+      {
+        label: "⚡ Grok 3",
+        models: [
+          { value: "grok-3", label: "Grok 3" },
+          { value: "grok-3-mini", label: "Grok 3 Mini", badge: "new" },
+        ],
+      },
+      {
+        label: "🔹 Grok 2",
+        models: [{ value: "grok-2-1212", label: "Grok 2" }],
+      },
+    ],
+    async call(prompt, model, apiKey) {
+      const resp = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + apiKey,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.1,
+        }),
+      });
+      if (!resp.ok) throw new Error("Grok error: " + resp.status);
+      const data = await resp.json();
+      return JSON.parse(data.choices[0].message.content);
+    },
+  },
+
   custom: {
     name: "Custom Endpoint",
     description: "Local LLM, Azure, etc.",

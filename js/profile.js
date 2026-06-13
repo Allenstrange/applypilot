@@ -39,7 +39,7 @@ function renderExperienceList() {
         <div class="text-xs text-gray-500">Role #${i+1}</div>
         <button type="button" onclick="removeExperience(${i})" class="text-red-400 text-xs hover:text-red-300">Remove</button>
       </div>
-      <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
         <input type="text" onchange="state.profile.experience[${i}].company=this.value" value="${escapeAttr(exp.company)}" placeholder="Company" class="px-3 py-2 rounded-lg text-sm"/>
         <input type="text" onchange="state.profile.experience[${i}].role=this.value" value="${escapeAttr(exp.role)}" placeholder="Role title" class="px-3 py-2 rounded-lg text-sm"/>
         <input type="text" onchange="state.profile.experience[${i}].start=this.value" value="${escapeAttr(exp.start)}" placeholder="Start" class="px-3 py-2 rounded-lg text-sm"/>
@@ -69,7 +69,7 @@ function renderEducationList() {
     return;
   }
   container.innerHTML = state.profile.education.map((ed, i) => `
-    <div class="grid grid-cols-4 gap-3 items-center">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
       <input type="text" onchange="state.profile.education[${i}].institution=this.value" value="${escapeAttr(ed.institution)}" placeholder="Institution" class="col-span-2 px-3 py-2 rounded-lg text-sm"/>
       <input type="text" onchange="state.profile.education[${i}].degree=this.value" value="${escapeAttr(ed.degree)}" placeholder="Degree" class="px-3 py-2 rounded-lg text-sm"/>
       <div class="flex gap-2">

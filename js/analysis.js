@@ -191,7 +191,7 @@ function renderAnalysisResults() {
         <button onclick="showPage('editor')" class="btn-primary text-white px-6 py-2.5 rounded-lg text-sm font-medium">✍ Enter Editing Room →</button>
       </div>
 
-      <div class="grid grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Match Score -->
         <div class="card rounded-xl p-5">
           <div class="text-xs text-gray-500 uppercase mb-3">${matchLabel}</div>
@@ -224,7 +224,7 @@ function renderAnalysisResults() {
       </div>
 
       <!-- Keywords / Gaps -->
-      <div class="grid grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="card rounded-xl p-5">
           <h3 class="font-semibold text-white mb-3">✓ Matched Concepts (${a.matched.length})</h3>
           <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">

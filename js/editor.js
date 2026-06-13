@@ -44,7 +44,7 @@ function renderEditor() {
           </div>
           ${state.draftVersion.experience.map((exp, i) => `
             <div class="mb-4 p-3 rounded-lg bg-white/5">
-              <div class="grid grid-cols-2 gap-2 mb-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                 <input type="text" value="${escapeAttr(exp.role)}" onchange="updateExp(${i}, 'role', this.value)" placeholder="Role" class="px-2 py-1 rounded text-xs"/>
                 <input type="text" value="${escapeAttr(exp.company)}" onchange="updateExp(${i}, 'company', this.value)" placeholder="Company" class="px-2 py-1 rounded text-xs"/>
                 <input type="text" value="${escapeAttr(exp.start)}" onchange="updateExp(${i}, 'start', this.value)" placeholder="Start" class="px-2 py-1 rounded text-xs"/>

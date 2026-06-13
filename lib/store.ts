@@ -9,6 +9,9 @@ import type {
   ProviderSettings,
   ProviderId,
   ProviderConfig,
+  Analysis,
+  Generations,
+  GenerationMode,
 } from "./types";
 
 export const emptyProfile: Profile = {
@@ -36,35 +39,62 @@ const defaultProviders: ProviderSettings = {
 interface AppState {
   profile: Profile;
   applications: Application[];
-  // currentAnalysis / draftVersion are filled in later phases; kept loose for now.
-  currentAnalysis: unknown | null;
-  draftVersion: unknown | null;
+  currentAnalysis: Analysis | null;
+  draftCV: Profile | null;
+  generations: Generations;
   providers: ProviderSettings;
 
-  // ----- actions -----
+  // ----- profile -----
   setProfile: (patch: Partial<Profile>) => void;
   replaceProfile: (profile: Profile) => void;
 
+  // ----- analysis / editor -----
+  setAnalysis: (analysis: Analysis) => void;
+  setDraftCV: (profile: Profile) => void;
+  updateDraftCV: (patch: Partial<Profile>) => void;
+  setGeneration: <K extends GenerationMode>(
+    mode: K,
+    payload: NonNullable<Generations[K]>,
+  ) => void;
+
+  // ----- tracker -----
   addApplication: (app: Application) => void;
   removeApplication: (id: number) => void;
   setApplicationStatus: (id: number, status: Application["status"]) => void;
+  saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
+  loadApplication: (id: number) => boolean;
 
+  // ----- providers -----
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, patch: Partial<ProviderConfig>) => void;
 }
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       profile: emptyProfile,
       applications: [],
       currentAnalysis: null,
-      draftVersion: null,
+      draftCV: null,
+      generations: {},
       providers: defaultProviders,
 
       setProfile: (patch) =>
         set((s) => ({ profile: { ...s.profile, ...patch } })),
       replaceProfile: (profile) => set({ profile }),
+
+      setAnalysis: (analysis) =>
+        set((s) => ({
+          currentAnalysis: analysis,
+          // Start a fresh CV draft and clear stale generations for the new job.
+          draftCV: JSON.parse(JSON.stringify(s.profile)) as Profile,
+          generations: {},
+        })),
+      setDraftCV: (profile) => set({ draftCV: profile }),
+      updateDraftCV: (patch) =>
+        set((s) => ({ draftCV: s.draftCV ? { ...s.draftCV, ...patch } : s.draftCV })),
+      setGeneration: (mode, payload) =>
+        set((s) => ({ generations: { ...s.generations, [mode]: payload } })),
 
       addApplication: (app) =>
         set((s) => ({ applications: [app, ...s.applications] })),
@@ -76,6 +106,45 @@ export const useStore = create<AppState>()(
             a.id === id ? { ...a, status } : a,
           ),
         })),
+      saveCurrentToTracker: () => {
+        const s = get();
+        const a = s.currentAnalysis;
+        if (!a) return "no-analysis";
+        if (
+          s.applications.find(
+            (app) => app.company === a.company && app.title === a.title,
+          )
+        ) {
+          return "exists";
+        }
+        const app: Application = {
+          id: Date.now(),
+          company: a.company,
+          title: a.title,
+          location: a.location,
+          url: a.url,
+          status: "planned",
+          createdAt: new Date().toISOString(),
+          notes: "",
+          snapshot: {
+            analysis: a,
+            draftCV: s.draftCV ?? (JSON.parse(JSON.stringify(s.profile)) as Profile),
+            generations: s.generations,
+          },
+        };
+        set((st) => ({ applications: [app, ...st.applications] }));
+        return "saved";
+      },
+      loadApplication: (id) => {
+        const app = get().applications.find((a) => a.id === id);
+        if (!app?.snapshot) return false;
+        set({
+          currentAnalysis: app.snapshot.analysis,
+          draftCV: app.snapshot.draftCV,
+          generations: app.snapshot.generations,
+        });
+        return true;
+      },
 
       setActiveProvider: (id) =>
         set((s) => ({ providers: { ...s.providers, activeProvider: id } })),

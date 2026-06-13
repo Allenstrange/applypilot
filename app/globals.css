@@ -146,6 +146,41 @@ select optgroup {
   font-weight: 600;
 }
 
+/* ---------- CV dropzone ---------- */
+.dropzone {
+  border: 2px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.dropzone:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+.dropzone.dragover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  transform: scale(1.01);
+}
+
+/* ---------- Spinner ---------- */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---------- Provider cards ---------- */
 .provider-card {
   background: rgba(255, 255, 255, 0.02);
@@ -172,6 +207,92 @@ select optgroup {
   border-radius: 0.25rem;
   border: 1px solid rgba(245, 158, 11, 0.25);
   display: inline-block;
+}
+
+/* ---------- Chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.chip-match {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.chip-gap {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ---------- ATS banners ---------- */
+.ats-warning {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.ats-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.ats-success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.progress-ring {
+  transition: stroke-dashoffset 0.8s ease-out;
+}
+
+/* ---------- Document preview (CV) ---------- */
+.doc-preview {
+  background: #fff;
+  color: #111;
+  padding: 40px;
+  line-height: 1.6;
+  font-size: 14px;
+  font-family: "Calibri", Arial, sans-serif;
+}
+.doc-preview h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #000;
+}
+.doc-preview h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+  color: #222;
+}
+.doc-preview h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: #111;
+}
+.doc-preview ul {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 6px 0;
+}
+.doc-preview li {
+  margin-bottom: 4px;
+}
+.doc-preview mark {
+  background: rgba(245, 158, 11, 0.3);
+  color: #000;
+  padding: 1px 2px;
+  border-radius: 2px;
 }
 
 /* ---------- Status pills ---------- */

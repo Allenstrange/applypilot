@@ -11,12 +11,12 @@ Mid-migration from the legacy single-file HTML app to a Next.js platform.
 - ✅ **Phase 0** — Next.js 15+/Tailwind v4 scaffold, repo layout, CI
 - ✅ **Phase 1** — App shell: cosmic dark theme, sidebar navigation, dashboard
 - ✅ **Phase 2** — State (Zustand + localStorage), multi-provider AI client, AI Settings
-- ⏳ **Phase 3** — Master Profile + CV import
-- ⏳ **Phase 4** — Job Analysis (semantic match + ATS scan + keyword badges)
-- ⏳ **Phase 5** — Editing Room: Cover Letter, Resume Summary Booster, Interview Prep Coach, Outreach
-- ⏳ **Phase 6** — Exports (PDF via jsPDF, copy to clipboard)
-- ⏳ **Phase 7** — Saved generations + Application Tracker
-- ⏳ **Phase 8** — Animations (motion/react), polish, edge cases
+- ✅ **Phase 3** — Master Profile + CV import (DOCX/PDF/JSON/TXT, AI or local)
+- ✅ **Phase 4** — Job Analysis (semantic match + ATS scan + keyword badges)
+- ✅ **Phase 5** — Editing Room: CV editor, Cover Letter, Resume Summary Booster, Interview Prep Coach, Outreach
+- ✅ **Phase 6** — Exports (PDF via jsPDF, copy to clipboard)
+- ✅ **Phase 7** — Saved generations (snapshots) + Application Tracker
+- ✅ **Phase 8** — Animations (motion/react), error boundary, polish
 
 ## Tech
 

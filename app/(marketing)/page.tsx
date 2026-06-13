@@ -7,16 +7,16 @@ export default function LandingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="hero-grid border-b border-slate-200">
+      <section className="hero-grid border-b border-slate-200 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 mb-6">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 mb-6 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             No sign-up · runs in your browser
           </div>
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-[1.1]">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-[1.1] dark:text-slate-100">
             Land more interviews with <span className="brand-gradient-text">tailored</span> applications
           </h1>
-          <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
             ApplyPilot turns one job description into a tailored CV, a cover
             letter, interview prep, and recruiter outreach — keyword-matched and
             ATS-checked, in minutes instead of hours.
@@ -29,10 +29,10 @@ export default function LandingPage() {
               See how it works
             </Link>
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
             {["Free & local", "Your own AI keys", "Export to PDF"].map((t) => (
               <span key={t} className="inline-flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-green-600" /> {t}
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> {t}
               </span>
             ))}
           </div>
@@ -49,18 +49,18 @@ export default function LandingPage() {
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="card p-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4">
-                <Icon className="w-5 h-5 text-indigo-600" />
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4 dark:bg-indigo-950/40">
+                <Icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1.5">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+              <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* How it works */}
-      <section className="bg-slate-50 border-y border-slate-200">
+      <section className="bg-slate-50 border-y border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <SectionHeading
             eyebrow="How it works"
@@ -73,8 +73,8 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-white font-bold flex items-center justify-center mb-4">
                   {s.n}
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-1.5">{s.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
+                <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{s.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -91,7 +91,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/app"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition-colors"
+            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition-colors dark:bg-slate-900 dark:text-indigo-300"
           >
             Launch the app <ArrowRight className="w-4 h-4" />
           </Link>

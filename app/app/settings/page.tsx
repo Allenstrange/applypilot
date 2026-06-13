@@ -50,7 +50,7 @@ export default function SettingsPage() {
       />
 
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4">Select AI Provider</h2>
+        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Select AI Provider</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {PROVIDER_ORDER.map((id) => {
             const p = AI_PROVIDERS[id];
@@ -62,18 +62,18 @@ export default function SettingsPage() {
                 className={`provider-card text-left ${active === id ? "selected" : ""}`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-xl">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-xl dark:bg-slate-800">
                     {p.icon}
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-900">{p.name}</div>
-                    <div className="text-xs text-slate-500">{p.description}</div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">{p.name}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{p.description}</div>
                   </div>
                   {isAIConfigured({ ...providers, activeProvider: id }) ? (
-                    <span className="ml-auto text-xs text-green-600">● ready</span>
+                    <span className="ml-auto text-xs text-green-600 dark:text-green-400">● ready</span>
                   ) : null}
                 </div>
-                <div className="text-xs text-slate-500">{p.blurb}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{p.blurb}</div>
               </button>
             );
           })}
@@ -81,7 +81,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4">Configure {info.name}</h2>
+        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Configure {info.name}</h2>
 
         <div className="space-y-3">
           {active === "custom" ? (
@@ -153,7 +153,7 @@ export default function SettingsPage() {
             🔌 Test Connection
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-3">
+        <p className="text-xs text-slate-500 mt-3 dark:text-slate-400">
           Settings save automatically and are stored only in this browser.
         </p>
       </div>
@@ -170,7 +170,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs text-slate-500 mb-1">{label}</label>
+      <label className="block text-xs text-slate-500 mb-1 dark:text-slate-400">{label}</label>
       {children}
     </div>
   );

@@ -20,12 +20,12 @@ export default function ResumeEditorPage() {
   const updateResume = useStore((s) => s.updateResume);
 
   if (!hydrated) {
-    return <div className="p-8 text-slate-500">Loading…</div>;
+    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
   }
 
   if (!resume) {
     return (
-      <div className="p-12 text-center text-slate-500">
+      <div className="p-12 text-center text-slate-500 dark:text-slate-400">
         <div>Resume not found.</div>
         <Link href="/app/resumes" className="btn-primary px-4 py-2 rounded-lg text-sm mt-4 inline-block">
           Back to resumes
@@ -41,13 +41,13 @@ export default function ResumeEditorPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/app/resumes" className="text-slate-400 hover:text-slate-600 shrink-0">
+          <Link href="/app/resumes" className="text-slate-400 hover:text-slate-600 shrink-0 dark:text-slate-500">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <input
             value={resume.name}
             onChange={(e) => updateResume(id, { name: e.target.value })}
-            className="text-xl font-bold text-slate-900 bg-transparent border-0 px-1 py-1 rounded focus:bg-white min-w-0"
+            className="text-xl font-bold text-slate-900 bg-transparent border-0 px-1 py-1 rounded focus:bg-white min-w-0 dark:text-slate-100"
             aria-label="Resume name"
           />
         </div>
@@ -64,7 +64,7 @@ export default function ResumeEditorPage() {
         {/* Editor */}
         <div>
           <div className="card rounded-xl p-5 mb-6">
-            <div className="text-sm font-semibold text-slate-900 mb-3">Template</div>
+            <div className="text-sm font-semibold text-slate-900 mb-3 dark:text-slate-100">Template</div>
             <div className="grid grid-cols-3 gap-2">
               {TEMPLATES.map((t) => (
                 <button
@@ -76,8 +76,8 @@ export default function ResumeEditorPage() {
                   }`}
                 >
                   <span className="block w-full h-1.5 rounded-full mb-2" style={{ background: t.accent }} />
-                  <span className="text-sm font-medium text-slate-900">{t.name}</span>
-                  <span className="block text-[11px] text-slate-500 mt-0.5 leading-tight">{t.description}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{t.name}</span>
+                  <span className="block text-[11px] text-slate-500 mt-0.5 leading-tight dark:text-slate-400">{t.description}</span>
                 </button>
               ))}
             </div>

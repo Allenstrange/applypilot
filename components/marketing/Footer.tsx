@@ -4,16 +4,16 @@ const YEAR = new Date().getFullYear();
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
+    <footer className="border-t border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700">
       <div className="mx-auto max-w-6xl px-6 py-12 grid gap-8 sm:grid-cols-2 md:grid-cols-4">
         <div className="sm:col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
               AP
             </div>
-            <span className="font-bold text-slate-900">ApplyPilot</span>
+            <span className="font-bold text-slate-900 dark:text-slate-100">ApplyPilot</span>
           </div>
-          <p className="text-sm text-slate-500 max-w-xs">
+          <p className="text-sm text-slate-500 max-w-xs dark:text-slate-400">
             Your AI co-pilot for tailoring applications, faster — CVs, cover
             letters, interview prep, and tracking in one place.
           </p>
@@ -40,8 +40,8 @@ export default function Footer() {
           links={[{ href: "/app/settings", label: "AI Settings" }]}
         />
       </div>
-      <div className="border-t border-slate-200">
-        <div className="mx-auto max-w-6xl px-6 py-4 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+      <div className="border-t border-slate-200 dark:border-slate-700">
+        <div className="mx-auto max-w-6xl px-6 py-4 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 dark:text-slate-500">
           <span>© {YEAR} ApplyPilot</span>
           <span>Runs in your browser · your data stays local</span>
         </div>
@@ -59,13 +59,13 @@ function FooterCol({
 }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 dark:text-slate-500">
         {title}
       </div>
       <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.href + l.label}>
-            <Link href={l.href} className="text-sm text-slate-600 hover:text-indigo-600">
+            <Link href={l.href} className="text-sm text-slate-600 hover:text-indigo-600 dark:text-slate-300">
               {l.label}
             </Link>
           </li>

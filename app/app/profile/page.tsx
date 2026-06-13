@@ -153,10 +153,10 @@ export default function ProfilePage() {
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+            <h2 className="font-semibold text-slate-900 flex items-center gap-2 dark:text-slate-100">
               <Upload className="w-4 h-4" /> Auto-Import from CV
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
               Upload your CV. Uses AI if configured. Supports DOCX, PDF, JSON, TXT.
             </p>
           </div>
@@ -194,10 +194,10 @@ export default function ProfilePage() {
             }}
           />
           <div className="text-4xl mb-2">📎</div>
-          <div className="font-medium text-slate-900">
+          <div className="font-medium text-slate-900 dark:text-slate-100">
             Drop your CV here or click to browse
           </div>
-          <div className="text-xs text-slate-500 mt-2">
+          <div className="text-xs text-slate-500 mt-2 dark:text-slate-400">
             Accepted: .docx .pdf .json .txt (max 10MB)
           </div>
           {status.msg ? (
@@ -211,7 +211,7 @@ export default function ProfilePage() {
         {pending ? (
           <div className="mt-4">
             <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <div className="text-amber-600 font-semibold text-sm mb-3">
+              <div className="text-amber-600 font-semibold text-sm mb-3 dark:text-amber-400">
                 How should this data be applied?
               </div>
               <div className="flex flex-wrap gap-2">
@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
       {/* ---- Personal details ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4">Personal Details</h2>
+        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Personal Details</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Labeled label="Full Name">
             <input className="w-full px-3 py-2 rounded-lg text-sm" placeholder="John Smith" {...text("name")} />
@@ -272,7 +272,7 @@ export default function ProfilePage() {
 
       {/* ---- Summary ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4">Professional Summary</h2>
+        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Professional Summary</h2>
         <textarea
           rows={4}
           className="w-full px-3 py-2 rounded-lg text-sm"
@@ -283,8 +283,8 @@ export default function ProfilePage() {
 
       {/* ---- Skills ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-1">Skills &amp; Tools</h2>
-        <p className="text-xs text-slate-500 mb-3">
+        <h2 className="font-semibold text-slate-900 mb-1 dark:text-slate-100">Skills &amp; Tools</h2>
+        <p className="text-xs text-slate-500 mb-3 dark:text-slate-400">
           Comma-separated. Used for keyword matching.
         </p>
         <textarea
@@ -298,7 +298,7 @@ export default function ProfilePage() {
       {/* ---- Experience ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-slate-900">Work Experience</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">Work Experience</h2>
           <button
             type="button"
             onClick={addExp}
@@ -309,18 +309,18 @@ export default function ProfilePage() {
         </div>
         <div className="space-y-4">
           {profile.experience.length === 0 ? (
-            <div className="text-slate-500 text-sm text-center py-4">
+            <div className="text-slate-500 text-sm text-center py-4 dark:text-slate-400">
               No experience added yet.
             </div>
           ) : (
             profile.experience.map((exp, i) => (
-              <div key={i} className="p-4 rounded-lg bg-slate-100 border border-slate-200">
+              <div key={i} className="p-4 rounded-lg bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-xs text-slate-500">Role #{i + 1}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Role #{i + 1}</div>
                   <button
                     type="button"
                     onClick={() => removeExp(i)}
-                    className="text-red-600 text-xs hover:text-red-700"
+                    className="text-red-600 text-xs hover:text-red-700 dark:text-red-400"
                   >
                     Remove
                   </button>
@@ -353,7 +353,7 @@ export default function ProfilePage() {
       {/* ---- Education ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-slate-900">Education</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">Education</h2>
           <button
             type="button"
             onClick={addEdu}
@@ -364,7 +364,7 @@ export default function ProfilePage() {
         </div>
         <div className="space-y-3">
           {profile.education.length === 0 ? (
-            <div className="text-slate-500 text-sm text-center py-4">
+            <div className="text-slate-500 text-sm text-center py-4 dark:text-slate-400">
               No education added yet.
             </div>
           ) : (
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                 <input className="px-3 py-2 rounded-lg text-sm" placeholder="Degree" value={ed.degree} onChange={(e) => updateEdu(i, { degree: e.target.value })} />
                 <div className="flex gap-2">
                   <input className="flex-1 px-3 py-2 rounded-lg text-sm" placeholder="Year" value={ed.year} onChange={(e) => updateEdu(i, { year: e.target.value })} />
-                  <button type="button" onClick={() => removeEdu(i)} className="text-red-600 text-xs px-2" aria-label="Remove education">
+                  <button type="button" onClick={() => removeEdu(i)} className="text-red-600 text-xs px-2 dark:text-red-400" aria-label="Remove education">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -386,7 +386,7 @@ export default function ProfilePage() {
 
       {/* ---- Certifications ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4">Certifications</h2>
+        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Certifications</h2>
         <textarea
           rows={2}
           className="w-full px-3 py-2 rounded-lg text-sm"
@@ -395,7 +395,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <p className="text-xs text-slate-500 text-right">
+      <p className="text-xs text-slate-500 text-right dark:text-slate-400">
         Changes save automatically to this browser.
       </p>
     </div>
@@ -411,7 +411,7 @@ function Labeled({
 }) {
   return (
     <div>
-      <label className="block text-xs text-slate-500 mb-1">{label}</label>
+      <label className="block text-xs text-slate-500 mb-1 dark:text-slate-400">{label}</label>
       {children}
     </div>
   );

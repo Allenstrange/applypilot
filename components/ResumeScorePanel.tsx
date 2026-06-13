@@ -32,8 +32,8 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
           </div>
         </div>
         <div>
-          <div className="font-semibold text-slate-900">Resume Score</div>
-          <div className="text-xs text-slate-500">
+          <div className="font-semibold text-slate-900 dark:text-slate-100">Resume Score</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             {overall >= 80 ? "Strong — minor tweaks only" : overall >= 55 ? "Decent — a few things to fix" : "Needs work — see suggestions"}
           </div>
         </div>
@@ -42,22 +42,22 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
       <div className="space-y-2 mb-4">
         {categories.map((c) => (
           <div key={c.label}>
-            <div className="flex justify-between text-xs text-slate-500 mb-0.5">
+            <div className="flex justify-between text-xs text-slate-500 mb-0.5 dark:text-slate-400">
               <span>{c.label}</span>
               <span>{c.score}/{c.max}</span>
             </div>
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
               <div className="h-full rounded-full bg-indigo-500" style={{ width: `${(c.score / c.max) * 100}%` }} />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 dark:text-slate-500">
         Suggestions ({issues.length})
       </div>
       {issues.length === 0 ? (
-        <div className="text-sm text-green-600">Nothing to fix — looks great!</div>
+        <div className="text-sm text-green-600 dark:text-green-400">Nothing to fix — looks great!</div>
       ) : (
         <ul className="space-y-2 max-h-72 overflow-y-auto scrollbar pr-1">
           {issues.map((issue, i) => {
@@ -65,9 +65,9 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
             return (
               <li key={i} className="flex items-start gap-2 text-sm">
                 <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${cls}`} />
-                <span className="text-slate-700">
+                <span className="text-slate-700 dark:text-slate-200">
                   {issue.message}
-                  {issue.where ? <span className="text-slate-400"> · {issue.where}</span> : null}
+                  {issue.where ? <span className="text-slate-400 dark:text-slate-500"> · {issue.where}</span> : null}
                 </span>
               </li>
             );

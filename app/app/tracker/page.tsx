@@ -68,14 +68,14 @@ export default function TrackerPage() {
 
       <div className="card rounded-xl overflow-hidden">
         {apps.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
             No applications tracked yet. Analyse a job and save it from the Editing Room.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500">
+                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500 dark:text-slate-400 dark:border-slate-700">
                   <th className="p-4">Company</th>
                   <th className="p-4">Role</th>
                   <th className="p-4">Location</th>
@@ -86,10 +86,10 @@ export default function TrackerPage() {
               </thead>
               <tbody>
                 {apps.map((app) => (
-                  <tr key={app.id} className="border-b border-slate-200 hover:bg-slate-100">
-                    <td className="p-4 font-medium text-slate-900">{app.company}</td>
+                  <tr key={app.id} className="border-b border-slate-200 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+                    <td className="p-4 font-medium text-slate-900 dark:text-slate-100">{app.company}</td>
                     <td className="p-4">{app.title}</td>
-                    <td className="p-4 text-slate-500">{app.location || "-"}</td>
+                    <td className="p-4 text-slate-500 dark:text-slate-400">{app.location || "-"}</td>
                     <td className="p-4">
                       <select
                         value={app.status}
@@ -106,13 +106,13 @@ export default function TrackerPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="p-4 text-slate-500 text-xs">
+                    <td className="p-4 text-slate-500 text-xs dark:text-slate-400">
                       {new Date(app.createdAt).toLocaleDateString("en-GB")}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {app.snapshot ? (
-                          <button type="button" onClick={() => openApp(app.id)} className="text-amber-600 text-xs hover:text-amber-600 flex items-center gap-1" title="Reload saved generations">
+                          <button type="button" onClick={() => openApp(app.id)} className="text-amber-600 text-xs hover:text-amber-600 flex items-center gap-1 dark:text-amber-400" title="Reload saved generations">
                             <FolderOpen className="w-3.5 h-3.5" /> Open
                           </button>
                         ) : null}
@@ -122,7 +122,7 @@ export default function TrackerPage() {
                             removeApp(app.id);
                             toast("✓ Deleted");
                           }}
-                          className="text-red-600 text-xs hover:text-red-700 flex items-center gap-1"
+                          className="text-red-600 text-xs hover:text-red-700 flex items-center gap-1 dark:text-red-400"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>

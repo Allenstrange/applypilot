@@ -22,12 +22,12 @@ const HIGHLIGHTS = [
 export default function FeaturesPage() {
   return (
     <>
-      <section className="hero-grid border-b border-slate-200">
+      <section className="hero-grid border-b border-slate-200 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
             Everything you need to <span className="brand-gradient-text">apply faster</span>
           </h1>
-          <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
             One tool for the entire application loop — diagnose, tailor,
             generate, and track.
           </p>
@@ -38,24 +38,24 @@ export default function FeaturesPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="card p-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4">
-                <Icon className="w-5 h-5 text-indigo-600" />
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4 dark:bg-indigo-950/40">
+                <Icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1.5">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+              <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="bg-slate-50 border-y border-slate-200">
+      <section className="bg-slate-50 border-y border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-16">
           <SectionHeading eyebrow="Why it's different" title="Built to beat the ATS, honestly" />
           <div className="mt-10 grid gap-3 sm:grid-cols-2 max-w-3xl mx-auto">
             {HIGHLIGHTS.map((h) => (
               <div key={h} className="flex items-start gap-3 card p-4">
-                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                <span className="text-sm text-slate-700">{h}</span>
+                <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5 dark:text-green-400" />
+                <span className="text-sm text-slate-700 dark:text-slate-200">{h}</span>
               </div>
             ))}
           </div>

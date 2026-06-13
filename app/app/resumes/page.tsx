@@ -38,12 +38,12 @@ export default function ResumesPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="card rounded-xl p-12 text-center text-slate-500">
-          <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+        <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400">
+          <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
           <div>No resumes yet.</div>
           <p className="text-sm mt-1">
             Create one from your{" "}
-            <Link href="/app/profile" className="text-indigo-600 underline">master profile</Link>{" "}
+            <Link href="/app/profile" className="text-indigo-600 underline dark:text-indigo-400">master profile</Link>{" "}
             to get started.
           </p>
         </div>
@@ -57,32 +57,32 @@ export default function ResumesPage() {
               <div key={r.id} className="card rounded-xl p-5 flex flex-col">
                 <Link href={`/app/resumes/${r.id}`} className="flex-1">
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="font-semibold text-slate-900">{r.name}</div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">{r.name}</div>
                     <span className={`text-sm font-bold ${scoreColor}`}>{score}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
                       <span className="w-2 h-2 rounded-full" style={{ background: tpl.accent }} />
                       {tpl.name}
                     </span>
                     <span>· {new Date(r.updatedAt).toLocaleDateString("en-GB")}</span>
                   </div>
                 </Link>
-                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-200">
-                  <Link href={`/app/resumes/${r.id}`} className="text-indigo-600 text-xs font-medium hover:text-indigo-700">
+                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <Link href={`/app/resumes/${r.id}`} className="text-indigo-600 text-xs font-medium hover:text-indigo-700 dark:text-indigo-400">
                     Edit
                   </Link>
                   <button
                     type="button"
                     onClick={() => { const id = duplicateResume(r.id); if (id) toast("✓ Duplicated"); }}
-                    className="text-slate-500 text-xs hover:text-slate-700 flex items-center gap-1"
+                    className="text-slate-500 text-xs hover:text-slate-700 flex items-center gap-1 dark:text-slate-400 dark:hover:text-slate-200"
                   >
                     <Copy className="w-3.5 h-3.5" /> Duplicate
                   </button>
                   <button
                     type="button"
                     onClick={() => { removeResume(r.id); toast("✓ Deleted"); }}
-                    className="text-red-600 text-xs hover:text-red-700 flex items-center gap-1 ml-auto"
+                    className="text-red-600 text-xs hover:text-red-700 flex items-center gap-1 ml-auto dark:text-red-400"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>

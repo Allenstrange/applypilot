@@ -28,15 +28,15 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Applications" value={stats.total} className="text-slate-900" />
-        <StatCard label="Interviews" value={stats.interviews} className="text-amber-600" />
-        <StatCard label="Offers" value={stats.offers} className="text-green-600" />
-        <StatCard label="This Week" value={stats.week} className="text-indigo-600" />
+        <StatCard label="Applications" value={stats.total} className="text-slate-900 dark:text-slate-100" />
+        <StatCard label="Interviews" value={stats.interviews} className="text-amber-600 dark:text-amber-400" />
+        <StatCard label="Offers" value={stats.offers} className="text-green-600 dark:text-green-400" />
+        <StatCard label="This Week" value={stats.week} className="text-indigo-600 dark:text-indigo-400" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-slate-900 mb-4">Quick Actions</h2>
+          <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Quick Actions</h2>
           <div className="space-y-2">
             <QuickAction href="/app/analyze" primary icon={<Search className="w-4 h-4" />}>
               Analyse a New Job
@@ -54,21 +54,21 @@ export default function DashboardPage() {
         </div>
 
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-slate-900 mb-4">Recent Activity</h2>
+          <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Recent Activity</h2>
           <div className="space-y-3 text-sm">
             {apps.length === 0 ? (
-              <div className="text-slate-500 text-center py-4">
+              <div className="text-slate-500 text-center py-4 dark:text-slate-400">
                 No recent activity. Start by analysing a job.
               </div>
             ) : (
               apps.slice(0, 5).map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-100"
+                  className="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-800"
                 >
                   <div>
-                    <div className="font-medium text-slate-900 text-sm">{a.title}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="font-medium text-slate-900 text-sm dark:text-slate-100">{a.title}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
                       {a.company} •{" "}
                       {new Date(a.createdAt).toLocaleDateString("en-GB")}
                     </div>
@@ -95,7 +95,7 @@ function StatCard({
 }) {
   return (
     <div className="card stat-card rounded-xl p-5">
-      <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
+      <div className="text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">{label}</div>
       <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
     </div>
   );

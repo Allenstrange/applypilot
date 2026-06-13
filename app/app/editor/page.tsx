@@ -56,12 +56,12 @@ export default function EditorPage() {
   const [tab, setTab] = useState<Tab>("cv");
 
   if (!hydrated) {
-    return <div className="p-8 text-slate-500">Loading…</div>;
+    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
   }
 
   if (!analysis || !draftCV) {
     return (
-      <div className="p-12 text-center text-slate-500">
+      <div className="p-12 text-center text-slate-500 dark:text-slate-400">
         <PenLine className="w-10 h-10 mx-auto mb-3" />
         <div>No job selected for editing.</div>
         <Link href="/app/analyze" className="btn-primary px-4 py-2 rounded-lg text-sm mt-4 inline-block">
@@ -80,8 +80,8 @@ export default function EditorPage() {
     <div className="p-8">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Editing Room</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {analysis.title} at {analysis.company}
           </p>
         </div>
@@ -90,7 +90,7 @@ export default function EditorPage() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-6 border-b border-slate-200">
+      <div className="flex flex-wrap gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -189,7 +189,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
         <Section title="Work Experience">
           <div className="space-y-4">
             {draftCV.experience.map((exp, i) => (
-              <div key={i} className="p-3 rounded-lg bg-slate-100">
+              <div key={i} className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <input className="px-2 py-1 rounded text-xs" placeholder="Role" value={exp.role} onChange={(e) => updateExp(i, { role: e.target.value })} />
                   <input className="px-2 py-1 rounded text-xs" placeholder="Company" value={exp.company} onChange={(e) => updateExp(i, { company: e.target.value })} />
@@ -199,7 +199,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                     <div key={j} className="relative pr-2">
                       <textarea
                         rows={2}
-                        className="w-full px-2 py-1 rounded text-xs bg-slate-50"
+                        className="w-full px-2 py-1 rounded text-xs bg-slate-50 dark:bg-slate-800/50"
                         value={bullet}
                         onChange={(e) => updateBullet(i, j, e.target.value)}
                       />
@@ -219,7 +219,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                       ) : null}
                     </div>
                   ))}
-                  <button type="button" onClick={() => updateExp(i, { bullets: exp.bullets + "\nNew bullet point here" })} className="text-xs text-amber-600 hover:text-amber-600">
+                  <button type="button" onClick={() => updateExp(i, { bullets: exp.bullets + "\nNew bullet point here" })} className="text-xs text-amber-600 hover:text-amber-600 dark:text-amber-400">
                     + Add bullet
                   </button>
                 </div>
@@ -235,10 +235,10 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
       {/* Preview */}
       <div>
         <div className="glass rounded-xl p-4 mb-3 sticky top-4 z-10">
-          <div className="text-xs text-slate-500 uppercase mb-1">Live Match Rate</div>
+          <div className="text-xs text-slate-500 uppercase mb-1 dark:text-slate-400">Live Match Rate</div>
           <div className="flex items-center gap-3">
             <div className="text-2xl font-bold" style={{ color: scoreColor }}>{score}%</div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>
           </div>
@@ -347,14 +347,14 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
       {data ? (
         <div className="card rounded-xl p-6 space-y-4 leading-relaxed">
           <KeywordBadges keywords={data.keywords} />
-          <div className="text-xs text-slate-500 uppercase">Subject</div>
-          <div className="font-semibold text-slate-900"><Highlight text={data.subjectLine} keywords={data.keywords} /></div>
-          <p className="text-slate-700"><Highlight text={data.salutation} keywords={data.keywords} /></p>
+          <div className="text-xs text-slate-500 uppercase dark:text-slate-400">Subject</div>
+          <div className="font-semibold text-slate-900 dark:text-slate-100"><Highlight text={data.subjectLine} keywords={data.keywords} /></div>
+          <p className="text-slate-700 dark:text-slate-200"><Highlight text={data.salutation} keywords={data.keywords} /></p>
           {data.body.map((p, i) => (
-            <p key={i} className="text-slate-600"><Highlight text={p} keywords={data.keywords} /></p>
+            <p key={i} className="text-slate-600 dark:text-slate-300"><Highlight text={p} keywords={data.keywords} /></p>
           ))}
-          <p className="text-slate-600"><Highlight text={data.closing} keywords={data.keywords} /></p>
-          <p className="text-slate-700 whitespace-pre-line"><Highlight text={data.signOff} keywords={data.keywords} /></p>
+          <p className="text-slate-600 dark:text-slate-300"><Highlight text={data.closing} keywords={data.keywords} /></p>
+          <p className="text-slate-700 whitespace-pre-line dark:text-slate-200"><Highlight text={data.signOff} keywords={data.keywords} /></p>
         </div>
       ) : null}
     </OutputShell>
@@ -392,12 +392,12 @@ function ResumeSummaryTab({ analysis, draftCV }: { analysis: Analysis; draftCV: 
       {data ? (
         <div className="card rounded-xl p-6 space-y-4">
           <KeywordBadges keywords={data.keywords} />
-          <h3 className="text-lg font-bold text-slate-900"><Highlight text={data.targetHeadline} keywords={data.keywords} /></h3>
-          <p className="text-slate-600 leading-relaxed"><Highlight text={data.introSummary} keywords={data.keywords} /></p>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100"><Highlight text={data.targetHeadline} keywords={data.keywords} /></h3>
+          <p className="text-slate-600 leading-relaxed dark:text-slate-300"><Highlight text={data.introSummary} keywords={data.keywords} /></p>
           <ul className="space-y-2">
             {data.bulletPoints.map((b, i) => (
-              <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="text-slate-600 flex gap-2">
-                <span className="text-amber-600">▸</span>
+              <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="text-slate-600 flex gap-2 dark:text-slate-300">
+                <span className="text-amber-600 dark:text-amber-400">▸</span>
                 <span><Highlight text={b} keywords={data.keywords} /></span>
               </motion.li>
             ))}
@@ -436,12 +436,12 @@ function InterviewPrepTab({ analysis, draftCV }: { analysis: Analysis; draftCV: 
           <KeywordBadges keywords={data.keywords} />
           {data.questions.map((q, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="card rounded-xl p-5">
-              <div className="font-semibold text-slate-900 mb-2">Q{i + 1}. <Highlight text={q} keywords={data.keywords} /></div>
+              <div className="font-semibold text-slate-900 mb-2 dark:text-slate-100">Q{i + 1}. <Highlight text={q} keywords={data.keywords} /></div>
               {data.answerFormulas[i] ? (
-                <div className="text-sm text-slate-600 mb-2"><span className="text-amber-600 font-medium">How to frame: </span><Highlight text={data.answerFormulas[i]} keywords={data.keywords} /></div>
+                <div className="text-sm text-slate-600 mb-2 dark:text-slate-300"><span className="text-amber-600 font-medium dark:text-amber-400">How to frame: </span><Highlight text={data.answerFormulas[i]} keywords={data.keywords} /></div>
               ) : null}
               {data.coachTips[i] ? (
-                <div className="text-xs text-slate-500"><span className="text-indigo-600 font-medium">Coach tip: </span><Highlight text={data.coachTips[i]} keywords={data.keywords} /></div>
+                <div className="text-xs text-slate-500 dark:text-slate-400"><span className="text-indigo-600 font-medium dark:text-indigo-400">Coach tip: </span><Highlight text={data.coachTips[i]} keywords={data.keywords} /></div>
               ) : null}
             </motion.div>
           ))}
@@ -471,9 +471,9 @@ function OutreachTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profi
       {data ? (
         <div className="card rounded-xl p-6 space-y-3">
           <KeywordBadges keywords={data.keywords} />
-          <div className="text-xs text-slate-500 uppercase">Subject</div>
-          <div className="font-semibold text-slate-900"><Highlight text={data.subject} keywords={data.keywords} /></div>
-          <div className="text-slate-600 whitespace-pre-line leading-relaxed"><Highlight text={data.message} keywords={data.keywords} /></div>
+          <div className="text-xs text-slate-500 uppercase dark:text-slate-400">Subject</div>
+          <div className="font-semibold text-slate-900 dark:text-slate-100"><Highlight text={data.subject} keywords={data.keywords} /></div>
+          <div className="text-slate-600 whitespace-pre-line leading-relaxed dark:text-slate-300"><Highlight text={data.message} keywords={data.keywords} /></div>
         </div>
       ) : null}
     </OutputShell>
@@ -500,7 +500,7 @@ function OutputShell({
   return (
     <div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 className="font-semibold text-slate-900">{title}</h2>
+        <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
         <div className="flex gap-2">
           {actions}
           <button type="button" onClick={onGenerate} disabled={busy} className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
@@ -510,8 +510,8 @@ function OutputShell({
         </div>
       </div>
       {hasData ? children : (
-        <div className="card rounded-xl p-12 text-center text-slate-500">
-          Click <span className="text-amber-600">Generate</span> to create tailored, keyword-rich content.
+        <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400">
+          Click <span className="text-amber-600 dark:text-amber-400">Generate</span> to create tailored, keyword-rich content.
         </div>
       )}
     </div>
@@ -552,7 +552,7 @@ function PdfBtn({ onClick }: { onClick: () => void }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card rounded-xl p-4">
-      <h3 className="text-sm font-semibold text-slate-600 mb-2">{title}</h3>
+      <h3 className="text-sm font-semibold text-slate-600 mb-2 dark:text-slate-300">{title}</h3>
       {children}
     </div>
   );
@@ -560,7 +560,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function MenuItem({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="block w-full text-left px-3 py-2 rounded hover:bg-amber-500/20 text-slate-700">
+    <button type="button" onClick={onClick} className="block w-full text-left px-3 py-2 rounded hover:bg-amber-500/20 text-slate-700 dark:text-slate-200">
       {children}
     </button>
   );

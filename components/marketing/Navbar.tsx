@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const LINKS = [
   { href: "/features", label: "Features" },
@@ -12,13 +13,13 @@ const LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur">
+      <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
             AP
           </div>
-          <span className="font-bold text-slate-900">ApplyPilot</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100">ApplyPilot</span>
         </Link>
 
         <nav className="hidden sm:flex items-center gap-1">
@@ -28,8 +29,8 @@ export default function Navbar() {
               href={l.href}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 pathname === l.href
-                  ? "text-indigo-600"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               {l.label}
@@ -37,12 +38,15 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <Link
-          href="/app"
-          className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5"
-        >
-          Launch app <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/app"
+            className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5"
+          >
+            Launch app <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </header>
   );

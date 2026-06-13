@@ -115,7 +115,7 @@ export default function AnalyzePage() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, company: f.company || "Tetra Tech", title: f.title || "1st/2nd Line Support Analyst", location: f.location || "Birmingham, UK", jd: SAMPLE_JD }))}
-              className="text-xs text-amber-600 hover:text-amber-600"
+              className="text-xs text-amber-600 hover:text-amber-600 dark:text-amber-400"
             >
               Load sample JD for testing
             </button>
@@ -132,29 +132,29 @@ export default function AnalyzePage() {
         </div>
 
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-slate-900 mb-4">Status</h2>
-          <div className="space-y-3 text-sm text-slate-500">
+          <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Status</h2>
+          <div className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
             <div className="flex gap-2"><span>✅</span><span>Paste the full JD including responsibilities and requirements</span></div>
             <div className="flex gap-2"><span>✅</span><span>Keep your master profile up to date first</span></div>
             <div className="flex gap-2"><span>✅</span><span>Review the ATS safety scan before editing</span></div>
           </div>
           <div className="mt-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <div className="text-xs text-amber-600 font-semibold mb-1">PROFILE STATUS</div>
+            <div className="text-xs text-amber-600 font-semibold mb-1 dark:text-amber-400">PROFILE STATUS</div>
             <div className="text-sm">
               {profileComplete ? (
-                <span className="text-green-600">✓ Ready to analyse</span>
+                <span className="text-green-600 dark:text-green-400">✓ Ready to analyse</span>
               ) : (
-                <span className="text-amber-600">⚠ <Link href="/app/profile" className="underline">Profile incomplete</Link></span>
+                <span className="text-amber-600 dark:text-amber-400">⚠ <Link href="/app/profile" className="underline">Profile incomplete</Link></span>
               )}
             </div>
           </div>
           <div className="mt-4 p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-            <div className="text-xs text-indigo-600 font-semibold mb-1">AI PROVIDER</div>
+            <div className="text-xs text-indigo-600 font-semibold mb-1 dark:text-indigo-400">AI PROVIDER</div>
             <div className="text-sm">
               {aiReady ? (
-                <span className="text-green-600">✓ {AI_PROVIDERS[providers.activeProvider].name}</span>
+                <span className="text-green-600 dark:text-green-400">✓ {AI_PROVIDERS[providers.activeProvider].name}</span>
               ) : (
-                <span className="text-amber-600">⚠ <Link href="/app/settings" className="underline">Not configured</Link> — keyword fallback</span>
+                <span className="text-amber-600 dark:text-amber-400">⚠ <Link href="/app/settings" className="underline">Not configured</Link> — keyword fallback</span>
               )}
             </div>
           </div>
@@ -182,14 +182,14 @@ function Results({ analysis: a }: { analysis: Analysis }) {
       className="mt-8"
     >
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 dark:text-slate-100">
           Analysis Complete
           {a.isSemantic && a.senioritySignal ? (
             <span className="status-pill bg-purple-500/20 text-purple-700">{a.senioritySignal}</span>
           ) : null}
           {a.isSemantic
             ? a.domainTags.map((t) => (
-                <span key={t} className="status-pill bg-indigo-500/20 text-indigo-600">{t}</span>
+                <span key={t} className="status-pill bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">{t}</span>
               ))
             : null}
         </h2>
@@ -200,15 +200,15 @@ function Results({ analysis: a }: { analysis: Analysis }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="card rounded-xl p-5">
-          <div className="text-xs text-slate-500 uppercase mb-3">{a.isSemantic ? "Semantic Fit" : "Match Rate"}</div>
+          <div className="text-xs text-slate-500 uppercase mb-3 dark:text-slate-400">{a.isSemantic ? "Semantic Fit" : "Match Rate"}</div>
           <div className="flex items-center gap-4">
             <svg width="80" height="80" viewBox="0 0 80 80">
               <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
               <circle cx="40" cy="40" r="32" fill="none" stroke={ring} strokeWidth="8" strokeDasharray={C} strokeDashoffset={C * (1 - score / 100)} transform="rotate(-90 40 40)" className="progress-ring" strokeLinecap="round" />
             </svg>
             <div>
-              <div className="text-3xl font-bold text-slate-900">{score}%</div>
-              <div className="text-xs text-slate-500">
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{score}%</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 {a.isSemantic ? "Semantic fit" : `${a.matched.length} of ${a.jdKeywords.length} keywords matched`}
               </div>
             </div>
@@ -216,7 +216,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
         </div>
 
         <div className="card rounded-xl p-5">
-          <div className="text-xs text-slate-500 uppercase mb-3">ATS Safety Scan</div>
+          <div className="text-xs text-slate-500 uppercase mb-3 dark:text-slate-400">ATS Safety Scan</div>
           <div className="space-y-2 max-h-48 overflow-y-auto scrollbar">
             {a.atsWarnings.map((w, i) => (
               <div key={i} className={`ats-${w.type} rounded-lg p-3`}>
@@ -231,7 +231,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card rounded-xl p-5">
-          <h3 className="font-semibold text-slate-900 mb-3">✓ Matched Concepts ({a.matched.length})</h3>
+          <h3 className="font-semibold text-slate-900 mb-3 dark:text-slate-100">✓ Matched Concepts ({a.matched.length})</h3>
           <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto scrollbar">
             {a.matched.length ? (
               a.matched.map((m, i) => (
@@ -240,26 +240,26 @@ function Results({ analysis: a }: { analysis: Analysis }) {
                 </span>
               ))
             ) : (
-              <span className="text-slate-500 text-sm">None matched</span>
+              <span className="text-slate-500 text-sm dark:text-slate-400">None matched</span>
             )}
           </div>
         </div>
         <div className="card rounded-xl p-5">
-          <h3 className="font-semibold text-slate-900 mb-3">⚠ Areas to Strengthen</h3>
+          <h3 className="font-semibold text-slate-900 mb-3 dark:text-slate-100">⚠ Areas to Strengthen</h3>
           <div className="flex flex-col gap-2 max-h-48 overflow-y-auto scrollbar">
             {a.isSemantic && a.gaps.length ? (
               a.gaps.map((g, i) => (
                 <div key={i} className="p-2 rounded bg-red-500/10 border border-red-500/20 text-sm">
-                  <div className="font-semibold text-red-600">
-                    {g.concept} {g.importance ? <span className="text-xs text-slate-500 ml-1">({g.importance})</span> : null}
+                  <div className="font-semibold text-red-600 dark:text-red-400">
+                    {g.concept} {g.importance ? <span className="text-xs text-slate-500 ml-1 dark:text-slate-400">({g.importance})</span> : null}
                   </div>
-                  {g.suggestion ? <div className="text-xs text-slate-500 mt-1">{g.suggestion}</div> : null}
+                  {g.suggestion ? <div className="text-xs text-slate-500 mt-1 dark:text-slate-400">{g.suggestion}</div> : null}
                 </div>
               ))
             ) : !a.isSemantic && a.missing.length ? (
               a.missing.map((k, i) => <span key={i} className="chip chip-gap w-max">{k}</span>)
             ) : (
-              <span className="text-slate-500 text-sm">Great, no gaps found</span>
+              <span className="text-slate-500 text-sm dark:text-slate-400">Great, no gaps found</span>
             )}
           </div>
         </div>
@@ -271,7 +271,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
 function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs text-slate-500 mb-1">{label}</label>
+      <label className="block text-xs text-slate-500 mb-1 dark:text-slate-400">{label}</label>
       {children}
     </div>
   );

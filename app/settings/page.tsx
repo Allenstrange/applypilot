@@ -1,0 +1,177 @@
+"use client";
+
+import { useState } from "react";
+import { useStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
+import { AI_PROVIDERS, callAI, isAIConfigured } from "@/lib/ai";
+import type { ProviderId } from "@/lib/types";
+import { toast } from "@/lib/toast";
+import PageHeader from "@/components/PageHeader";
+
+const PROVIDER_ORDER: ProviderId[] = ["openai", "anthropic", "gemini", "custom"];
+
+export default function SettingsPage() {
+  const hydrated = useHydrated();
+  const providers = useStore((s) => s.providers);
+  const setActiveProvider = useStore((s) => s.setActiveProvider);
+  const updateProviderConfig = useStore((s) => s.updateProviderConfig);
+  const [testing, setTesting] = useState(false);
+
+  if (!hydrated) {
+    return (
+      <div className="p-8">
+        <PageHeader title="⚙ AI Provider Settings" subtitle="Loading…" />
+      </div>
+    );
+  }
+
+  const active = providers.activeProvider;
+  const config = providers[active];
+  const info = AI_PROVIDERS[active];
+
+  async function testConnection() {
+    setTesting(true);
+    toast("⏳ Testing connection…");
+    try {
+      await callAI('Reply with {"status": "ok"}', providers);
+      toast("✓ Connection successful");
+    } catch (err) {
+      toast("✕ Connection failed: " + (err as Error).message);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div className="p-8">
+      <PageHeader
+        title="⚙ AI Provider Settings"
+        subtitle="Configure which AI service powers CV parsing, analysis, and generation."
+      />
+
+      <div className="card rounded-xl p-6 mb-6">
+        <h2 className="font-semibold text-white mb-4">Select AI Provider</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {PROVIDER_ORDER.map((id) => {
+            const p = AI_PROVIDERS[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveProvider(id)}
+                className={`provider-card text-left ${active === id ? "selected" : ""}`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-xl">
+                    {p.icon}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-white">{p.name}</div>
+                    <div className="text-xs text-gray-500">{p.description}</div>
+                  </div>
+                  {isAIConfigured({ ...providers, activeProvider: id }) ? (
+                    <span className="ml-auto text-xs text-green-400">● ready</span>
+                  ) : null}
+                </div>
+                <div className="text-xs text-gray-400">{p.blurb}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="card rounded-xl p-6 mb-6">
+        <h2 className="font-semibold text-white mb-4">Configure {info.name}</h2>
+
+        <div className="space-y-3">
+          {active === "custom" ? (
+            <Field label="API Endpoint URL">
+              <input
+                type="text"
+                value={config.endpoint ?? ""}
+                onChange={(e) =>
+                  updateProviderConfig(active, { endpoint: e.target.value })
+                }
+                placeholder="http://localhost:11434/v1/chat/completions"
+                className="w-full px-3 py-2 rounded-lg text-sm"
+              />
+            </Field>
+          ) : null}
+
+          <Field label={active === "custom" ? "API Key (optional)" : "API Key"}>
+            <input
+              type="password"
+              value={config.apiKey}
+              onChange={(e) =>
+                updateProviderConfig(active, { apiKey: e.target.value })
+              }
+              placeholder={active === "custom" ? "Leave blank if not required" : "sk-…"}
+              className="w-full px-3 py-2 rounded-lg text-sm"
+            />
+          </Field>
+
+          <Field label="Model">
+            {active === "custom" ? (
+              <input
+                type="text"
+                value={config.model}
+                onChange={(e) =>
+                  updateProviderConfig(active, { model: e.target.value })
+                }
+                placeholder="llama3.1, mistral, etc."
+                className="w-full px-3 py-2 rounded-lg text-sm"
+              />
+            ) : (
+              <select
+                value={config.model}
+                onChange={(e) =>
+                  updateProviderConfig(active, { model: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-lg text-sm"
+              >
+                {info.modelGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.models.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            type="button"
+            onClick={testConnection}
+            disabled={testing}
+            className="btn-ghost text-white px-4 py-2 rounded-lg text-sm"
+          >
+            🔌 Test Connection
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Settings save automatically and are stored only in this browser.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}

@@ -1,69 +1,62 @@
 # ApplyPilot
 
-> AI Job Application Assistant — a single-file web app that tailors your CV to a job description, scores ATS compatibility, and tracks applications.
+> AI job-application platform — tailor your CV and cover letters, scan ATS
+> compatibility, and track applications. Now a Next.js app (v4); the original
+> single-file version lives in [`legacy/`](./legacy).
 
-## What it does
+## Status
 
-A dark-themed, single-page web app (no build step) that helps job seekers:
+Mid-migration from the legacy single-file HTML app to a Next.js platform.
 
-1. **Maintain a master profile** — manually, or by uploading a `.docx`/`.pdf` CV and letting the AI parse it into structured data.
-2. **Analyse a job description** — paste a JD, get keyword extraction and an ATS compatibility scan against your profile.
-3. **Tailor your CV** — live editor with per-bullet AI enhancement (rewrite for impact, technical depth, quantification, etc.) and a side-by-side preview that highlights matched keywords.
-4. **Track applications** — pipeline of `Planned → Applied → Interview → Offer → Rejected`, with CSV export.
-5. **Export** — CV as printable HTML, profile as JSON, tracker as CSV.
+- ✅ **Phase 0** — Next.js 15+/Tailwind v4 scaffold, repo layout, CI
+- ✅ **Phase 1** — App shell: cosmic dark theme, sidebar navigation, dashboard
+- ✅ **Phase 2** — State (Zustand + localStorage), multi-provider AI client, AI Settings
+- ⏳ **Phase 3** — Master Profile + CV import
+- ⏳ **Phase 4** — Job Analysis (semantic match + ATS scan + keyword badges)
+- ⏳ **Phase 5** — Editing Room: Cover Letter, Resume Summary Booster, Interview Prep Coach, Outreach
+- ⏳ **Phase 6** — Exports (PDF via jsPDF, copy to clipboard)
+- ⏳ **Phase 7** — Saved generations + Application Tracker
+- ⏳ **Phase 8** — Animations (motion/react), polish, edge cases
 
 ## Tech
 
-- **Single self-contained HTML file** (`index.html`) — no build, no server, no install. Open in any modern browser.
-- **Tailwind CSS** via CDN.
-- **External libs via CDN**: `FileSaver.js` (exports), `mammoth.js` (DOCX parsing), `pdf.js` (PDF parsing).
-- **AI providers** (user-configured, credentials stored in `localStorage`):
-  - OpenAI (`gpt-4o`, `o3`, `o4` reasoning models, etc.)
-  - Anthropic (`claude-sonnet-4`, etc.)
-  - Google Gemini
-  - Any OpenAI-compatible endpoint (Ollama, LM Studio, etc.)
-- **State persistence**: `localStorage` keys `applypilot_state_v3`, `applypilot_providers_v3`.
+- **Next.js 16 (App Router) + React 19 + TypeScript**
+- **Tailwind CSS v4** — cosmic dark theme with amber/indigo accents
+- **State:** Zustand persisted to `localStorage` (key `applypilot_v4`)
+- **Icons:** `lucide-react` · **Animations:** `motion/react` · **PDF:** `jspdf`
+- **CV parsing:** `mammoth` (DOCX) + `pdfjs-dist` (PDF)
+- **AI providers** (client-side, keys in `localStorage` so you can switch freely):
+  OpenAI, Anthropic, Google Gemini, or any OpenAI-compatible endpoint.
 
-## Usage
+## Develop
 
 ```bash
-# Just open the file
-start index.html        # Windows
-open index.html         # macOS
-xdg-open index.html     # Linux
-```
-
-Or, if you want a quick local server (recommended when embedding external CDN content — avoids some CORS quirks for `.docx`/`.pdf` parsing):
-
-```bash
-python -m http.server 8000
-# then open http://localhost:8000
+npm install
+npm run dev      # http://localhost:3000
+npm run lint
+npm run build
 ```
 
 ## Project layout
 
 ```
 .
-├── index.html        # The entire app — HTML + CSS + JS
-└── README.md
+├── app/            # Next.js routes (dashboard, profile, analyze, editor, tracker, settings)
+├── components/     # Shared UI (Sidebar, Toaster, PageHeader, …)
+├── lib/            # Domain types, Zustand store, multi-provider AI client, helpers
+├── public/
+└── legacy/         # Original single-file HTML app, kept for reference/porting
 ```
-
-Everything lives in `index.html`. State, styles, logic, and the AI provider configuration UI are all in that single file.
 
 ## AI provider setup
 
-1. Open the app and click **⚙ Configure AI Provider** in the sidebar.
+1. Open **AI Settings** in the sidebar.
 2. Pick a provider (OpenAI, Anthropic, Gemini, or Custom).
-3. Paste your API key and pick a model.
+3. Paste your API key and pick a model — settings save automatically.
 4. Click **🔌 Test Connection** to confirm.
-5. The key is stored only in your browser's `localStorage` — never sent anywhere except the provider's API.
 
-## Notes for contributors / agents
-
-- The app expects to be served from a directory (not `file://`) when parsing uploaded PDFs — the PDF.js worker has CORS issues with `file://`. Use a local server.
-- All state mutations go through `saveState()` — keep that pattern.
-- AI calls go through `callAI(prompt)` — don't bypass it.
-- Don't commit `localStorage` snapshots, screenshots, or test JDs to the repo. Add them to `.gitignore` if needed.
+Keys are stored only in your browser's `localStorage` and are sent only to the
+provider's API.
 
 ## Licence
 

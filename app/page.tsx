@@ -1,0 +1,126 @@
+"use client";
+
+import Link from "next/link";
+import { Search, User, ClipboardList, Settings } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { useHydrated, useNow } from "@/lib/useHydrated";
+import PageHeader from "@/components/PageHeader";
+
+export default function DashboardPage() {
+  const hydrated = useHydrated();
+  const now = useNow();
+  const applications = useStore((s) => s.applications);
+
+  const apps = hydrated ? applications : [];
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const stats = {
+    total: apps.length,
+    interviews: apps.filter((a) => a.status === "interview").length,
+    offers: apps.filter((a) => a.status === "offer").length,
+    week: apps.filter((a) => new Date(a.createdAt).getTime() > weekAgo).length,
+  };
+
+  return (
+    <div className="p-8">
+      <PageHeader
+        title="Welcome back 👋"
+        subtitle="Your AI-powered job application command centre."
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Applications" value={stats.total} className="text-white" />
+        <StatCard label="Interviews" value={stats.interviews} className="text-yellow-400" />
+        <StatCard label="Offers" value={stats.offers} className="text-green-400" />
+        <StatCard label="This Week" value={stats.week} className="text-indigo-400" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card rounded-xl p-6">
+          <h2 className="font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="space-y-2">
+            <QuickAction href="/analyze" primary icon={<Search className="w-4 h-4" />}>
+              Analyse a New Job
+            </QuickAction>
+            <QuickAction href="/profile" icon={<User className="w-4 h-4" />}>
+              Edit Master Profile
+            </QuickAction>
+            <QuickAction href="/tracker" icon={<ClipboardList className="w-4 h-4" />}>
+              View All Applications
+            </QuickAction>
+            <QuickAction href="/settings" icon={<Settings className="w-4 h-4" />}>
+              Configure AI Provider
+            </QuickAction>
+          </div>
+        </div>
+
+        <div className="card rounded-xl p-6">
+          <h2 className="font-semibold text-white mb-4">Recent Activity</h2>
+          <div className="space-y-3 text-sm">
+            {apps.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">
+                No recent activity. Start by analysing a job.
+              </div>
+            ) : (
+              apps.slice(0, 5).map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/5"
+                >
+                  <div>
+                    <div className="font-medium text-white text-sm">{a.title}</div>
+                    <div className="text-xs text-gray-500">
+                      {a.company} •{" "}
+                      {new Date(a.createdAt).toLocaleDateString("en-GB")}
+                    </div>
+                  </div>
+                  <span className={`status-pill status-${a.status}`}>{a.status}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
+  return (
+    <div className="card stat-card rounded-xl p-5">
+      <div className="text-xs text-gray-500 uppercase tracking-wider">{label}</div>
+      <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
+    </div>
+  );
+}
+
+function QuickAction({
+  href,
+  children,
+  icon,
+  primary,
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon: React.ReactNode;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`w-full ${
+        primary ? "btn-primary" : "btn-ghost"
+      } text-white py-3 px-4 rounded-lg text-sm font-medium flex items-center gap-2`}
+    >
+      {icon}
+      {children}
+    </Link>
+  );
+}

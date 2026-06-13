@@ -1,4 +1,4 @@
-name: Lint
+name: CI
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  html-lint:
-    name: HTML lint
+  build:
+    name: Lint & build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,42 +17,14 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "22"
+          cache: npm
 
-      - name: Install HTMLHint
-        run: npm install --no-audit --no-fund htmlhint
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run HTMLHint
-        run: npx htmlhint '**/*.html'
+      - name: Lint
+        run: npm run lint
 
-      - name: Validate inline JavaScript
-        run: |
-          # Extract every <script>...</script> block that does NOT have a src= attribute
-          # (i.e. inline JS in index.html) and run it through node --check so syntax
-          # errors break the build before they reach production.
-          node -e "
-            const fs = require('fs');
-            const html = fs.readFileSync('index.html', 'utf8');
-            const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
-            const blocks = [];
-            let m;
-            while ((m = re.exec(html)) !== null) {
-              if (m[1].trim().length > 0) blocks.push(m[1]);
-            }
-            if (blocks.length === 0) {
-              console.log('No inline <script> blocks found in index.html');
-              process.exit(0);
-            }
-            blocks.forEach((src, i) => {
-              const tmp = '/tmp/inline-' + i + '.js';
-              fs.writeFileSync(tmp, src);
-              try {
-                require('child_process').execSync('node --check ' + tmp, { stdio: 'pipe' });
-                console.log('  inline block ' + (i+1) + ' (' + src.length + ' bytes) OK');
-              } catch (e) {
-                console.error('  inline block ' + (i+1) + ' FAILED syntax check');
-                console.error(e.stderr ? e.stderr.toString() : e.message);
-                process.exit(1);
-              }
-            });
-          "
+      - name: Build
+        run: npm run build

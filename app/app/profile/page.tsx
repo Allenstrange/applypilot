@@ -137,10 +137,10 @@ export default function ProfilePage() {
 
   const statusColor =
     status.kind === "error"
-      ? "text-red-400"
+      ? "text-red-600"
       : status.kind === "ok"
-        ? "text-green-400"
-        : "text-amber-400";
+        ? "text-green-600"
+        : "text-amber-600";
 
   return (
     <div className="p-8">
@@ -153,10 +153,10 @@ export default function ProfilePage() {
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-white flex items-center gap-2">
+            <h2 className="font-semibold text-slate-900 flex items-center gap-2">
               <Upload className="w-4 h-4" /> Auto-Import from CV
             </h2>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Upload your CV. Uses AI if configured. Supports DOCX, PDF, JSON, TXT.
             </p>
           </div>
@@ -194,10 +194,10 @@ export default function ProfilePage() {
             }}
           />
           <div className="text-4xl mb-2">📎</div>
-          <div className="font-medium text-white">
+          <div className="font-medium text-slate-900">
             Drop your CV here or click to browse
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-slate-500 mt-2">
             Accepted: .docx .pdf .json .txt (max 10MB)
           </div>
           {status.msg ? (
@@ -211,21 +211,21 @@ export default function ProfilePage() {
         {pending ? (
           <div className="mt-4">
             <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <div className="text-amber-300 font-semibold text-sm mb-3">
+              <div className="text-amber-600 font-semibold text-sm mb-3">
                 How should this data be applied?
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => applyParsed("overwrite")}
-                  className="btn-primary text-white px-4 py-2 rounded-lg text-xs font-medium"
+                  className="btn-primary px-4 py-2 rounded-lg text-xs font-medium"
                 >
                   Replace current profile
                 </button>
                 <button
                   type="button"
                   onClick={() => applyParsed("merge")}
-                  className="btn-ghost text-white px-4 py-2 rounded-lg text-xs font-medium"
+                  className="btn-ghost px-4 py-2 rounded-lg text-xs font-medium"
                 >
                   Fill blank fields only
                 </button>
@@ -235,7 +235,7 @@ export default function ProfilePage() {
                     setPending(null);
                     setStatus({ kind: "idle", msg: "" });
                   }}
-                  className="btn-ghost text-white px-4 py-2 rounded-lg text-xs"
+                  className="btn-ghost px-4 py-2 rounded-lg text-xs"
                 >
                   Cancel
                 </button>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
       {/* ---- Personal details ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-white mb-4">Personal Details</h2>
+        <h2 className="font-semibold text-slate-900 mb-4">Personal Details</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Labeled label="Full Name">
             <input className="w-full px-3 py-2 rounded-lg text-sm" placeholder="John Smith" {...text("name")} />
@@ -272,7 +272,7 @@ export default function ProfilePage() {
 
       {/* ---- Summary ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-white mb-4">Professional Summary</h2>
+        <h2 className="font-semibold text-slate-900 mb-4">Professional Summary</h2>
         <textarea
           rows={4}
           className="w-full px-3 py-2 rounded-lg text-sm"
@@ -283,8 +283,8 @@ export default function ProfilePage() {
 
       {/* ---- Skills ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-white mb-1">Skills &amp; Tools</h2>
-        <p className="text-xs text-gray-500 mb-3">
+        <h2 className="font-semibold text-slate-900 mb-1">Skills &amp; Tools</h2>
+        <p className="text-xs text-slate-500 mb-3">
           Comma-separated. Used for keyword matching.
         </p>
         <textarea
@@ -298,7 +298,7 @@ export default function ProfilePage() {
       {/* ---- Experience ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-white">Work Experience</h2>
+          <h2 className="font-semibold text-slate-900">Work Experience</h2>
           <button
             type="button"
             onClick={addExp}
@@ -309,18 +309,18 @@ export default function ProfilePage() {
         </div>
         <div className="space-y-4">
           {profile.experience.length === 0 ? (
-            <div className="text-gray-500 text-sm text-center py-4">
+            <div className="text-slate-500 text-sm text-center py-4">
               No experience added yet.
             </div>
           ) : (
             profile.experience.map((exp, i) => (
-              <div key={i} className="p-4 rounded-lg bg-white/5 border border-white/5">
+              <div key={i} className="p-4 rounded-lg bg-slate-100 border border-slate-200">
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-xs text-gray-500">Role #{i + 1}</div>
+                  <div className="text-xs text-slate-500">Role #{i + 1}</div>
                   <button
                     type="button"
                     onClick={() => removeExp(i)}
-                    className="text-red-400 text-xs hover:text-red-300"
+                    className="text-red-600 text-xs hover:text-red-700"
                   >
                     Remove
                   </button>
@@ -353,7 +353,7 @@ export default function ProfilePage() {
       {/* ---- Education ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-white">Education</h2>
+          <h2 className="font-semibold text-slate-900">Education</h2>
           <button
             type="button"
             onClick={addEdu}
@@ -364,7 +364,7 @@ export default function ProfilePage() {
         </div>
         <div className="space-y-3">
           {profile.education.length === 0 ? (
-            <div className="text-gray-500 text-sm text-center py-4">
+            <div className="text-slate-500 text-sm text-center py-4">
               No education added yet.
             </div>
           ) : (
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                 <input className="px-3 py-2 rounded-lg text-sm" placeholder="Degree" value={ed.degree} onChange={(e) => updateEdu(i, { degree: e.target.value })} />
                 <div className="flex gap-2">
                   <input className="flex-1 px-3 py-2 rounded-lg text-sm" placeholder="Year" value={ed.year} onChange={(e) => updateEdu(i, { year: e.target.value })} />
-                  <button type="button" onClick={() => removeEdu(i)} className="text-red-400 text-xs px-2" aria-label="Remove education">
+                  <button type="button" onClick={() => removeEdu(i)} className="text-red-600 text-xs px-2" aria-label="Remove education">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -386,7 +386,7 @@ export default function ProfilePage() {
 
       {/* ---- Certifications ---- */}
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-white mb-4">Certifications</h2>
+        <h2 className="font-semibold text-slate-900 mb-4">Certifications</h2>
         <textarea
           rows={2}
           className="w-full px-3 py-2 rounded-lg text-sm"
@@ -395,7 +395,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <p className="text-xs text-gray-500 text-right">
+      <p className="text-xs text-slate-500 text-right">
         Changes save automatically to this browser.
       </p>
     </div>
@@ -411,7 +411,7 @@ function Labeled({
 }) {
   return (
     <div>
-      <label className="block text-xs text-gray-400 mb-1">{label}</label>
+      <label className="block text-xs text-slate-500 mb-1">{label}</label>
       {children}
     </div>
   );

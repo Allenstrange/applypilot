@@ -9,7 +9,7 @@ export default function Toaster() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="glass text-sm text-gray-100 px-4 py-3 rounded-lg shadow-lg max-w-sm"
+          className="glass text-sm text-slate-800 px-4 py-3 rounded-lg max-w-sm"
         >
           {t.message}
         </div>

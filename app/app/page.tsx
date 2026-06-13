@@ -28,47 +28,47 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Applications" value={stats.total} className="text-white" />
-        <StatCard label="Interviews" value={stats.interviews} className="text-yellow-400" />
-        <StatCard label="Offers" value={stats.offers} className="text-green-400" />
-        <StatCard label="This Week" value={stats.week} className="text-indigo-400" />
+        <StatCard label="Applications" value={stats.total} className="text-slate-900" />
+        <StatCard label="Interviews" value={stats.interviews} className="text-amber-600" />
+        <StatCard label="Offers" value={stats.offers} className="text-green-600" />
+        <StatCard label="This Week" value={stats.week} className="text-indigo-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-white mb-4">Quick Actions</h2>
+          <h2 className="font-semibold text-slate-900 mb-4">Quick Actions</h2>
           <div className="space-y-2">
-            <QuickAction href="/analyze" primary icon={<Search className="w-4 h-4" />}>
+            <QuickAction href="/app/analyze" primary icon={<Search className="w-4 h-4" />}>
               Analyse a New Job
             </QuickAction>
-            <QuickAction href="/profile" icon={<User className="w-4 h-4" />}>
+            <QuickAction href="/app/profile" icon={<User className="w-4 h-4" />}>
               Edit Master Profile
             </QuickAction>
-            <QuickAction href="/tracker" icon={<ClipboardList className="w-4 h-4" />}>
+            <QuickAction href="/app/tracker" icon={<ClipboardList className="w-4 h-4" />}>
               View All Applications
             </QuickAction>
-            <QuickAction href="/settings" icon={<Settings className="w-4 h-4" />}>
+            <QuickAction href="/app/settings" icon={<Settings className="w-4 h-4" />}>
               Configure AI Provider
             </QuickAction>
           </div>
         </div>
 
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-white mb-4">Recent Activity</h2>
+          <h2 className="font-semibold text-slate-900 mb-4">Recent Activity</h2>
           <div className="space-y-3 text-sm">
             {apps.length === 0 ? (
-              <div className="text-gray-500 text-center py-4">
+              <div className="text-slate-500 text-center py-4">
                 No recent activity. Start by analysing a job.
               </div>
             ) : (
               apps.slice(0, 5).map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white/5"
+                  className="flex items-center justify-between p-3 rounded-lg bg-slate-100"
                 >
                   <div>
-                    <div className="font-medium text-white text-sm">{a.title}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="font-medium text-slate-900 text-sm">{a.title}</div>
+                    <div className="text-xs text-slate-500">
                       {a.company} •{" "}
                       {new Date(a.createdAt).toLocaleDateString("en-GB")}
                     </div>
@@ -95,7 +95,7 @@ function StatCard({
 }) {
   return (
     <div className="card stat-card rounded-xl p-5">
-      <div className="text-xs text-gray-500 uppercase tracking-wider">{label}</div>
+      <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
       <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
     </div>
   );
@@ -117,7 +117,7 @@ function QuickAction({
       href={href}
       className={`w-full ${
         primary ? "btn-primary" : "btn-ghost"
-      } text-white py-3 px-4 rounded-lg text-sm font-medium flex items-center gap-2`}
+      } text-slate-900 py-3 px-4 rounded-lg text-sm font-medium flex items-center gap-2`}
     >
       {icon}
       {children}

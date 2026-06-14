@@ -32,10 +32,10 @@ export const emptyProfile: Profile = {
 
 const defaultProviders: ProviderSettings = {
   activeProvider: "openai",
-  openai: { apiKey: "", model: "gpt-4o-mini" },
-  anthropic: { apiKey: "", model: "claude-3-5-sonnet-latest" },
-  gemini: { apiKey: "", model: "gemini-1.5-flash" },
-  grok: { apiKey: "", model: "grok-4" },
+  openai: { apiKey: "", model: "gpt-5.4-mini" },
+  anthropic: { apiKey: "", model: "claude-sonnet-4-6" },
+  gemini: { apiKey: "", model: "gemini-3.5-flash" },
+  grok: { apiKey: "", model: "grok-4.3" },
   custom: { endpoint: "", apiKey: "", model: "" },
 };
 

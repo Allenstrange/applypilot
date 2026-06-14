@@ -82,7 +82,19 @@ export default function SettingsPage() {
       </div>
 
       <div className="card rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Configure {info.name}</h2>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">Configure {info.name}</h2>
+          {info.keyUrl ? (
+            <a
+              href={info.keyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              Get an API key ↗
+            </a>
+          ) : null}
+        </div>
 
         <div className="space-y-3">
           {active === "custom" ? (

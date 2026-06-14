@@ -20,6 +20,8 @@ export interface ProviderDef {
   description: string;
   icon: string;
   blurb: string;
+  /** Where to get an API key for this provider. Empty for none. */
+  keyUrl: string;
   modelGroups: ModelGroup[];
   call: (
     prompt: string,
@@ -32,41 +34,37 @@ export interface ProviderDef {
 export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
   openai: {
     name: "OpenAI",
-    description: "GPT-5, GPT-4.1, o3",
+    description: "GPT-5.5, GPT-5.4, GPT-5.1",
     icon: "🤖",
-    blurb: "Latest GPT-5 and reasoning models. Best all-round accuracy.",
+    blurb: "Latest GPT-5.5 family. Best all-round accuracy.",
+    keyUrl: "https://platform.openai.com/api-keys",
     modelGroups: [
       {
-        label: "🚀 GPT-5 Family (Latest)",
+        label: "🚀 GPT-5.5 (Latest)",
         models: [
-          { value: "gpt-5", label: "GPT-5 — Most capable", badge: "new" },
-          { value: "gpt-5-mini", label: "GPT-5 Mini — Best balance", badge: "recommended" },
+          { value: "gpt-5.5", label: "GPT-5.5 — Most capable", badge: "new" },
+          { value: "gpt-5.5-pro", label: "GPT-5.5 Pro — Deep reasoning", badge: "reasoning" },
         ],
       },
       {
-        label: "🧠 Reasoning Models",
+        label: "⚡ GPT-5.4",
         models: [
-          { value: "o3", label: "o3 — Advanced reasoning", badge: "reasoning" },
-          { value: "o4-mini", label: "o4 Mini — Latest reasoning", badge: "new" },
+          { value: "gpt-5.4-mini", label: "GPT-5.4 Mini — Best balance", badge: "recommended" },
+          { value: "gpt-5.4-nano", label: "GPT-5.4 Nano — Cheapest" },
         ],
       },
       {
-        label: "⚡ GPT-4.1 Family",
+        label: "🔹 Earlier GPT-5",
         models: [
-          { value: "gpt-4.1", label: "GPT-4.1" },
-          { value: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
-        ],
-      },
-      {
-        label: "🔹 GPT-4o Family",
-        models: [
-          { value: "gpt-4o", label: "GPT-4o" },
-          { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+          { value: "gpt-5.2", label: "GPT-5.2" },
+          { value: "gpt-5.1", label: "GPT-5.1" },
         ],
       },
     ],
     async call(prompt, model, apiKey) {
-      const isReasoning = model.startsWith("o3") || model.startsWith("o4");
+      // GPT-5 and o-series reasoning models reject a custom temperature.
+      const isReasoning =
+        model.startsWith("o3") || model.startsWith("o4") || model.startsWith("gpt-5");
       const body: Record<string, unknown> = {
         model,
         messages: [{ role: "user", content: prompt }],
@@ -89,29 +87,41 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
 
   anthropic: {
     name: "Anthropic Claude",
-    description: "Claude 4.5, 4, 3.5",
+    description: "Claude Opus 4.8, Sonnet 4.6, Haiku 4.5",
     icon: "🧠",
-    blurb: "Latest Claude 4.5 Sonnet. Excellent structured extraction.",
+    blurb: "Latest Claude 4.x models. Excellent structured extraction.",
+    keyUrl: "https://console.anthropic.com/settings/keys",
     modelGroups: [
       {
-        label: "🚀 Claude 4.5 (Latest)",
+        label: "🚀 Most capable",
         models: [
-          { value: "claude-sonnet-4-5", label: "Claude 4.5 Sonnet", badge: "recommended" },
+          { value: "claude-opus-4-8", label: "Claude Opus 4.8", badge: "new" },
         ],
       },
       {
-        label: "🔸 Claude 4",
-        models: [{ value: "claude-sonnet-4", label: "Claude 4 Sonnet" }],
+        label: "⚡ Balanced",
+        models: [
+          { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", badge: "recommended" },
+        ],
       },
       {
-        label: "⚡ Claude 3.5",
-        models: [
-          { value: "claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet" },
-          { value: "claude-3-5-haiku-latest", label: "Claude 3.5 Haiku" },
-        ],
+        label: "🔹 Fast & cheap",
+        models: [{ value: "claude-haiku-4-5", label: "Claude Haiku 4.5" }],
+      },
+      {
+        label: "🔸 Previous generation",
+        models: [{ value: "claude-opus-4-7", label: "Claude Opus 4.7" }],
       },
     ],
     async call(prompt, model, apiKey) {
+      // Opus 4.7/4.8 and Fable 5 reject sampling parameters (temperature → 400).
+      const noTemp = /opus-4-(7|8)|fable/.test(model);
+      const body: Record<string, unknown> = {
+        model,
+        max_tokens: 8192,
+        messages: [{ role: "user", content: prompt }],
+      };
+      if (!noTemp) body.temperature = 0.1;
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -120,16 +130,14 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
           "anthropic-version": "2023-06-01",
           "anthropic-dangerous-direct-browser-access": "true",
         },
-        body: JSON.stringify({
-          model,
-          max_tokens: 8192,
-          temperature: 0.1,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify(body),
       });
       if (!resp.ok) throw new Error("Anthropic error: " + resp.status);
       const data = await resp.json();
-      const text = data.content[0].text as string;
+      const textBlock = (data.content as { type: string; text?: string }[]).find(
+        (b) => b.type === "text",
+      );
+      const text = (textBlock?.text ?? data.content[0].text) as string;
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No JSON in response");
       return JSON.parse(jsonMatch[0]);
@@ -138,22 +146,28 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
 
   gemini: {
     name: "Google Gemini",
-    description: "Gemini 2.5 Pro, Flash",
+    description: "Gemini 3.5 Flash, 3.1 Pro",
     icon: "💎",
-    blurb: "Latest Gemini 2.5. Fast with a generous free tier.",
+    blurb: "Latest Gemini 3.x. Fast with a generous free tier.",
+    keyUrl: "https://aistudio.google.com/apikey",
     modelGroups: [
       {
-        label: "🚀 Gemini 2.5 (Latest)",
+        label: "🚀 Gemini 3.5 (Latest)",
         models: [
-          { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", badge: "recommended" },
-          { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", badge: "new" },
+          { value: "gemini-3.5-flash", label: "Gemini 3.5 Flash", badge: "recommended" },
         ],
       },
       {
-        label: "🔹 Gemini 1.5",
+        label: "🧠 Gemini 3.1 Pro",
         models: [
-          { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-          { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+          { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", badge: "new" },
+        ],
+      },
+      {
+        label: "⚡ Fast & cheap",
+        models: [
+          { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
+          { value: "gemini-3-flash-preview", label: "Gemini 3 Flash" },
         ],
       },
     ],
@@ -181,24 +195,18 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
 
   grok: {
     name: "xAI Grok",
-    description: "Grok 4, Grok 3",
+    description: "Grok 4.3",
     icon: "✴️",
-    blurb: "xAI's Grok models — strong reasoning, OpenAI-compatible API.",
+    blurb: "xAI's Grok 4.3 — strong reasoning, OpenAI-compatible API.",
+    keyUrl: "https://console.x.ai",
     modelGroups: [
       {
-        label: "🚀 Grok 4 (Latest)",
-        models: [{ value: "grok-4", label: "Grok 4 — Most capable", badge: "recommended" }],
+        label: "🚀 Grok 4.3 (Latest)",
+        models: [{ value: "grok-4.3", label: "Grok 4.3 — Most capable", badge: "recommended" }],
       },
       {
-        label: "⚡ Grok 3",
-        models: [
-          { value: "grok-3", label: "Grok 3" },
-          { value: "grok-3-mini", label: "Grok 3 Mini", badge: "new" },
-        ],
-      },
-      {
-        label: "🔹 Grok 2",
-        models: [{ value: "grok-2-1212", label: "Grok 2" }],
+        label: "💻 Coding",
+        models: [{ value: "grok-build-0.1", label: "Grok Build (early access)", badge: "new" }],
       },
     ],
     async call(prompt, model, apiKey) {
@@ -226,6 +234,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     description: "Local LLM, Azure, etc.",
     icon: "🔧",
     blurb: "Connect to any OpenAI-compatible API (Ollama, LM Studio, etc.)",
+    keyUrl: "",
     modelGroups: [],
     async call(prompt, model, apiKey, endpoint) {
       const resp = await fetch(endpoint as string, {

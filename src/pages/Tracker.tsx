@@ -1,0 +1,224 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import type { Application, ApplicationStatus } from '@/lib/types'
+import { useAppStore } from '@/lib/store'
+import { generateId, formatDate } from '@/lib/utils'
+import { Plus, X, ExternalLink, Bell, Edit2, Trash2 } from 'lucide-react'
+
+const COLUMNS: { key: ApplicationStatus; label: string; color: string }[] = [
+  { key: 'applied',   label: 'Applied',   color: 'text-blue-400' },
+  { key: 'screened',  label: 'Screened',  color: 'text-purple-400' },
+  { key: 'interview', label: 'Interview', color: 'text-amber-400' },
+  { key: 'offer',     label: 'Offer',     color: 'text-green-400' },
+  { key: 'rejected',  label: 'Rejected',  color: 'text-red-400' },
+]
+
+const BLANK: Omit<Application, 'id' | 'createdAt' | 'updatedAt'> = {
+  company: '', title: '', location: '', status: 'applied',
+  dateApplied: new Date().toISOString().split('T')[0],
+  salaryRange: '', contactName: '', contactEmail: '', notes: '', followUpDate: '', url: '',
+}
+
+export default function Tracker() {
+  const { addToast } = useAppStore()
+  const [apps, setApps] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState<Application | null>(null)
+  const [form, setForm] = useState({ ...BLANK })
+  const [detail, setDetail] = useState<Application | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<ApplicationStatus | 'all'>('all')
+
+  useEffect(() => {
+    supabase.from('applications').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { setApps((data ?? []).map(mapRow)); setLoading(false) })
+  }, [])
+
+  function mapRow(r: Record<string, unknown>): Application {
+    return {
+      id: r.id as string, company: r.company as string, title: r.title as string,
+      location: r.location as string, status: r.status as ApplicationStatus,
+      dateApplied: r.date_applied as string, salaryRange: r.salary_range as string,
+      contactName: r.contact_name as string, contactEmail: r.contact_email as string,
+      notes: r.notes as string, followUpDate: r.follow_up_date as string,
+      atsScore: r.ats_score as number, url: r.url as string,
+      resumeId: r.resume_id as string, jobId: r.job_id as string,
+      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+    }
+  }
+
+  function openAdd() { setEditing(null); setForm({ ...BLANK }); setShowModal(true) }
+  function openEdit(a: Application) { setEditing(a); setForm({ company: a.company, title: a.title, location: a.location ?? '', status: a.status, dateApplied: a.dateApplied?.split('T')[0] ?? '', salaryRange: a.salaryRange ?? '', contactName: a.contactName ?? '', contactEmail: a.contactEmail ?? '', notes: a.notes ?? '', followUpDate: a.followUpDate?.split('T')[0] ?? '', url: a.url ?? '' }); setShowModal(true) }
+
+  async function save() {
+    if (!form.company || !form.title) { addToast('Company and title required', 'error'); return }
+    const payload = {
+      company: form.company, title: form.title, location: form.location, status: form.status,
+      date_applied: form.dateApplied || new Date().toISOString(),
+      salary_range: form.salaryRange, contact_name: form.contactName,
+      contact_email: form.contactEmail, notes: form.notes,
+      follow_up_date: form.followUpDate || null, url: form.url,
+      updated_at: new Date().toISOString(),
+    }
+    if (editing) {
+      const { data } = await supabase.from('applications').update(payload).eq('id', editing.id).select().single()
+      if (data) setApps(prev => prev.map(a => a.id === editing.id ? mapRow(data) : a))
+      addToast('Application updated', 'success')
+    } else {
+      const { data } = await supabase.from('applications').insert({ ...payload, id: generateId(), created_at: new Date().toISOString() }).select().single()
+      if (data) setApps(prev => [mapRow(data), ...prev])
+      addToast('Application added', 'success')
+    }
+    setShowModal(false)
+  }
+
+  async function deleteApp(id: string) {
+    await supabase.from('applications').delete().eq('id', id)
+    setApps(prev => prev.filter(a => a.id !== id))
+    setDetail(null)
+    addToast('Deleted', 'info')
+  }
+
+  async function updateStatus(id: string, status: ApplicationStatus) {
+    await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+    setApps(prev => prev.map(a => a.id === id ? { ...a, status } : a))
+    if (detail?.id === id) setDetail(prev => prev ? { ...prev, status } : prev)
+  }
+
+  const filtered = apps.filter(a => {
+    const q = search.toLowerCase()
+    const matchQ = !q || a.company.toLowerCase().includes(q) || a.title.toLowerCase().includes(q)
+    const matchS = filterStatus === 'all' || a.status === filterStatus
+    return matchQ && matchS
+  })
+
+  const isOverdue = (a: Application) => a.followUpDate && new Date(a.followUpDate) < new Date() && !['offer', 'rejected'].includes(a.status)
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-navy-700 flex items-center justify-between gap-4 flex-shrink-0">
+        <div>
+          <h1 className="text-xl font-bold text-slate-100">Job Tracker</h1>
+          <p className="text-slate-500 text-xs mt-0.5">{apps.length} applications total</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="w-44" />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ApplicationStatus | 'all')} className="w-36">
+            <option value="all">All statuses</option>
+            {COLUMNS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+          </select>
+          <button onClick={openAdd} className="btn-primary"><Plus size={16} />Add</button>
+        </div>
+      </div>
+
+      {/* Kanban */}
+      {loading ? (
+        <div className="flex items-center justify-center flex-1 text-slate-500">Loading...</div>
+      ) : (
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex gap-4 p-4 h-full min-w-max">
+            {COLUMNS.map(col => {
+              const colApps = filtered.filter(a => a.status === col.key)
+              return (
+                <div key={col.key} className="w-64 flex flex-col flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`text-sm font-semibold ${col.color}`}>{col.label}</h3>
+                    <span className="badge badge-slate">{colApps.length}</span>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto">
+                    {colApps.map(a => (
+                      <div key={a.id} onClick={() => setDetail(a)}
+                        className="card cursor-pointer hover:border-navy-600 transition-colors relative">
+                        {isOverdue(a) && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-400" title="Follow-up overdue" />}
+                        <p className="text-sm font-semibold text-slate-200 leading-tight">{a.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{a.company}</p>
+                        {a.atsScore != null && <span className="badge badge-teal mt-2">{a.atsScore}% ATS</span>}
+                        <p className="text-xs text-slate-600 mt-2">{formatDate(a.dateApplied)}</p>
+                      </div>
+                    ))}
+                    {colApps.length === 0 && <div className="text-center py-8 text-slate-700 text-xs">No applications</div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-navy-800 border border-navy-600 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-navy-700">
+              <h2 className="font-semibold text-slate-100">{editing ? 'Edit Application' : 'Add Application'}</h2>
+              <button onClick={() => setShowModal(false)}><X size={18} className="text-slate-400" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="form-label">Company *</label><input className="w-full" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} /></div>
+                <div><label className="form-label">Job Title *</label><input className="w-full" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+                <div><label className="form-label">Location</label><input className="w-full" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
+                <div><label className="form-label">Status</label>
+                  <select className="w-full" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ApplicationStatus }))}>
+                    {COLUMNS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div><label className="form-label">Date Applied</label><input type="date" className="w-full" value={form.dateApplied} onChange={e => setForm(f => ({ ...f, dateApplied: e.target.value }))} /></div>
+                <div><label className="form-label">Salary Range</label><input className="w-full" value={form.salaryRange} onChange={e => setForm(f => ({ ...f, salaryRange: e.target.value }))} placeholder="$100k-$130k" /></div>
+                <div><label className="form-label">Contact Name</label><input className="w-full" value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))} /></div>
+                <div><label className="form-label">Contact Email</label><input className="w-full" value={form.contactEmail} onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))} /></div>
+                <div><label className="form-label">Follow-up Date</label><input type="date" className="w-full" value={form.followUpDate} onChange={e => setForm(f => ({ ...f, followUpDate: e.target.value }))} /></div>
+                <div><label className="form-label">Job URL</label><input className="w-full" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} /></div>
+              </div>
+              <div><label className="form-label">Notes</label><textarea rows={3} className="w-full resize-none" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-navy-700">
+              <button onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={save} className="btn-primary flex-1">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail drawer */}
+      {detail && (
+        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-navy-800 border-l border-navy-700 flex flex-col shadow-2xl">
+          <div className="flex items-center justify-between p-4 border-b border-navy-700">
+            <h2 className="font-semibold text-slate-100 truncate">{detail.title}</h2>
+            <button onClick={() => setDetail(null)}><X size={18} className="text-slate-400" /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div>
+              <p className="text-lg font-bold text-slate-100">{detail.company}</p>
+              {detail.location && <p className="text-sm text-slate-500">{detail.location}</p>}
+              {detail.salaryRange && <p className="text-sm text-teal-400 mt-1">{detail.salaryRange}</p>}
+            </div>
+            <div>
+              <label className="form-label">Move to Stage</label>
+              <select className="w-full" value={detail.status} onChange={e => updateStatus(detail.id, e.target.value as ApplicationStatus)}>
+                {COLUMNS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
+            </div>
+            {detail.contactName && <div><p className="form-label">Contact</p><p className="text-sm text-slate-300">{detail.contactName}</p>{detail.contactEmail && <p className="text-xs text-slate-500">{detail.contactEmail}</p>}</div>}
+            {detail.followUpDate && (
+              <div className="flex items-center gap-2">
+                <Bell size={14} className={isOverdue(detail) ? 'text-red-400' : 'text-amber-400'} />
+                <p className={`text-sm ${isOverdue(detail) ? 'text-red-400' : 'text-amber-400'}`}>
+                  Follow up {formatDate(detail.followUpDate)}{isOverdue(detail) ? ' (overdue)' : ''}
+                </p>
+              </div>
+            )}
+            {detail.notes && <div><p className="form-label">Notes</p><p className="text-sm text-slate-400 whitespace-pre-wrap">{detail.notes}</p></div>}
+          </div>
+          <div className="p-4 border-t border-navy-700 flex gap-2">
+            {detail.url && <a href={detail.url} target="_blank" rel="noreferrer" className="btn-secondary flex-1 justify-center"><ExternalLink size={14} />Job URL</a>}
+            <button onClick={() => { openEdit(detail); setDetail(null) }} className="btn-secondary"><Edit2 size={14} /></button>
+            <button onClick={() => deleteApp(detail.id)} className="btn-danger"><Trash2 size={14} /></button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

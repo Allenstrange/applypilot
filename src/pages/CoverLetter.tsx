@@ -149,7 +149,11 @@ export default function CoverLetter() {
               <div className="flex gap-3">
                 <button onClick={() => setStep(1)} className="btn-secondary"><ChevronLeft size={16} />Back</button>
                 <button onClick={async () => { await generate(); setStep(3) }} disabled={generating} className="btn-primary flex-1">
-                  {generating ? <><span className="animate-spin">\u27F3</span> Generating...</> : <><Wand2 size={16} />{isAIConfigured() ? 'Generate with AI' : 'Generate Letter'}</>
+                  {generating ? (
+                    <span className="inline-flex items-center gap-1"><span className="animate-spin">⟳</span> Generating...</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1"><Wand2 size={16} />{isAIConfigured() ? 'Generate with AI' : 'Generate Letter'}</span>
+                  )}
                 </button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 import type { Application, ApplicationStatus } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
 import { generateId, formatDate } from '@/lib/utils'
@@ -13,8 +13,8 @@ const COLUMNS: { key: ApplicationStatus; label: string; color: string }[] = [
   { key: 'rejected',  label: 'Rejected',  color: 'text-red-400' },
 ]
 
-const BLANK: Omit<Application, 'id' | 'createdAt' | 'updatedAt'> = {
-  company: '', title: '', location: '', status: 'applied',
+const BLANK = {
+  company: '', title: '', location: '', status: 'applied' as ApplicationStatus,
   dateApplied: new Date().toISOString().split('T')[0],
   salaryRange: '', contactName: '', contactEmail: '', notes: '', followUpDate: '', url: '',
 }
@@ -22,7 +22,6 @@ const BLANK: Omit<Application, 'id' | 'createdAt' | 'updatedAt'> = {
 export default function Tracker() {
   const { addToast } = useAppStore()
   const [apps, setApps] = useState<Application[]>([])
-  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Application | null>(null)
   const [form, setForm] = useState({ ...BLANK })
@@ -31,73 +30,80 @@ export default function Tracker() {
   const [filterStatus, setFilterStatus] = useState<ApplicationStatus | 'all'>('all')
 
   useEffect(() => {
-    supabase.from('applications').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setApps((data ?? []).map(mapRow)); setLoading(false) })
+    setApps(storage.getApplications())
   }, [])
 
-  function mapRow(r: Record<string, unknown>): Application {
-    return {
-      id: r.id as string, company: r.company as string, title: r.title as string,
-      location: r.location as string, status: r.status as ApplicationStatus,
-      dateApplied: r.date_applied as string, salaryRange: r.salary_range as string,
-      contactName: r.contact_name as string, contactEmail: r.contact_email as string,
-      notes: r.notes as string, followUpDate: r.follow_up_date as string,
-      atsScore: r.ats_score as number, url: r.url as string,
-      resumeId: r.resume_id as string, jobId: r.job_id as string,
-      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
-    }
+  function openAdd() { setEditing(null); setForm({ ...BLANK }); setShowModal(true) }
+  function openEdit(a: Application) {
+    setEditing(a)
+    setForm({
+      company: a.company, title: a.title, location: a.location ?? '',
+      status: a.status, dateApplied: a.dateApplied?.split('T')[0] ?? '',
+      salaryRange: a.salaryRange ?? '', contactName: a.contactName ?? '',
+      contactEmail: a.contactEmail ?? '', notes: a.notes ?? '',
+      followUpDate: a.followUpDate?.split('T')[0] ?? '', url: a.url ?? '',
+    })
+    setShowModal(true)
   }
 
-  function openAdd() { setEditing(null); setForm({ ...BLANK }); setShowModal(true) }
-  function openEdit(a: Application) { setEditing(a); setForm({ company: a.company, title: a.title, location: a.location ?? '', status: a.status, dateApplied: a.dateApplied?.split('T')[0] ?? '', salaryRange: a.salaryRange ?? '', contactName: a.contactName ?? '', contactEmail: a.contactEmail ?? '', notes: a.notes ?? '', followUpDate: a.followUpDate?.split('T')[0] ?? '', url: a.url ?? '' }); setShowModal(true) }
-
-  async function save() {
+  function save() {
     if (!form.company || !form.title) { addToast('Company and title required', 'error'); return }
-    const payload = {
-      company: form.company, title: form.title, location: form.location, status: form.status,
-      date_applied: form.dateApplied || new Date().toISOString(),
-      salary_range: form.salaryRange, contact_name: form.contactName,
-      contact_email: form.contactEmail, notes: form.notes,
-      follow_up_date: form.followUpDate || null, url: form.url,
-      updated_at: new Date().toISOString(),
-    }
     if (editing) {
-      const { data } = await supabase.from('applications').update(payload).eq('id', editing.id).select().single()
-      if (data) setApps(prev => prev.map(a => a.id === editing.id ? mapRow(data) : a))
+      const updated: Application = {
+        ...editing,
+        company: form.company, title: form.title, location: form.location, status: form.status,
+        dateApplied: form.dateApplied || new Date().toISOString(),
+        salaryRange: form.salaryRange, contactName: form.contactName,
+        contactEmail: form.contactEmail, notes: form.notes,
+        followUpDate: form.followUpDate || undefined, url: form.url,
+        updatedAt: new Date().toISOString(),
+      }
+      storage.upsertApplication(updated)
+      setApps(prev => prev.map(a => a.id === editing.id ? updated : a))
       addToast('Application updated', 'success')
     } else {
-      const { data } = await supabase.from('applications').insert({ ...payload, id: generateId(), created_at: new Date().toISOString() }).select().single()
-      if (data) setApps(prev => [mapRow(data), ...prev])
+      const newApp: Application = {
+        id: generateId(),
+        company: form.company, title: form.title, location: form.location, status: form.status,
+        dateApplied: form.dateApplied || new Date().toISOString(),
+        salaryRange: form.salaryRange, contactName: form.contactName,
+        contactEmail: form.contactEmail, notes: form.notes,
+        followUpDate: form.followUpDate || undefined, url: form.url,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      }
+      storage.upsertApplication(newApp)
+      setApps(prev => [newApp, ...prev])
       addToast('Application added', 'success')
     }
     setShowModal(false)
   }
 
-  async function deleteApp(id: string) {
-    await supabase.from('applications').delete().eq('id', id)
+  function deleteApp(id: string) {
+    storage.deleteApplication(id)
     setApps(prev => prev.filter(a => a.id !== id))
     setDetail(null)
     addToast('Deleted', 'info')
   }
 
-  async function updateStatus(id: string, status: ApplicationStatus) {
-    await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
-    setApps(prev => prev.map(a => a.id === id ? { ...a, status } : a))
-    if (detail?.id === id) setDetail(prev => prev ? { ...prev, status } : prev)
+  function updateStatus(id: string, status: ApplicationStatus) {
+    const app = apps.find(a => a.id === id)
+    if (!app) return
+    const updated = { ...app, status, updatedAt: new Date().toISOString() }
+    storage.upsertApplication(updated)
+    setApps(prev => prev.map(a => a.id === id ? updated : a))
+    if (detail?.id === id) setDetail(updated)
   }
 
   const filtered = apps.filter(a => {
     const q = search.toLowerCase()
-    const matchQ = !q || a.company.toLowerCase().includes(q) || a.title.toLowerCase().includes(q)
-    const matchS = filterStatus === 'all' || a.status === filterStatus
-    return matchQ && matchS
+    return (!q || a.company.toLowerCase().includes(q) || a.title.toLowerCase().includes(q)) &&
+           (filterStatus === 'all' || a.status === filterStatus)
   })
 
   const isOverdue = (a: Application) => a.followUpDate && new Date(a.followUpDate) < new Date() && !['offer', 'rejected'].includes(a.status)
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
       <div className="px-6 py-4 border-b border-navy-700 flex items-center justify-between gap-4 flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-slate-100">Job Tracker</h1>
@@ -112,42 +118,34 @@ export default function Tracker() {
           <button onClick={openAdd} className="btn-primary"><Plus size={16} />Add</button>
         </div>
       </div>
-
-      {/* Kanban */}
-      {loading ? (
-        <div className="flex items-center justify-center flex-1 text-slate-500">Loading...</div>
-      ) : (
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 p-4 h-full min-w-max">
-            {COLUMNS.map(col => {
-              const colApps = filtered.filter(a => a.status === col.key)
-              return (
-                <div key={col.key} className="w-64 flex flex-col flex-shrink-0">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className={`text-sm font-semibold ${col.color}`}>{col.label}</h3>
-                    <span className="badge badge-slate">{colApps.length}</span>
-                  </div>
-                  <div className="flex-1 space-y-2 overflow-y-auto">
-                    {colApps.map(a => (
-                      <div key={a.id} onClick={() => setDetail(a)}
-                        className="card cursor-pointer hover:border-navy-600 transition-colors relative">
-                        {isOverdue(a) && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-400" title="Follow-up overdue" />}
-                        <p className="text-sm font-semibold text-slate-200 leading-tight">{a.title}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{a.company}</p>
-                        {a.atsScore != null && <span className="badge badge-teal mt-2">{a.atsScore}% ATS</span>}
-                        <p className="text-xs text-slate-600 mt-2">{formatDate(a.dateApplied)}</p>
-                      </div>
-                    ))}
-                    {colApps.length === 0 && <div className="text-center py-8 text-slate-700 text-xs">No applications</div>}
-                  </div>
+      <div className="flex-1 overflow-x-auto">
+        <div className="flex gap-4 p-4 h-full min-w-max">
+          {COLUMNS.map(col => {
+            const colApps = filtered.filter(a => a.status === col.key)
+            return (
+              <div key={col.key} className="w-64 flex flex-col flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-sm font-semibold ${col.color}`}>{col.label}</h3>
+                  <span className="badge badge-slate">{colApps.length}</span>
                 </div>
-              )
-            })}
-          </div>
+                <div className="flex-1 space-y-2 overflow-y-auto">
+                  {colApps.map(a => (
+                    <div key={a.id} onClick={() => setDetail(a)} className="card cursor-pointer hover:border-navy-600 transition-colors relative">
+                      {isOverdue(a) && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-400" title="Follow-up overdue" />}
+                      <p className="text-sm font-semibold text-slate-200 leading-tight">{a.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{a.company}</p>
+                      {a.atsScore != null && <span className="badge badge-teal mt-2">{a.atsScore}% ATS</span>}
+                      <p className="text-xs text-slate-600 mt-2">{formatDate(a.dateApplied)}</p>
+                    </div>
+                  ))}
+                  {colApps.length === 0 && <div className="text-center py-8 text-slate-700 text-xs">No applications</div>}
+                </div>
+              </div>
+            )
+          })}
         </div>
-      )}
+      </div>
 
-      {/* Add/Edit modal */}
       {showModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-navy-800 border border-navy-600 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -182,7 +180,6 @@ export default function Tracker() {
         </div>
       )}
 
-      {/* Detail drawer */}
       {detail && (
         <div className="fixed inset-y-0 right-0 z-40 w-80 bg-navy-800 border-l border-navy-700 flex flex-col shadow-2xl">
           <div className="flex items-center justify-between p-4 border-b border-navy-700">

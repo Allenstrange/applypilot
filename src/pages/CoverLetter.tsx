@@ -1,39 +1,36 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 import { callAI, isAIConfigured } from '@/lib/ai'
-import type { Job, CoverLetter as CoverLetterType, Application } from '@/lib/types'
+import type { Job, CoverLetter as CoverLetterType } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
 import { generateId, formatDate } from '@/lib/utils'
-import { PenLine, Wand2, Copy, Save, Check, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
+import { Wand2, Copy, Save, Check, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 
 type Tone = 'formal' | 'conversational' | 'confident'
 type Step = 1 | 2 | 3
+type ProfileSnippet = { name?: string; skills?: string[]; summary?: string; experience?: { company: string; title: string; bullets: string[] }[] } | null
 
-function buildCoverLetter(profile: { name?: string; title?: string; skills?: string[]; summary?: string; experience?: { company: string; title: string; bullets: string[] }[] } | null, jobTitle: string, company: string, tone: Tone): string {
+function buildCoverLetter(profile: ProfileSnippet, jobTitle: string, company: string, tone: Tone): string {
   const name = profile?.name || 'the hiring team'
   const role = jobTitle || 'this role'
   const co = company || 'your company'
   const skills = (profile?.skills ?? []).slice(0, 4).join(', ') || 'my technical skills'
   const topExp = profile?.experience?.[0]
-
   const openings: Record<Tone, string> = {
     formal: `Dear Hiring Manager,\n\nI am writing to express my strong interest in the ${role} position at ${co}.`,
-    conversational: `Hi there,\n\nI was excited to see the ${role} opening at ${co} — it's exactly the kind of role I've been looking for.`,
+    conversational: `Hi there,\n\nI was excited to see the ${role} opening at ${co} \u2014 it's exactly the kind of role I've been looking for.`,
     confident: `I'm a strong candidate for the ${role} role at ${co}, and I'd like to tell you why.`,
   }
-
   const middles: Record<Tone, string> = {
     formal: `With a background encompassing ${skills}, I have consistently delivered results in fast-paced environments. ${topExp ? `Most recently at ${topExp.company} as ${topExp.title}, I ${topExp.bullets[0]?.toLowerCase() || 'led key initiatives that drove measurable impact'}.` : ''}`,
-    conversational: `I've spent my career building expertise in ${skills}. ${topExp ? `At ${topExp.company}, I ${topExp.bullets[0]?.toLowerCase() || 'worked on exciting challenges'} — the kind of impact I'm eager to continue at ${co}.` : ''}`,
+    conversational: `I've spent my career building expertise in ${skills}. ${topExp ? `At ${topExp.company}, I ${topExp.bullets[0]?.toLowerCase() || 'worked on exciting challenges'} \u2014 the kind of impact I'm eager to continue at ${co}.` : ''}`,
     confident: `My background in ${skills} is directly aligned with what you need. ${topExp ? `At ${topExp.company} as ${topExp.title}, I delivered: ${topExp.bullets[0] || 'exceptional results'}.` : ''}`,
   }
-
   const closings: Record<Tone, string> = {
     formal: `I would welcome the opportunity to discuss how my experience aligns with the needs of your team. Thank you for your consideration.\n\nSincerely,\n${name}`,
     conversational: `I'd love to chat more about how I could contribute. Thanks so much for considering my application!\n\nBest,\n${name}`,
-    confident: `I'm ready to bring this energy to ${co} and would love to connect. Let's talk.\n\n— ${name}`,
+    confident: `I'm ready to bring this energy to ${co} and would love to connect. Let's talk.\n\n\u2014 ${name}`,
   }
-
   return `${openings[tone]}\n\n${middles[tone]}\n\n${closings[tone]}`
 }
 
@@ -41,7 +38,6 @@ export default function CoverLetter() {
   const { addToast } = useAppStore()
   const [step, setStep] = useState<Step>(1)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [applications, setApplications] = useState<Application[]>([])
   const [letters, setLetters] = useState<CoverLetterType[]>([])
   const [selectedJobId, setSelectedJobId] = useState('new')
   const [jobTitle, setJobTitle] = useState('')
@@ -51,20 +47,13 @@ export default function CoverLetter() {
   const [body, setBody] = useState('')
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [activeResume, setActiveResume] = useState<{ name?: string; title?: string; skills?: string[]; summary?: string; experience?: { company: string; title: string; bullets: string[] }[] } | null>(null)
+  const [activeResume, setActiveResume] = useState<ProfileSnippet>(null)
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('jobs').select('*').order('date_added', { ascending: false }),
-      supabase.from('applications').select('*').order('created_at', { ascending: false }),
-      supabase.from('cover_letters').select('*').order('created_at', { ascending: false }),
-      supabase.from('resumes').select('*').order('updated_at', { ascending: false }).limit(1),
-    ]).then(([{ data: jd }, { data: ad }, { data: ld }, { data: rd }]) => {
-      setJobs((jd ?? []).map(j => ({ id: j.id, company: j.company, title: j.title, description: j.description, status: j.status, dateAdded: j.date_added })))
-      setApplications((ad ?? []).map(a => ({ id: a.id, company: a.company, title: a.title, status: a.status, dateApplied: a.date_applied })))
-      setLetters((ld ?? []).map(l => ({ id: l.id, applicationId: l.application_id, jobTitle: l.job_title, company: l.company, tone: l.tone, body: l.body, createdAt: l.created_at })))
-      if (rd && rd[0]) setActiveResume(rd[0].profile)
-    })
+    setJobs(storage.getJobs())
+    setLetters(storage.getCoverLetters())
+    const resumes = storage.getResumes()
+    if (resumes.length > 0) setActiveResume(resumes[0].profile)
   }, [])
 
   useEffect(() => {
@@ -78,7 +67,7 @@ export default function CoverLetter() {
     setGenerating(true)
     try {
       if (isAIConfigured()) {
-        const prompt = `Write a ${tone} cover letter for a ${jobTitle} position at ${company}.\n\nJob Description:\n${jdText}\n\nCandidate profile:\nName: ${activeResume?.name || 'Candidate'}\nSkills: ${(activeResume?.skills ?? []).join(', ')}\nSummary: ${activeResume?.summary || ''}\nMost recent role: ${activeResume?.experience?.[0]?.title || ''} at ${activeResume?.experience?.[0]?.company || ''}\n\nWrite only the letter body, no explanations.`
+        const prompt = `Write a ${tone} cover letter for a ${jobTitle} position at ${company}.\n\nJob Description:\n${jdText}\n\nCandidate profile:\nName: ${activeResume?.name || 'Candidate'}\nSkills: ${(activeResume?.skills ?? []).join(', ')}\nSummary: ${(activeResume as { summary?: string })?.summary || ''}\nMost recent role: ${activeResume?.experience?.[0]?.title || ''} at ${activeResume?.experience?.[0]?.company || ''}\n\nWrite only the letter body, no explanations.`
         const result = await callAI(prompt)
         setBody(result)
         addToast('Cover letter generated with AI', 'success')
@@ -92,12 +81,11 @@ export default function CoverLetter() {
     setGenerating(false)
   }
 
-  async function saveLetter() {
+  function saveLetter() {
     if (!body) return
-    const { data } = await supabase.from('cover_letters').insert({
-      id: generateId(), job_title: jobTitle, company, tone, body, created_at: new Date().toISOString(),
-    }).select().single()
-    if (data) setLetters(prev => [{ id: data.id, jobTitle: data.job_title, company: data.company, tone: data.tone, body: data.body, createdAt: data.created_at }, ...prev])
+    const letter: CoverLetterType = { id: generateId(), jobTitle, company, tone, body, createdAt: new Date().toISOString() }
+    storage.addCoverLetter(letter)
+    setLetters(prev => [letter, ...prev])
     addToast('Cover letter saved', 'success')
   }
 
@@ -109,20 +97,17 @@ export default function CoverLetter() {
         <h1 className="text-2xl font-bold text-slate-100">Cover Letter Generator</h1>
         <p className="text-slate-500 text-sm mt-1">{isAIConfigured() ? 'AI-powered' : 'Template-based'} cover letters tailored to job descriptions</p>
       </div>
-
-      {/* Stepper */}
       <div className="flex items-center gap-2 mb-6">
         {([1, 2, 3] as Step[]).map((s, i) => (
           <>
             <button key={s} onClick={() => step > s && setStep(s)}
-              className={`w-8 h-8 rounded-full text-sm font-semibold flex items-center justify-center transition-colors ${ step === s ? 'bg-teal-600 text-white' : step > s ? 'bg-teal-600/30 text-teal-400 cursor-pointer hover:bg-teal-600/50' : 'bg-navy-700 text-slate-500' }`}>
+              className={`w-8 h-8 rounded-full text-sm font-semibold flex items-center justify-center transition-colors ${step === s ? 'bg-teal-600 text-white' : step > s ? 'bg-teal-600/30 text-teal-400 cursor-pointer hover:bg-teal-600/50' : 'bg-navy-700 text-slate-500'}`}>
               {s}
             </button>
             {i < 2 && <div className={`flex-1 h-px ${step > s ? 'bg-teal-600/50' : 'bg-navy-700'}`} />}
           </>
         ))}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           {step === 1 && (
@@ -132,7 +117,7 @@ export default function CoverLetter() {
                 <label className="form-label">Load from Saved Jobs</label>
                 <select className="w-full" value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)}>
                   <option value="new">Enter new job details</option>
-                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} — {j.title}</option>)}
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} \u2014 {j.title}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -143,12 +128,9 @@ export default function CoverLetter() {
                 <label className="form-label">Job Description (optional, improves output)</label>
                 <textarea rows={6} className="w-full resize-none" value={jdText} onChange={e => setJdText(e.target.value)} placeholder="Paste the job description..." />
               </div>
-              <button onClick={() => setStep(2)} className="btn-primary">
-                Continue <ChevronRight size={16} />
-              </button>
+              <button onClick={() => setStep(2)} className="btn-primary">Continue <ChevronRight size={16} /></button>
             </div>
           )}
-
           {step === 2 && (
             <div className="card space-y-4">
               <h2 className="section-title">Step 2: Configure Tone</h2>
@@ -157,7 +139,7 @@ export default function CoverLetter() {
                 <div className="grid grid-cols-3 gap-3 mt-2">
                   {(['formal', 'conversational', 'confident'] as Tone[]).map(t => (
                     <button key={t} onClick={() => setTone(t)}
-                      className={`p-3 rounded-xl border text-sm font-medium capitalize transition-colors ${ tone === t ? 'border-teal-500 bg-teal-600/15 text-teal-400' : 'border-navy-600 bg-navy-800 text-slate-400 hover:border-navy-500' }`}>
+                      className={`p-3 rounded-xl border text-sm font-medium capitalize transition-colors ${tone === t ? 'border-teal-500 bg-teal-600/15 text-teal-400' : 'border-navy-600 bg-navy-800 text-slate-400 hover:border-navy-500'}`}>
                       {t}
                     </button>
                   ))}
@@ -167,34 +149,26 @@ export default function CoverLetter() {
               <div className="flex gap-3">
                 <button onClick={() => setStep(1)} className="btn-secondary"><ChevronLeft size={16} />Back</button>
                 <button onClick={async () => { await generate(); setStep(3) }} disabled={generating} className="btn-primary flex-1">
-                  {generating ? <><span className="animate-spin">⟳</span> Generating...</> : <><Wand2 size={16} />{isAIConfigured() ? 'Generate with AI' : 'Generate Letter'}</>}
+                  {generating ? <><span className="animate-spin">\u27F3</span> Generating...</> : <><Wand2 size={16} />{isAIConfigured() ? 'Generate with AI' : 'Generate Letter'}</>
                 </button>
               </div>
             </div>
           )}
-
           {step === 3 && (
             <div className="card space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="section-title">Step 3: Review & Export</h2>
                 <div className="flex gap-2">
-                  <button onClick={() => { generate() }} className="btn-ghost text-xs"><Sparkles size={13} />Regenerate</button>
+                  <button onClick={generate} className="btn-ghost text-xs"><Sparkles size={13} />Regenerate</button>
                   <button onClick={copyLetter} className="btn-secondary text-xs">{copied ? <><Check size={13} />Copied</> : <><Copy size={13} />Copy</>}</button>
                   <button onClick={saveLetter} className="btn-primary text-xs"><Save size={13} />Save</button>
                 </div>
               </div>
-              <textarea
-                rows={18}
-                className="w-full resize-none font-mono text-sm"
-                value={body}
-                onChange={e => setBody(e.target.value)}
-              />
+              <textarea rows={18} className="w-full resize-none font-mono text-sm" value={body} onChange={e => setBody(e.target.value)} />
               <button onClick={() => setStep(2)} className="btn-ghost text-xs"><ChevronLeft size={14} />Back to configure</button>
             </div>
           )}
         </div>
-
-        {/* History */}
         <div className="card h-fit">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">Saved Letters ({letters.length})</h3>
           {letters.length === 0 ? (

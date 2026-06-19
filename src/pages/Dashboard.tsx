@@ -1,34 +1,23 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 import type { Application } from '@/lib/types'
 import { formatRelative, pct } from '@/lib/utils'
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts'
 import { Briefcase, TrendingUp, MessageSquare, Trophy, ArrowRight } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const STATUS_COLORS: Record<string, string> = {
-  applied: '#3b82f6',
-  screened: '#a78bfa',
-  interview: '#f59e0b',
-  offer: '#10b981',
-  rejected: '#ef4444',
+  applied: '#3b82f6', screened: '#a78bfa', interview: '#f59e0b', offer: '#10b981', rejected: '#ef4444',
 }
-
 const STATUS_LABELS: Record<string, string> = {
-  applied: 'Applied', screened: 'Screened',
-  interview: 'Interview', offer: 'Offer', rejected: 'Rejected',
+  applied: 'Applied', screened: 'Screened', interview: 'Interview', offer: 'Offer', rejected: 'Rejected',
 }
 
 export default function Dashboard() {
   const [apps, setApps] = useState<Application[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('applications').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setApps(data ?? []); setLoading(false) })
+    setApps(storage.getApplications())
   }, [])
 
   const total = apps.length
@@ -38,23 +27,14 @@ export default function Dashboard() {
   const active = apps.filter(a => !['offer', 'rejected'].includes(a.status)).length
 
   const statusCounts = ['applied', 'screened', 'interview', 'offer', 'rejected'].map(s => ({
-    name: STATUS_LABELS[s],
-    value: apps.filter(a => a.status === s).length,
-    color: STATUS_COLORS[s],
+    name: STATUS_LABELS[s], value: apps.filter(a => a.status === s).length, color: STATUS_COLORS[s],
   }))
 
-  // Weekly apps over last 12 weeks
   const weeklyData = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (11 - i) * 7)
-    const weekStart = new Date(d)
-    weekStart.setDate(d.getDate() - d.getDay())
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekStart.getDate() + 6)
-    const count = apps.filter(a => {
-      const ad = new Date(a.dateApplied)
-      return ad >= weekStart && ad <= weekEnd
-    }).length
+    const d = new Date(); d.setDate(d.getDate() - (11 - i) * 7)
+    const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay())
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6)
+    const count = apps.filter(a => { const ad = new Date(a.dateApplied); return ad >= weekStart && ad <= weekEnd }).length
     return { week: `W${12 - i}`, count }
   }).reverse().slice(0, 12).reverse()
 
@@ -73,14 +53,10 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
         <p className="text-slate-500 text-sm mt-1">Your job search at a glance</p>
       </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-64 text-slate-500">Loading...</div>
-      ) : total === 0 ? (
+      {total === 0 ? (
         <EmptyState />
       ) : (
         <>
-          {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {kpis.map(k => (
               <div key={k.label} className="card">
@@ -95,10 +71,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
-          {/* Charts row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            {/* Pipeline funnel */}
             <div className="card lg:col-span-2">
               <h3 className="text-sm font-semibold text-slate-300 mb-4">Application Pipeline</h3>
               <ResponsiveContainer width="100%" height={200}>
@@ -113,8 +86,6 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-
-            {/* Status donut */}
             <div className="card">
               <h3 className="text-sm font-semibold text-slate-300 mb-4">Status Breakdown</h3>
               <ResponsiveContainer width="100%" height={160}>
@@ -138,8 +109,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Weekly chart + recent */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="card lg:col-span-2">
               <h3 className="text-sm font-semibold text-slate-300 mb-4">Applications per Week</h3>
@@ -153,14 +122,10 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-
-            {/* Recent activity */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-slate-300">Recent Applications</h3>
-                <NavLink to="/tracker" className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">
-                  View all <ArrowRight size={12} />
-                </NavLink>
+                <NavLink to="/tracker" className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">View all <ArrowRight size={12} /></NavLink>
               </div>
               <div className="space-y-2">
                 {recent.map(a => (

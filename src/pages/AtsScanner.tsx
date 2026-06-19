@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 import { analyzeATS, resumeToText, type ATSResult } from '@/lib/ats'
 import type { Job, Resume } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
 import { generateId } from '@/lib/utils'
-import { ScanLine, CheckCircle2, XCircle, AlertCircle, Minus } from 'lucide-react'
+import { ScanLine, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 export default function AtsScanner() {
   const { addToast } = useAppStore()
@@ -19,21 +19,11 @@ export default function AtsScanner() {
   const [scanning, setScanning] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('jobs').select('*').order('date_added', { ascending: false }),
-      supabase.from('resumes').select('*').order('updated_at', { ascending: false }),
-    ]).then(([{ data: jd }, { data: rd }]) => {
-      setJobs((jd ?? []).map(j => ({
-        id: j.id, company: j.company, title: j.title, location: j.location,
-        url: j.url, description: j.description, requirements: j.requirements,
-        atsScore: j.ats_score, status: j.status, dateAdded: j.date_added,
-      })))
-      setResumes((rd ?? []).map(r => ({
-        id: r.id, title: r.title, template: r.template, accentColor: r.accent_color,
-        profile: r.profile, createdAt: r.created_at, updatedAt: r.updated_at,
-      })))
-      if (rd && rd.length > 0) setSelectedResumeId(rd[0].id)
-    })
+    const savedJobs = storage.getJobs()
+    const savedResumes = storage.getResumes()
+    setJobs(savedJobs)
+    setResumes(savedResumes)
+    if (savedResumes.length > 0) setSelectedResumeId(savedResumes[0].id)
   }, [])
 
   useEffect(() => {
@@ -45,7 +35,7 @@ export default function AtsScanner() {
     }
   }, [selectedJobId, jobs])
 
-  async function runScan() {
+  function runScan() {
     if (!jdText.trim()) { addToast('Paste a job description first', 'error'); return }
     setScanning(true)
     const resume = resumes.find(r => r.id === selectedResumeId)
@@ -54,21 +44,17 @@ export default function AtsScanner() {
     const r = analyzeATS(jdText, resumeText, bullets)
     setResult(r)
 
-    // Save job to Supabase
     const jobId = selectedJobId !== 'new' ? selectedJobId : generateId()
-    await supabase.from('jobs').upsert({
-      id: jobId, company, title: jobTitle, description: jdText, ats_score: r.score,
-      status: 'saved', date_added: new Date().toISOString(),
-    })
+    const newJob: Job = { id: jobId, company, title: jobTitle, description: jdText, atsScore: r.score, status: 'saved', dateAdded: new Date().toISOString() }
+    storage.upsertJob(newJob)
     if (selectedJobId === 'new') {
-      const newJob: Job = { id: jobId, company, title: jobTitle, description: jdText, atsScore: r.score, status: 'saved', dateAdded: new Date().toISOString() }
       setJobs(prev => [newJob, ...prev])
       setSelectedJobId(jobId)
     } else {
       setJobs(prev => prev.map(j => j.id === jobId ? { ...j, atsScore: r.score } : j))
     }
     setScanning(false)
-    addToast(`ATS analysis complete — ${r.score}% match`, r.score >= 60 ? 'success' : 'info')
+    addToast(`ATS analysis complete \u2014 ${r.score}% match`, r.score >= 60 ? 'success' : 'info')
   }
 
   const scoreColor = result ? (result.score >= 70 ? '#10b981' : result.score >= 40 ? '#f59e0b' : '#ef4444') : '#64748b'
@@ -79,9 +65,7 @@ export default function AtsScanner() {
         <h1 className="text-2xl font-bold text-slate-100">ATS Scanner</h1>
         <p className="text-slate-500 text-sm mt-1">Analyze how well your resume matches a job description</p>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input panel */}
         <div className="space-y-4">
           <div className="card">
             <h3 className="text-sm font-semibold text-slate-300 mb-3">Job Details</h3>
@@ -90,7 +74,7 @@ export default function AtsScanner() {
                 <label className="form-label">Load Saved Job</label>
                 <select className="w-full" value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)}>
                   <option value="new">Paste new job description</option>
-                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} — {j.title}</option>)}
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} \u2014 {j.title}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -103,7 +87,6 @@ export default function AtsScanner() {
               </div>
             </div>
           </div>
-
           <div className="card">
             <h3 className="text-sm font-semibold text-slate-300 mb-3">Resume to Compare</h3>
             {resumes.length === 0 ? (
@@ -114,13 +97,10 @@ export default function AtsScanner() {
               </select>
             )}
           </div>
-
           <button onClick={runScan} disabled={scanning} className="btn-primary w-full">
             <ScanLine size={16} />{scanning ? 'Analyzing...' : 'Run ATS Analysis'}
           </button>
         </div>
-
-        {/* Results panel */}
         <div className="space-y-4">
           {!result ? (
             <div className="card flex flex-col items-center justify-center py-20 text-center">
@@ -129,7 +109,6 @@ export default function AtsScanner() {
             </div>
           ) : (
             <>
-              {/* Score */}
               <div className="card flex items-center gap-6">
                 <div className="relative w-24 h-24 flex-shrink-0">
                   <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -145,50 +124,36 @@ export default function AtsScanner() {
                   <p className="text-lg font-semibold text-slate-100">
                     {result.score >= 70 ? 'Strong Match' : result.score >= 40 ? 'Partial Match' : 'Weak Match'}
                   </p>
-                  <p className="text-sm text-slate-400 mt-1">
-                    {result.matched.length} matched · {result.partial.length} partial · {result.missing.length} missing
-                  </p>
+                  <p className="text-sm text-slate-400 mt-1">{result.matched.length} matched \u00b7 {result.partial.length} partial \u00b7 {result.missing.length} missing</p>
                 </div>
               </div>
-
-              {/* Keywords */}
               <div className="card">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3">Keyword Analysis</h3>
                 {result.matched.length > 0 && (
                   <div className="mb-3">
                     <p className="text-xs text-green-400 font-medium mb-1.5">Matched ({result.matched.length})</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.matched.map(k => <span key={k} className="badge badge-green">{k}</span>)}
-                    </div>
+                    <div className="flex flex-wrap gap-1.5">{result.matched.map(k => <span key={k} className="badge badge-green">{k}</span>)}</div>
                   </div>
                 )}
                 {result.partial.length > 0 && (
                   <div className="mb-3">
                     <p className="text-xs text-amber-400 font-medium mb-1.5">Partial ({result.partial.length})</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.partial.map(k => <span key={k} className="badge badge-amber">{k}</span>)}
-                    </div>
+                    <div className="flex flex-wrap gap-1.5">{result.partial.map(k => <span key={k} className="badge badge-amber">{k}</span>)}</div>
                   </div>
                 )}
                 {result.missing.length > 0 && (
                   <div>
                     <p className="text-xs text-red-400 font-medium mb-1.5">Missing ({result.missing.length})</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.missing.map(k => <span key={k} className="badge badge-red">{k}</span>)}
-                    </div>
+                    <div className="flex flex-wrap gap-1.5">{result.missing.map(k => <span key={k} className="badge badge-red">{k}</span>)}</div>
                   </div>
                 )}
               </div>
-
-              {/* ATS Checks */}
               <div className="card">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3">ATS Compatibility Checks</h3>
                 <div className="space-y-2">
                   {result.checks.map(c => (
                     <div key={c.label} className="flex items-start gap-3">
-                      {c.passed
-                        ? <CheckCircle2 size={16} className="text-green-400 flex-shrink-0 mt-0.5" />
-                        : <XCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />}
+                      {c.passed ? <CheckCircle2 size={16} className="text-green-400 flex-shrink-0 mt-0.5" /> : <XCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />}
                       <div>
                         <p className="text-sm text-slate-200">{c.label}</p>
                         <p className="text-xs text-slate-500">{c.message}</p>
@@ -197,8 +162,6 @@ export default function AtsScanner() {
                   ))}
                 </div>
               </div>
-
-              {/* Bullet issues */}
               {result.bulletIssues.length > 0 && (
                 <div className="card">
                   <h3 className="text-sm font-semibold text-slate-300 mb-3">Bullet Strength Issues</h3>

@@ -1,5 +1,20 @@
 import type { Profile } from '@/lib/types'
 
+interface ColorScheme {
+  accent: string
+  page: string
+  text: string
+  muted: string
+  light: string
+  border: string
+}
+
+interface TemplateProps {
+  profile: Profile
+  s: ColorScheme
+  style: React.CSSProperties
+}
+
 interface Props {
   profile: Profile
   template: 'classic' | 'modern' | 'compact'
@@ -8,7 +23,7 @@ interface Props {
 }
 
 export default function ResumePreview({ profile, template, accentColor, scale = 1 }: Props) {
-  const s = {
+  const s: ColorScheme = {
     accent: accentColor,
     page: '#ffffff',
     text: '#1a1a1a',
@@ -34,10 +49,9 @@ export default function ResumePreview({ profile, template, accentColor, scale = 
   return <ClassicTemplate profile={profile} s={s} style={pageStyle} />
 }
 
-function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnType<typeof colors>; style: React.CSSProperties }) {
+function ClassicTemplate({ profile, s, style }: TemplateProps) {
   return (
     <div style={style} id="resume-preview">
-      {/* Header */}
       <div style={{ background: s.accent, padding: '32px 48px 24px', color: '#fff' }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: '-0.3px' }}>{profile.name || 'Your Name'}</h1>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.9, display: 'flex', flexWrap: 'wrap', gap: '0 16px' }}>
@@ -49,7 +63,6 @@ function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
       </div>
 
       <div style={{ padding: '28px 48px' }}>
-        {/* Summary */}
         {profile.summary && (
           <section style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, borderBottom: `2px solid ${s.accent}`, paddingBottom: 4, marginBottom: 10 }}>Summary</h2>
@@ -57,8 +70,7 @@ function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
           </section>
         )}
 
-        {/* Experience */}
-        {profile.experience?.length > 0 && (
+        {(profile.experience?.length ?? 0) > 0 && (
           <section style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, borderBottom: `2px solid ${s.accent}`, paddingBottom: 4, marginBottom: 12 }}>Experience</h2>
             {profile.experience.map(exp => (
@@ -83,14 +95,13 @@ function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
           </section>
         )}
 
-        {/* Education */}
-        {profile.education?.length > 0 && (
+        {(profile.education?.length ?? 0) > 0 && (
           <section style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, borderBottom: `2px solid ${s.accent}`, paddingBottom: 4, marginBottom: 12 }}>Education</h2>
             {profile.education.map(edu => (
               <div key={edu.id} style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ fontWeight: 700, fontSize: 13 }}>{edu.degree} {edu.field && `in ${edu.field}`}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{edu.degree}{edu.field && ` in ${edu.field}`}</span>
                   <div style={{ fontSize: 12, color: s.muted }}>{edu.school}</div>
                 </div>
                 <span style={{ fontSize: 11, color: s.light, whiteSpace: 'nowrap' }}>{edu.startDate}{edu.startDate && ' – '}{edu.endDate}</span>
@@ -99,8 +110,7 @@ function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
           </section>
         )}
 
-        {/* Skills */}
-        {profile.skills?.length > 0 && (
+        {(profile.skills?.length ?? 0) > 0 && (
           <section style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, borderBottom: `2px solid ${s.accent}`, paddingBottom: 4, marginBottom: 10 }}>Skills</h2>
             <p style={{ fontSize: 12, color: s.muted }}>{profile.skills.join(' · ')}</p>
@@ -111,10 +121,9 @@ function ClassicTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
   )
 }
 
-function ModernTemplate({ profile, s, style }: { profile: Profile; s: ReturnType<typeof colors>; style: React.CSSProperties }) {
+function ModernTemplate({ profile, s, style }: TemplateProps) {
   return (
     <div style={{ ...style, display: 'flex' }} id="resume-preview">
-      {/* Left column */}
       <div style={{ width: 240, background: s.accent, padding: '32px 20px', color: '#fff', flexShrink: 0 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px', lineHeight: 1.2 }}>{profile.name || 'Your Name'}</h1>
         <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 24, lineHeight: 1.8 }}>
@@ -123,7 +132,7 @@ function ModernTemplate({ profile, s, style }: { profile: Profile; s: ReturnType
           {profile.location && <div>{profile.location}</div>}
           {profile.linkedin && <div>{profile.linkedin}</div>}
         </div>
-        {profile.skills?.length > 0 && (
+        {(profile.skills?.length ?? 0) > 0 && (
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>Skills</div>
             {profile.skills.map(sk => (
@@ -131,17 +140,16 @@ function ModernTemplate({ profile, s, style }: { profile: Profile; s: ReturnType
             ))}
           </div>
         )}
-        {profile.certifications?.length > 0 && (
+        {(profile.certifications?.length ?? 0) > 0 && (
           <div style={{ marginTop: 20 }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>Certifications</div>
             {profile.certifications.map(c => <div key={c} style={{ fontSize: 11, opacity: 0.9, marginBottom: 4 }}>{c}</div>)}
           </div>
         )}
       </div>
-      {/* Right column */}
       <div style={{ flex: 1, padding: '32px 28px', overflow: 'hidden' }}>
         {profile.summary && <p style={{ fontSize: 12.5, color: s.muted, marginBottom: 24, lineHeight: 1.6 }}>{profile.summary}</p>}
-        {profile.experience?.length > 0 && (
+        {(profile.experience?.length ?? 0) > 0 && (
           <section style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, marginBottom: 12 }}>Experience</h2>
             {profile.experience.map(exp => (
@@ -158,12 +166,12 @@ function ModernTemplate({ profile, s, style }: { profile: Profile; s: ReturnType
             ))}
           </section>
         )}
-        {profile.education?.length > 0 && (
+        {(profile.education?.length ?? 0) > 0 && (
           <section>
             <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, color: s.accent, marginBottom: 10 }}>Education</h2>
             {profile.education.map(edu => (
               <div key={edu.id} style={{ marginBottom: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>{edu.degree} {edu.field && `in ${edu.field}`}</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{edu.degree}{edu.field && ` in ${edu.field}`}</div>
                 <div style={{ fontSize: 12, color: s.muted }}>{edu.school} · {edu.startDate}{edu.startDate && '–'}{edu.endDate}</div>
               </div>
             ))}
@@ -174,7 +182,7 @@ function ModernTemplate({ profile, s, style }: { profile: Profile; s: ReturnType
   )
 }
 
-function CompactTemplate({ profile, s, style }: { profile: Profile; s: ReturnType<typeof colors>; style: React.CSSProperties }) {
+function CompactTemplate({ profile, s, style }: TemplateProps) {
   return (
     <div style={{ ...style, fontFamily: 'Arial, sans-serif', fontSize: 12 }} id="resume-preview">
       <div style={{ borderBottom: `3px solid ${s.accent}`, padding: '20px 40px 14px' }}>
@@ -185,13 +193,13 @@ function CompactTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
       </div>
       <div style={{ padding: '16px 40px' }}>
         {profile.summary && <p style={{ fontSize: 12, color: s.muted, marginBottom: 14, lineHeight: 1.5 }}>{profile.summary}</p>}
-        {profile.skills?.length > 0 && (
+        {(profile.skills?.length ?? 0) > 0 && (
           <div style={{ marginBottom: 14 }}>
             <strong style={{ fontSize: 12, color: s.accent }}>Skills: </strong>
             <span style={{ color: s.muted }}>{profile.skills.join(', ')}</span>
           </div>
         )}
-        {profile.experience?.length > 0 && (
+        {(profile.experience?.length ?? 0) > 0 && (
           <section style={{ marginBottom: 14 }}>
             <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: s.accent, borderBottom: `1px solid ${s.border}`, paddingBottom: 3, marginBottom: 8 }}>Experience</h2>
             {profile.experience.map(exp => (
@@ -207,12 +215,12 @@ function CompactTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
             ))}
           </section>
         )}
-        {profile.education?.length > 0 && (
+        {(profile.education?.length ?? 0) > 0 && (
           <section>
             <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: s.accent, borderBottom: `1px solid ${s.border}`, paddingBottom: 3, marginBottom: 8 }}>Education</h2>
             {profile.education.map(edu => (
               <div key={edu.id} style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-                <span><strong>{edu.degree} {edu.field && `in ${edu.field}`}</strong>, {edu.school}</span>
+                <span><strong>{edu.degree}{edu.field && ` in ${edu.field}`}</strong>, {edu.school}</span>
                 <span style={{ fontSize: 11, color: s.light }}>{edu.endDate}</span>
               </div>
             ))}
@@ -222,8 +230,3 @@ function CompactTemplate({ profile, s, style }: { profile: Profile; s: ReturnTyp
     </div>
   )
 }
-
-function colors() {
-  return { accent: '', page: '', text: '', muted: '', light: '', border: '' }
-}
-type ReturnType<T extends (...args: unknown[]) => unknown> = T extends (...args: unknown[]) => infer R ? R : never

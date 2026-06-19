@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { getAIConfig, isAIConfigured } from './ai'
+import { getAIConfig, isAIConfigured, saveAIConfig } from './ai'
 import type { AIConfig } from './types'
-import { saveAIConfig } from './ai'
 
 export interface Toast {
   id: string

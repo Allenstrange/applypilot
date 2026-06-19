@@ -21,7 +21,8 @@ export function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
-export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, delay: number): (...args: Parameters<T>) => void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function debounce<T extends (...args: any[]) => unknown>(fn: T, delay: number): (...args: Parameters<T>) => void {
   let timer: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
     clearTimeout(timer)

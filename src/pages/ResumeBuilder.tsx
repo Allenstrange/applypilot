@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 import type { Profile, Resume, Experience, Education } from '@/lib/types'
 import { generateId, debounce, formatDate } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -38,39 +38,22 @@ export default function ResumeBuilder() {
   const previewRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    supabase.from('resumes').select('*').order('updated_at', { ascending: false })
-      .then(({ data }) => {
-        const rs = (data ?? []).map(mapRow)
-        setResumes(rs)
-        if (rs.length > 0) loadResume(rs[0])
-      })
+    const rs = storage.getResumes()
+    setResumes(rs)
+    if (rs.length > 0) loadResume(rs[0])
   }, [])
-
-  function mapRow(r: Record<string, unknown>): Resume {
-    return {
-      id: r.id as string, title: r.title as string,
-      template: r.template as Resume['template'], accentColor: r.accent_color as string,
-      profile: r.profile as Profile, targetRole: r.target_role as string | undefined,
-      createdAt: r.created_at as string, updatedAt: r.updated_at as string,
-    }
-  }
 
   function loadResume(r: Resume) {
     setActive(r); setProfile(r.profile); setTemplate(r.template)
     setAccentColor(r.accentColor); setTitle(r.title); setSaveStatus('saved')
   }
 
-  const debouncedSave = useCallback(debounce(async (r: Resume) => {
+  const debouncedSave = useCallback(debounce((r: Resume) => {
     setSaveStatus('saving')
-    const { data } = await supabase.from('resumes').upsert({
-      id: r.id, title: r.title, template: r.template, accent_color: r.accentColor,
-      profile: r.profile, target_role: r.targetRole, updated_at: new Date().toISOString(),
-    }).select().single()
-    if (data) {
-      const updated = mapRow(data)
-      setActive(updated)
-      setResumes(prev => prev.map(x => x.id === updated.id ? updated : x))
-    }
+    const updated = { ...r, updatedAt: new Date().toISOString() }
+    storage.upsertResume(updated)
+    setActive(updated)
+    setResumes(prev => prev.map(x => x.id === updated.id ? updated : x))
     setSaveStatus('saved')
   }, 1200), [])
 
@@ -80,35 +63,26 @@ export default function ResumeBuilder() {
     if (active) debouncedSave({ ...active, profile: newProfile, template, accentColor, title })
   }
 
-  async function newResume() {
+  function newResume() {
     const r: Resume = {
       id: generateId(), title: 'Untitled Resume', template: 'classic',
       accentColor: '#0d9488', profile: BLANK_PROFILE,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     }
-    const { data } = await supabase.from('resumes').insert({
-      id: r.id, title: r.title, template: r.template, accent_color: r.accentColor,
-      profile: r.profile, created_at: r.createdAt, updated_at: r.updatedAt,
-    }).select().single()
-    if (data) {
-      const saved = mapRow(data)
-      setResumes(prev => [saved, ...prev])
-      loadResume(saved)
-    }
+    storage.upsertResume(r)
+    setResumes(prev => [r, ...prev])
+    loadResume(r)
   }
 
-  async function cloneResume(r: Resume) {
-    const clone = { ...r, id: generateId(), title: `${r.title} (copy)`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-    const { data } = await supabase.from('resumes').insert({
-      id: clone.id, title: clone.title, template: clone.template, accent_color: clone.accentColor,
-      profile: clone.profile, created_at: clone.createdAt, updated_at: clone.updatedAt,
-    }).select().single()
-    if (data) setResumes(prev => [mapRow(data), ...prev])
+  function cloneResume(r: Resume) {
+    const clone: Resume = { ...r, id: generateId(), title: `${r.title} (copy)`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    storage.upsertResume(clone)
+    setResumes(prev => [clone, ...prev])
     addToast('Resume cloned', 'success')
   }
 
-  async function deleteResume(id: string) {
-    await supabase.from('resumes').delete().eq('id', id)
+  function deleteResume(id: string) {
+    storage.deleteResume(id)
     const remaining = resumes.filter(r => r.id !== id)
     setResumes(remaining)
     if (active?.id === id) { if (remaining.length > 0) loadResume(remaining[0]); else { setActive(null); setProfile(BLANK_PROFILE) } }

@@ -1,9 +1,8 @@
-# Netlify build configuration for the Next.js app.
-# The Next.js runtime plugin is auto-installed when Netlify detects Next.
-
 [build]
-  command = "npm run build"
-  publish = ".next"
+  command = "npm install && npm run build"
+  publish = "dist"
 
-[build.environment]
-  NODE_VERSION = "22"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

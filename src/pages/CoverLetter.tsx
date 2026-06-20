@@ -117,7 +117,7 @@ export default function CoverLetter() {
                 <label className="form-label">Load from Saved Jobs</label>
                 <select className="w-full" value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)}>
                   <option value="new">Enter new job details</option>
-                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} \u2014 {j.title}</option>)}
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} — {j.title}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">

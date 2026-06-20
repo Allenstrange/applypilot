@@ -34,3 +34,25 @@ export function pct(num: number, den: number): string {
   if (!den) return '0%'
   return `${Math.round((num / den) * 100)}%`
 }
+
+/** Find all {{token}} placeholders in a string (deduped, in order of appearance). */
+export function extractTokens(...texts: (string | undefined)[]): string[] {
+  const seen = new Set<string>()
+  const re = /\{\{\s*([\w.]+)\s*\}\}/g
+  for (const text of texts) {
+    if (!text) continue
+    let m: RegExpExecArray | null
+    while ((m = re.exec(text)) !== null) seen.add(m[1])
+  }
+  return Array.from(seen)
+}
+
+/** Replace {{token}} placeholders with provided values; unfilled tokens stay literal. */
+export function applyTokens(text: string, values: Record<string, string>): string {
+  return text.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k: string) => values[k]?.trim() ? values[k] : `{{${k}}}`)
+}
+
+/** "recruiter_name" -> "Recruiter Name" for use as a form label. */
+export function humanizeToken(token: string): string {
+  return token.replace(/[_.]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}

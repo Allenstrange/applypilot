@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { storage } from '@/lib/storage'
 import type { OutreachTemplate, OutreachMessage } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
-import { generateId, formatDate } from '@/lib/utils'
-import { Plus, X, Mail, Linkedin, Send, CheckCircle, Clock, Copy, Trash2, Edit2 } from 'lucide-react'
+import { generateId, formatDate, extractTokens, applyTokens, humanizeToken } from '@/lib/utils'
+import { callAI, isAIConfigured } from '@/lib/ai'
+import { Plus, X, Mail, Linkedin, Send, CheckCircle, Clock, Copy, Trash2, Edit2, Wand2 } from 'lucide-react'
 
 const STARTER_TEMPLATES: Omit<OutreachTemplate, 'id' | 'createdAt'>[] = [
   {
@@ -56,8 +57,11 @@ export default function OutreachHub() {
   const [editingTemplate, setEditingTemplate] = useState<OutreachTemplate | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<OutreachTemplate | null>(null)
   const [templateForm, setTemplateForm] = useState({ name: '', type: 'cold-email' as OutreachTemplate['type'], subject: '', body: '', tags: '' })
-  const [composeForm, setComposeForm] = useState({ recipientName: '', recipientEmail: '', channel: 'email' as OutreachMessage['channel'], subject: '', body: '' })
-  const [previewBody, setPreviewBody] = useState('')
+  const [composeForm, setComposeForm] = useState({ recipientName: '', recipientEmail: '', channel: 'email' as OutreachMessage['channel'] })
+  const [composeSubject, setComposeSubject] = useState('')
+  const [composeBody, setComposeBody] = useState('')
+  const [tokenValues, setTokenValues] = useState<Record<string, string>>({})
+  const [polishing, setPolishing] = useState(false)
 
   useEffect(() => {
     const saved = storage.getTemplates()
@@ -93,24 +97,40 @@ export default function OutreachHub() {
 
   function openCompose(t: OutreachTemplate) {
     setSelectedTemplate(t)
-    setComposeForm({ recipientName: '', recipientEmail: '', channel: t.type === 'linkedin' ? 'linkedin' : 'email', subject: t.subject ?? '', body: t.body })
-    setPreviewBody(t.body)
+    setComposeForm({ recipientName: '', recipientEmail: '', channel: t.type === 'linkedin' ? 'linkedin' : 'email' })
+    setComposeSubject(t.subject ?? '')
+    setComposeBody(t.body)
+    setTokenValues({})
     setShowComposeModal(true)
   }
 
-  function updateTokens(form: typeof composeForm) {
-    let preview = selectedTemplate?.body ?? form.body
-    const replacements: Record<string, string> = { '{{recruiter_name}}': form.recipientName || '[Name]', '{{your_name}}': 'You' }
-    Object.entries(replacements).forEach(([k, v]) => { preview = preview.replaceAll(k, v) })
-    setPreviewBody(preview)
-    setComposeForm(form)
+  function setRecipientName(name: string) {
+    setComposeForm(f => ({ ...f, recipientName: name }))
+    const recipientToken = extractTokens(composeSubject, composeBody).find(t => /name/i.test(t) && /(recruiter|recipient|contact|interviewer|hiring|manager)/i.test(t))
+    if (recipientToken) setTokenValues(v => ({ ...v, [recipientToken]: name }))
+  }
+
+  async function polishWithAI() {
+    if (!isAIConfigured()) { addToast('Add an AI provider in Settings to personalize messages', 'info'); return }
+    setPolishing(true)
+    try {
+      const filled = applyTokens(composeBody, tokenValues)
+      const prompt = `Rewrite this ${selectedTemplate?.type.replace('-', ' ')} job-search outreach message to be more personalized, warm, and concise while staying professional. Make it ready to send with no placeholders left. Channel: ${composeForm.channel}.\n\nMessage:\n${filled}`
+      const out = await callAI(prompt, 'You are an expert at writing effective job-search outreach messages.')
+      setComposeBody(out.trim())
+      setTokenValues({})
+      addToast('Message personalized with AI', 'success')
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'AI personalization failed', 'error')
+    }
+    setPolishing(false)
   }
 
   function sendMessage() {
     if (!composeForm.recipientName) { addToast('Recipient name required', 'error'); return }
     const m: OutreachMessage = {
       id: generateId(), recipientName: composeForm.recipientName, recipientEmail: composeForm.recipientEmail,
-      channel: composeForm.channel, subject: composeForm.subject, body: previewBody,
+      channel: composeForm.channel, subject: applyTokens(composeSubject, tokenValues), body: applyTokens(composeBody, tokenValues),
       templateId: selectedTemplate?.id, status: 'sent', sentDate: new Date().toISOString(), createdAt: new Date().toISOString(),
     }
     storage.upsertMessage(m)
@@ -126,6 +146,12 @@ export default function OutreachHub() {
 
   const replied = messages.filter(m => m.status === 'replied').length
   const sent = messages.filter(m => m.status !== 'draft').length
+
+  const composeTokens = extractTokens(composeSubject, composeBody)
+  const recipientToken = composeTokens.find(t => /name/i.test(t) && /(recruiter|recipient|contact|interviewer|hiring|manager)/i.test(t))
+  const previewSubject = applyTokens(composeSubject, tokenValues)
+  const previewBody = applyTokens(composeBody, tokenValues)
+  const unfilledTokens = composeTokens.filter(t => !tokenValues[t]?.trim())
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -244,23 +270,41 @@ export default function OutreachHub() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-navy-800 border border-navy-600 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-navy-700">
-              <h2 className="font-semibold text-slate-100">Compose \u2014 {selectedTemplate.name}</h2>
+              <h2 className="font-semibold text-slate-100">Compose — {selectedTemplate.name}</h2>
               <button onClick={() => setShowComposeModal(false)}><X size={18} className="text-slate-400" /></button>
             </div>
             <div className="p-5 grid grid-cols-2 gap-5">
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                 <h3 className="text-xs font-semibold text-slate-400">FILL IN DETAILS</h3>
-                <div><label className="form-label">Recipient Name</label><input className="w-full" value={composeForm.recipientName} onChange={e => updateTokens({ ...composeForm, recipientName: e.target.value })} /></div>
+                <div><label className="form-label">Recipient Name</label><input className="w-full" value={composeForm.recipientName} onChange={e => setRecipientName(e.target.value)} /></div>
                 <div><label className="form-label">Recipient Email</label><input className="w-full" value={composeForm.recipientEmail} onChange={e => setComposeForm(f => ({ ...f, recipientEmail: e.target.value }))} /></div>
                 <div><label className="form-label">Channel</label>
                   <select className="w-full" value={composeForm.channel} onChange={e => setComposeForm(f => ({ ...f, channel: e.target.value as OutreachMessage['channel'] }))}>
                     <option value="email">Email</option><option value="linkedin">LinkedIn</option><option value="other">Other</option>
                   </select>
                 </div>
-                {composeForm.channel === 'email' && <div><label className="form-label">Subject</label><input className="w-full" value={composeForm.subject} onChange={e => setComposeForm(f => ({ ...f, subject: e.target.value }))} /></div>}
+                {composeForm.channel === 'email' && composeTokens.length >= 0 && (
+                  <div><label className="form-label">Subject</label><input className="w-full" value={composeSubject} onChange={e => setComposeSubject(e.target.value)} /></div>
+                )}
+                {composeTokens.filter(t => t !== recipientToken).map(t => (
+                  <div key={t}>
+                    <label className="form-label">{humanizeToken(t)}</label>
+                    <input className="w-full" value={tokenValues[t] ?? ''} placeholder={`{{${t}}}`}
+                      onChange={e => setTokenValues(v => ({ ...v, [t]: e.target.value }))} />
+                  </div>
+                ))}
+                <button onClick={polishWithAI} disabled={polishing} className="btn-secondary w-full text-xs">
+                  <Wand2 size={14} />{polishing ? 'Personalizing...' : 'Personalize with AI'}
+                </button>
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-slate-400 mb-2">PREVIEW</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold text-slate-400">PREVIEW</h3>
+                  {unfilledTokens.length > 0 && <span className="badge badge-amber">{unfilledTokens.length} unfilled</span>}
+                </div>
+                {composeForm.channel === 'email' && previewSubject && (
+                  <p className="text-xs text-slate-400 mb-2 pb-2 border-b border-navy-700"><span className="text-slate-600">Subject: </span>{previewSubject}</p>
+                )}
                 <div className="bg-navy-900 border border-navy-700 rounded-lg p-3 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed h-56 overflow-y-auto">{previewBody}</div>
               </div>
             </div>

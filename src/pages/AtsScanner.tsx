@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { storage } from '@/lib/storage'
 import { analyzeATS, resumeToText, type ATSResult } from '@/lib/ats'
+import { aiAtsSuggestions, isAIConfigured } from '@/lib/ai'
 import type { Job, Resume } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
 import { generateId } from '@/lib/utils'
-import { ScanLine, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { ScanLine, CheckCircle2, XCircle, AlertCircle, Sparkles } from 'lucide-react'
 
 export default function AtsScanner() {
   const { addToast } = useAppStore()
@@ -17,6 +18,8 @@ export default function AtsScanner() {
   const [jobTitle, setJobTitle] = useState('')
   const [result, setResult] = useState<ATSResult | null>(null)
   const [scanning, setScanning] = useState(false)
+  const [aiTips, setAiTips] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
 
   useEffect(() => {
     const savedJobs = storage.getJobs()
@@ -54,7 +57,23 @@ export default function AtsScanner() {
       setJobs(prev => prev.map(j => j.id === jobId ? { ...j, atsScore: r.score } : j))
     }
     setScanning(false)
+    setAiTips('')
     addToast(`ATS analysis complete \u2014 ${r.score}% match`, r.score >= 60 ? 'success' : 'info')
+  }
+
+  async function getAiTips() {
+    if (!result) return
+    if (!isAIConfigured()) { addToast('Add an AI provider in Settings for AI suggestions', 'info'); return }
+    const resume = resumes.find(r => r.id === selectedResumeId)
+    const resumeText = resume ? resumeToText(resume.profile) : ''
+    setAiLoading(true)
+    try {
+      const tips = await aiAtsSuggestions(jobTitle, [...result.missing, ...result.partial], resumeText)
+      setAiTips(tips)
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'AI request failed', 'error')
+    }
+    setAiLoading(false)
   }
 
   const scoreColor = result ? (result.score >= 70 ? '#10b981' : result.score >= 40 ? '#f59e0b' : '#ef4444') : '#64748b'
@@ -74,7 +93,7 @@ export default function AtsScanner() {
                 <label className="form-label">Load Saved Job</label>
                 <select className="w-full" value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)}>
                   <option value="new">Paste new job description</option>
-                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} \u2014 {j.title}</option>)}
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.company} — {j.title}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -124,7 +143,7 @@ export default function AtsScanner() {
                   <p className="text-lg font-semibold text-slate-100">
                     {result.score >= 70 ? 'Strong Match' : result.score >= 40 ? 'Partial Match' : 'Weak Match'}
                   </p>
-                  <p className="text-sm text-slate-400 mt-1">{result.matched.length} matched \u00b7 {result.partial.length} partial \u00b7 {result.missing.length} missing</p>
+                  <p className="text-sm text-slate-400 mt-1">{result.matched.length} matched · {result.partial.length} partial · {result.missing.length} missing</p>
                 </div>
               </div>
               <div className="card">
@@ -178,6 +197,19 @@ export default function AtsScanner() {
                   </div>
                 </div>
               )}
+              <div className="card">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2"><Sparkles size={15} className="text-teal-400" />AI Improvement Tips</h3>
+                  <button onClick={getAiTips} disabled={aiLoading} className="btn-secondary text-xs">
+                    <Sparkles size={13} />{aiLoading ? 'Thinking...' : aiTips ? 'Regenerate' : 'Get Suggestions'}
+                  </button>
+                </div>
+                {aiTips ? (
+                  <div className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{aiTips}</div>
+                ) : (
+                  <p className="text-xs text-slate-500">{isAIConfigured() ? 'Get AI-tailored suggestions to close the keyword gaps above.' : 'Configure an AI provider in Settings to unlock AI suggestions.'}</p>
+                )}
+              </div>
             </>
           )}
         </div>

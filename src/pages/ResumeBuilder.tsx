@@ -3,8 +3,9 @@ import { storage } from '@/lib/storage'
 import type { Profile, Resume, Experience, Education } from '@/lib/types'
 import { generateId, debounce, formatDate } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
+import { aiRewriteBullet, aiWriteSummary, aiExtractProfile, isAIConfigured, type ExtractedProfile } from '@/lib/ai'
 import ResumePreview from '@/components/ResumePreview'
-import { Plus, Trash2, Download, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, Download, Copy, FileText, ChevronDown, ChevronUp, Sparkles, Upload, X } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -35,6 +36,11 @@ export default function ResumeBuilder() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
   const [exporting, setExporting] = useState(false)
   const [expandedSections, setExpandedSections] = useState({ contact: true, summary: true, skills: true, experience: true, education: true })
+  const [showImport, setShowImport] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [enhancing, setEnhancing] = useState<string | null>(null)
+  const [writingSummary, setWritingSummary] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -105,6 +111,82 @@ export default function ResumeBuilder() {
       addToast('Export failed', 'error')
     }
     setExporting(false)
+  }
+
+  function mapExtracted(ep: ExtractedProfile): Profile {
+    return {
+      name: ep.name ?? '', email: ep.email ?? '', phone: ep.phone ?? '',
+      location: ep.location ?? '', linkedin: ep.linkedin ?? '', website: ep.website ?? '',
+      summary: ep.summary ?? '', skills: ep.skills ?? [], certifications: ep.certifications ?? [],
+      experience: (ep.experience ?? []).map(e => ({
+        id: generateId(), company: e.company ?? '', title: e.title ?? '', location: e.location ?? '',
+        startDate: e.startDate ?? '', endDate: e.endDate ?? '', current: !!e.current,
+        bullets: e.bullets?.length ? e.bullets : [''],
+      })),
+      education: (ep.education ?? []).map(e => ({
+        id: generateId(), school: e.school ?? '', degree: e.degree ?? '', field: e.field ?? '',
+        startDate: e.startDate ?? '', endDate: e.endDate ?? '',
+      })),
+    }
+  }
+
+  function onFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setImportText(String(reader.result ?? ''))
+    reader.readAsText(file)
+  }
+
+  async function importResume() {
+    if (!isAIConfigured()) { addToast('Add an AI provider in Settings to import resumes', 'info'); return }
+    if (!importText.trim()) { addToast('Paste your resume text first', 'error'); return }
+    setImporting(true)
+    try {
+      const ep = await aiExtractProfile(importText)
+      const prof = mapExtracted(ep)
+      const r: Resume = {
+        id: generateId(), title: prof.name ? `${prof.name}'s Resume` : 'Imported Resume',
+        template: 'classic', accentColor: '#0d9488', profile: prof,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      }
+      storage.upsertResume(r)
+      setResumes(prev => [r, ...prev])
+      loadResume(r)
+      setShowImport(false); setImportText('')
+      addToast('Resume imported — review and refine', 'success')
+    } catch (e) {
+      addToast(e instanceof Error ? `Import failed: ${e.message}` : 'Could not parse resume', 'error')
+    }
+    setImporting(false)
+  }
+
+  async function enhanceBullet(exp: Experience, bi: number) {
+    const text = exp.bullets[bi]?.trim()
+    if (!text) { addToast('Write a bullet first', 'info'); return }
+    if (!isAIConfigured()) { addToast('Add an AI provider in Settings to use AI', 'info'); return }
+    const key = `${exp.id}:${bi}`
+    setEnhancing(key)
+    try {
+      const improved = await aiRewriteBullet(text, title)
+      const bs = [...exp.bullets]; bs[bi] = improved
+      updateExp(exp.id, 'bullets', bs)
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'AI rewrite failed', 'error')
+    }
+    setEnhancing(null)
+  }
+
+  async function writeSummaryAI() {
+    if (!isAIConfigured()) { addToast('Add an AI provider in Settings to use AI', 'info'); return }
+    setWritingSummary(true)
+    try {
+      const s = await aiWriteSummary({ role: title, skills: profile.skills, experience: profile.experience.map(e => ({ title: e.title, company: e.company })) })
+      update({ ...profile, summary: s })
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'AI summary failed', 'error')
+    }
+    setWritingSummary(false)
   }
 
   function addExp() { update({ ...profile, experience: [...(profile.experience ?? []), BLANK_EXP()] }) }
@@ -191,6 +273,9 @@ export default function ResumeBuilder() {
 
           <Section title="Summary" skey="summary">
             <textarea rows={4} className={`${inp} resize-none`} value={profile.summary} onChange={e => update({ ...profile, summary: e.target.value })} placeholder="Professional summary..." />
+            <button onClick={writeSummaryAI} disabled={writingSummary} className="btn-ghost text-xs mt-2">
+              <Sparkles size={13} className={writingSummary ? 'animate-pulse' : ''} />{writingSummary ? 'Writing...' : 'Write with AI'}
+            </button>
           </Section>
 
           <Section title="Skills" skey="skills">
@@ -224,6 +309,9 @@ export default function ResumeBuilder() {
                     {exp.bullets.map((b, bi) => (
                       <div key={bi} className="flex gap-1 mb-1">
                         <input value={b} onChange={e => { const bs = [...exp.bullets]; bs[bi] = e.target.value; updateExp(exp.id, 'bullets', bs) }} className="flex-1 text-xs" placeholder="Describe an achievement..." />
+                        <button onClick={() => enhanceBullet(exp, bi)} disabled={enhancing === `${exp.id}:${bi}`} title="Improve with AI" className="text-slate-600 hover:text-teal-400 px-1 disabled:opacity-50">
+                          <Sparkles size={12} className={enhancing === `${exp.id}:${bi}` ? 'animate-pulse' : ''} />
+                        </button>
                         <button onClick={() => { const bs = exp.bullets.filter((_, i) => i !== bi); updateExp(exp.id, 'bullets', bs) }} className="text-slate-600 hover:text-red-400 px-1"><Trash2 size={12} /></button>
                       </div>
                     ))}
@@ -260,6 +348,7 @@ export default function ResumeBuilder() {
         {/* Actions */}
         <div className="px-4 py-3 border-t border-navy-700 flex gap-2">
           <button onClick={newResume} className="btn-secondary flex-1 text-xs"><Plus size={14} /> New</button>
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex-1 text-xs"><Upload size={14} /> Import</button>
           <button onClick={exportPDF} disabled={exporting} className="btn-primary flex-1 text-xs">
             <Download size={14} /> {exporting ? 'Exporting...' : 'Export PDF'}
           </button>
@@ -295,6 +384,31 @@ export default function ResumeBuilder() {
           </div>
         </div>
       </div>
+
+      {showImport && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-navy-800 border border-navy-600 rounded-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-navy-700">
+              <h2 className="font-semibold text-slate-100 flex items-center gap-2"><Sparkles size={16} className="text-teal-400" />Import Resume with AI</h2>
+              <button onClick={() => setShowImport(false)}><X size={18} className="text-slate-400" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-slate-500">Paste your existing resume text (or upload a .txt file). AI extracts it into the builder for you to review and refine.</p>
+              <label className="btn-secondary text-xs w-fit cursor-pointer">
+                <Upload size={13} /> Upload .txt
+                <input type="file" accept=".txt,text/plain" className="hidden" onChange={onFileUpload} />
+              </label>
+              <textarea rows={10} className="w-full resize-none text-xs" value={importText} onChange={e => setImportText(e.target.value)} placeholder="Paste your full resume here..." />
+            </div>
+            <div className="flex gap-3 p-5 border-t border-navy-700">
+              <button onClick={() => setShowImport(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={importResume} disabled={importing} className="btn-primary flex-1">
+                <Sparkles size={14} className={importing ? 'animate-pulse' : ''} />{importing ? 'Parsing...' : 'Import with AI'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

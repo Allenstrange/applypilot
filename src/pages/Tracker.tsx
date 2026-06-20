@@ -28,6 +28,17 @@ export default function Tracker() {
   const [detail, setDetail] = useState<Application | null>(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<ApplicationStatus | 'all'>('all')
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dragOverCol, setDragOverCol] = useState<ApplicationStatus | null>(null)
+
+  function dropOn(status: ApplicationStatus) {
+    setDragOverCol(null)
+    if (dragId) {
+      const app = apps.find(a => a.id === dragId)
+      if (app && app.status !== status) { updateStatus(dragId, status); addToast(`Moved to ${status}`, 'success') }
+    }
+    setDragId(null)
+  }
 
   useEffect(() => {
     setApps(storage.getApplications())
@@ -128,9 +139,21 @@ export default function Tracker() {
                   <h3 className={`text-sm font-semibold ${col.color}`}>{col.label}</h3>
                   <span className="badge badge-slate">{colApps.length}</span>
                 </div>
-                <div className="flex-1 space-y-2 overflow-y-auto">
+                <div
+                  onDragOver={e => { e.preventDefault(); if (dragOverCol !== col.key) setDragOverCol(col.key) }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCol(null) }}
+                  onDrop={e => { e.preventDefault(); dropOn(col.key) }}
+                  className={`flex-1 space-y-2 overflow-y-auto rounded-xl p-1 transition-colors ${dragOverCol === col.key ? 'bg-teal-500/5 ring-1 ring-teal-500/40' : ''}`}
+                >
                   {colApps.map(a => (
-                    <div key={a.id} onClick={() => setDetail(a)} className="card cursor-pointer hover:border-navy-600 transition-colors relative">
+                    <div
+                      key={a.id}
+                      draggable
+                      onDragStart={e => { setDragId(a.id); e.dataTransfer.effectAllowed = 'move' }}
+                      onDragEnd={() => { setDragId(null); setDragOverCol(null) }}
+                      onClick={() => setDetail(a)}
+                      className={`card cursor-pointer hover:border-navy-600 transition-all relative active:cursor-grabbing ${dragId === a.id ? 'opacity-40' : ''}`}
+                    >
                       {isOverdue(a) && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-400" title="Follow-up overdue" />}
                       <p className="text-sm font-semibold text-slate-200 leading-tight">{a.title}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{a.company}</p>
@@ -138,7 +161,11 @@ export default function Tracker() {
                       <p className="text-xs text-slate-600 mt-2">{formatDate(a.dateApplied)}</p>
                     </div>
                   ))}
-                  {colApps.length === 0 && <div className="text-center py-8 text-slate-700 text-xs">No applications</div>}
+                  {colApps.length === 0 && (
+                    <div className={`text-center py-8 text-xs border border-dashed rounded-lg transition-colors ${dragOverCol === col.key ? 'border-teal-500/40 text-teal-400' : 'border-transparent text-slate-700'}`}>
+                      {dragOverCol === col.key ? 'Drop here' : 'No applications'}
+                    </div>
+                  )}
                 </div>
               </div>
             )

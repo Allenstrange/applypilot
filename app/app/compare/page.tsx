@@ -158,9 +158,10 @@ function Comparison({ a, b }: { a: Source; b: Source }) {
       {/* Summary diff */}
       <div className="card rounded-xl p-6" data-testid="summary-diff">
         <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Summary diff</h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          <span className="text-red-500 line-through">Removed in B</span> ·{" "}
-          <span className="text-green-600 dark:text-green-400">Added in B</span> · unchanged
+        <p className="text-xs mb-4 flex flex-wrap items-center gap-2">
+          <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">Removed in B</span>
+          <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">Added in B</span>
+          <span className="text-slate-400 dark:text-slate-500">unchanged</span>
         </p>
         {a.profile.summary || b.profile.summary ? (
           <p className="text-sm leading-relaxed">
@@ -209,7 +210,7 @@ function ScoreColumn({ source, score, winner, side, testid }: { source: Source; 
           </div>
           <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">{source.name}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {source.profile.experience.length} roles · {source.profile.skills.split(",").filter((x) => x.trim()).length} skills
+            {source.profile.experience.length} {source.profile.experience.length === 1 ? "role" : "roles"} · {source.profile.skills.split(",").filter((x) => x.trim()).length} {source.profile.skills.split(",").filter((x) => x.trim()).length === 1 ? "skill" : "skills"}
           </div>
         </div>
       </div>

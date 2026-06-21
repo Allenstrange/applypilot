@@ -46,8 +46,11 @@ User choices:
   planned→applied→interview→offer with reached-counts and 3 conversion-rate dials + stat cards.
 - #6 **Status timeline** (`app/app/tracker/page.tsx`, store `statusHistory`): expandable per-app
   timeline; status changes append to history. Nav "Insights" added (BarChart3).
-### Phase 3 — Workflow
-- #12 Resume version comparison (side-by-side diff + scores).
+### Phase 3 — Workflow (2026-06-21) — DONE & verified (100%, 16/16)
+- #12 **Resume comparison** (`app/app/compare/page.tsx`, `lib/compare.ts`): pick two resumes
+  (or vs Master Profile) → side-by-side score rings, per-category breakdown with winner trophies,
+  case-insensitive skills set-diff (Only A / Both / Only B), and LCS word-level summary diff.
+  Nav "Compare Resumes" (GitCompare) + "Compare" link on the Resumes page.
 ### Phase 4 — Export & share (client-only approximations)
 - #1 Job URL extraction (client approx: CORS limits direct fetch — paste/proxy fallback).
 - #13 Shareable resume link (self-contained hash-encoded URL, no server).

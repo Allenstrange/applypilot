@@ -12,6 +12,7 @@ import {
   PenLine,
   Mic,
   ClipboardList,
+  BarChart3,
   Settings,
   ArrowLeft,
   Menu,
@@ -35,6 +36,7 @@ const NAV: NavItem[] = [
   { href: "/app/editor", label: "Editing Room", icon: PenLine },
   { href: "/app/interview", label: "Mock Interview", icon: Mic },
   { href: "/app/tracker", label: "Application Tracker", icon: ClipboardList },
+  { href: "/app/insights", label: "Insights", icon: BarChart3 },
   { href: "/app/settings", label: "AI Settings", icon: Settings },
 ];
 

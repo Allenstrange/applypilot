@@ -16,6 +16,15 @@ import type {
   TemplateId,
 } from "./types";
 
+/** Ensure a tracked application has a seeded status timeline. */
+function withInitialHistory(app: Application): Application {
+  if (app.statusHistory && app.statusHistory.length) return app;
+  return {
+    ...app,
+    statusHistory: [{ status: app.status, at: app.createdAt }],
+  };
+}
+
 export const emptyProfile: Profile = {
   name: "",
   title: "",
@@ -146,14 +155,21 @@ export const useStore = create<AppState>()(
         set((s) => ({ generations: { ...s.generations, [mode]: payload } })),
 
       addApplication: (app) =>
-        set((s) => ({ applications: [app, ...s.applications] })),
+        set((s) => ({ applications: [withInitialHistory(app), ...s.applications] })),
       removeApplication: (id) =>
         set((s) => ({ applications: s.applications.filter((a) => a.id !== id) })),
       setApplicationStatus: (id, status) =>
         set((s) => ({
-          applications: s.applications.map((a) =>
-            a.id === id ? { ...a, status } : a,
-          ),
+          applications: s.applications.map((a) => {
+            if (a.id !== id) return a;
+            const hist = a.statusHistory ?? [{ status: a.status, at: a.createdAt }];
+            const last = hist[hist.length - 1];
+            const statusHistory =
+              last && last.status === status
+                ? hist
+                : [...hist, { status, at: new Date().toISOString() }];
+            return { ...a, status, statusHistory };
+          }),
         })),
       saveCurrentToTracker: () => {
         const s = get();
@@ -175,6 +191,7 @@ export const useStore = create<AppState>()(
           status: "planned",
           createdAt: new Date().toISOString(),
           notes: "",
+          statusHistory: [{ status: "planned", at: new Date().toISOString() }],
           snapshot: {
             analysis: a,
             draftCV: s.draftCV ?? (JSON.parse(JSON.stringify(s.profile)) as Profile),

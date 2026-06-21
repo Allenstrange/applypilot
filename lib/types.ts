@@ -136,6 +136,8 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   notes?: string;
+  /** Status change history for the per-application timeline. */
+  statusHistory?: { status: ApplicationStatus; at: string }[];
   /** Snapshot so past generations can be reloaded without new API calls. */
   snapshot?: {
     analysis: Analysis;

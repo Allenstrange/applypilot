@@ -84,6 +84,7 @@ interface AppState {
   removeApplication: (id: number) => void;
   setApplicationStatus: (id: number, status: Application["status"]) => void;
   updateApplicationNotes: (id: number, notes: string) => void;
+  setApplicationResume: (id: number, resumeId: string) => void;
   saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
   loadApplication: (id: number) => boolean;
 
@@ -178,6 +179,17 @@ export const useStore = create<AppState>()(
             a.id === id ? { ...a, notes } : a,
           ),
         })),
+      setApplicationResume: (id, resumeId) =>
+        set((s) => {
+          const r = s.resumes.find((x) => x.id === resumeId);
+          return {
+            applications: s.applications.map((a) =>
+              a.id === id
+                ? { ...a, resumeId: resumeId || undefined, resumeName: r?.name }
+                : a,
+            ),
+          };
+        }),
       saveCurrentToTracker: () => {
         const s = get();
         const a = s.currentAnalysis;

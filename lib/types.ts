@@ -136,6 +136,9 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   notes?: string;
+  /** Which resume version was used for this application (for resume performance analytics). */
+  resumeId?: string;
+  resumeName?: string;
   /** Status change history for the per-application timeline. */
   statusHistory?: { status: ApplicationStatus; at: string }[];
   /** Snapshot so past generations can be reloaded without new API calls. */

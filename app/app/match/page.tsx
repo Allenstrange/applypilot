@@ -32,6 +32,8 @@ export default function MatchPage() {
   const providers = useStore((s) => s.providers);
   const addApplication = useStore((s) => s.addApplication);
   const addResume = useStore((s) => s.addResume);
+  const applications = useStore((s) => s.applications);
+  const setApplicationResume = useStore((s) => s.setApplicationResume);
 
   const [jobs, setJobs] = useState<JobInput[]>([{ id: crypto.randomUUID(), text: "" }]);
   const [results, setResults] = useState<JobMatch[]>([]);
@@ -116,10 +118,26 @@ export default function MatchPage() {
     setTailoring(m.id);
     toast("⏳ Tailoring your CV for this role…");
     try {
+      const name = `${m.title} – ${m.company}`;
       const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
-      addResume(`${m.title} – ${m.company}`, "classic", tailored);
+      const resumeId = addResume(name, "classic", tailored);
       exportCVPDF(tailored);
-      toast("✓ Tailored CV saved to your library & downloaded");
+      const existing = applications.find((a) => a.company === m.company && a.title === m.title);
+      if (existing) {
+        setApplicationResume(existing.id, resumeId);
+      } else {
+        addApplication({
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          company: m.company,
+          title: m.title,
+          status: "planned",
+          createdAt: new Date().toISOString(),
+          notes: `Tailored CV (${m.fit}% fit).`,
+          resumeId,
+          resumeName: name,
+        });
+      }
+      toast("✓ Tailored CV saved, linked & tracked");
     } catch (err) {
       toast("✕ " + (err as Error).message);
     } finally {

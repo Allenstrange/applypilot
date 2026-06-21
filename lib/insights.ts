@@ -119,17 +119,18 @@ function computeResponse(apps: Application[]): ResponseStats {
   };
 }
 
-/** Group applications by their CV angle (target role) and rank by interview rate. */
+/** Group applications by the actual resume used (falls back to target role) and rank by interview rate. */
 function computeCVPerf(apps: Application[]): CVPerf[] {
-  const groups = new Map<string, Application[]>();
+  const groups = new Map<string, { label: string; apps: Application[] }>();
   apps.forEach((a) => {
-    const label = (a.snapshot?.draftCV?.title || a.title || "Untitled").trim();
-    const arr = groups.get(label) ?? [];
-    arr.push(a);
-    groups.set(label, arr);
+    const label = (a.resumeName || a.snapshot?.draftCV?.title || a.title || "Untitled").trim();
+    const key = a.resumeId || label;
+    const g = groups.get(key) ?? { label, apps: [] };
+    g.apps.push(a);
+    groups.set(key, g);
   });
   const out: CVPerf[] = [];
-  groups.forEach((arr, label) => {
+  groups.forEach(({ label, apps: arr }) => {
     const applied = arr.filter((a) => maxStageReached(a) >= 1).length;
     if (applied === 0) return;
     const interview = arr.filter((a) => maxStageReached(a) >= 2).length;

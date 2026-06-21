@@ -115,16 +115,16 @@ export default function InsightsPage() {
             </div>
 
             <div className="card rounded-xl p-6 lg:col-span-2" data-testid="best-cv">
-              <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Best-performing CV angle</h2>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Which target role / positioning gets you the most interviews.</p>
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Resume performance</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Which resume gets you the most interviews. Link a CV to each application in the tracker.</p>
               {f.cvPerf.length === 0 ? (
-                <div className="text-sm text-slate-500 dark:text-slate-400">Apply to a few roles to see which CV angle performs best.</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Apply to a few roles to see which resume performs best.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left text-xs uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                        <th className="py-2 pr-4">CV angle</th>
+                        <th className="py-2 pr-4">Resume</th>
                         <th className="py-2 px-2">Applied</th>
                         <th className="py-2 px-2">Interview</th>
                         <th className="py-2 px-2">Offer</th>

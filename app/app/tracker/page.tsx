@@ -28,6 +28,8 @@ export default function TrackerPage() {
   const setStatus = useStore((s) => s.setApplicationStatus);
   const removeApp = useStore((s) => s.removeApplication);
   const loadApp = useStore((s) => s.loadApplication);
+  const resumes = useStore((s) => s.resumes);
+  const setAppResume = useStore((s) => s.setApplicationResume);
   const [expanded, setExpanded] = useState<number | null>(null);
 
   const apps = hydrated ? applications : [];
@@ -86,6 +88,7 @@ export default function TrackerPage() {
                   <th className="p-4">Role</th>
                   <th className="p-4">Location</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4">CV used</th>
                   <th className="p-4">Date</th>
                   <th className="p-4">Actions</th>
                 </tr>
@@ -125,6 +128,25 @@ export default function TrackerPage() {
                           ))}
                         </select>
                       </td>
+                      <td className="p-4">
+                        <select
+                          value={app.resumeId ?? ""}
+                          onChange={(e) => {
+                            setAppResume(app.id, e.target.value);
+                            toast(e.target.value ? "✓ CV linked" : "✓ CV unlinked");
+                          }}
+                          data-testid={`resume-select-${app.id}`}
+                          className="text-xs px-2 py-1 rounded-lg max-w-[160px] truncate"
+                        >
+                          <option value="">— None —</option>
+                          {resumes.map((r) => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                          {app.resumeId && !resumes.find((r) => r.id === app.resumeId) ? (
+                            <option value={app.resumeId}>{app.resumeName ?? "Deleted resume"}</option>
+                          ) : null}
+                        </select>
+                      </td>
                       <td className="p-4 text-slate-500 text-xs dark:text-slate-400">
                         {new Date(app.createdAt).toLocaleDateString("en-GB")}
                       </td>
@@ -150,7 +172,7 @@ export default function TrackerPage() {
                     </tr>
                     {expanded === app.id ? (
                       <tr className="bg-slate-50 dark:bg-slate-900/40">
-                        <td colSpan={7} className="px-6 pb-5 pt-1">
+                        <td colSpan={8} className="px-6 pb-5 pt-1">
                           <Timeline app={app} />
                         </td>
                       </tr>

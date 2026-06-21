@@ -82,6 +82,16 @@ Finished 5 partially-built enhancement items:
 - **Notes edit UI** (`app/app/tracker/page.tsx` `NotesEditor`, store `updateApplicationNotes`):
   editable per-application notes textarea with Save + unsaved-changes indicator. Verified e2e.
 
+## Enhancement round 2 — Per-resume performance tracking (2026-06-21)
+- `Application` now carries `resumeId`/`resumeName` (`lib/types.ts`). Store action
+  `setApplicationResume` (`lib/store.ts`) links a resume to an application.
+- Job Matcher "Tailor CV" now auto-saves the tailored resume to the library AND tracks/links
+  the application (dedups by company+title). Tracker has a new "CV used" dropdown column to
+  attach/reassign a resume to any application.
+- `computeCVPerf` (`lib/insights.ts`) now groups by actual `resumeId` (fallback to target role
+  for legacy apps); Insights card renamed "Resume performance". Backward-compatible, no migration.
+- Verified e2e: CV-used dropdown pre-selects linked resume; analytics aggregate by resume.
+
 ## Ops notes (2026-06-21)
 - Repo had no node_modules and no supervisor program. Ran `yarn install --ignore-engines`
   (Node 20 vs pdfjs-dist wanting 22 — client-side lib, safe) and created

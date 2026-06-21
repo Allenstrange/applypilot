@@ -41,9 +41,11 @@ User choices:
 - `lib/useHydrated.ts` switched to useState+useEffect; `ThemeProvider.tsx` mount-gated.
 
 ## Backlog (next phases)
-### Phase 2 — Analytics & tracking
-- #4 Application funnel dashboard (applied→interview→offer charts, conversion rates).
-- #6 Status timeline per application.
+### Phase 2 — Analytics & tracking (2026-06-21) — DONE & verified (100%)
+- #4 **Insights funnel** (`app/app/insights/page.tsx`, `lib/insights.ts`): conversion funnel
+  planned→applied→interview→offer with reached-counts and 3 conversion-rate dials + stat cards.
+- #6 **Status timeline** (`app/app/tracker/page.tsx`, store `statusHistory`): expandable per-app
+  timeline; status changes append to history. Nav "Insights" added (BarChart3).
 ### Phase 3 — Workflow
 - #12 Resume version comparison (side-by-side diff + scores).
 ### Phase 4 — Export & share (client-only approximations)

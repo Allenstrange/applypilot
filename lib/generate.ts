@@ -162,3 +162,51 @@ Original: "${bullet}"`;
   const r = (await callAI(prompt, providers)) as { enhanced?: string };
   return r.enhanced ?? bullet;
 }
+
+/**
+ * One-click ATS optimisation: rewrites summary, skills and every experience
+ * bullet to align with the job — without inventing roles, companies or dates.
+ */
+export async function optimizeResumeForJob(
+  profile: Profile,
+  analysis: Analysis,
+  providers: ProviderSettings,
+): Promise<Profile> {
+  const prompt = `You are an ATS optimisation expert. Rewrite the candidate's resume CONTENT to maximise alignment with the target job, WITHOUT inventing experience, employers, dates or qualifications.
+
+Rules:
+- Keep the SAME companies, roles, dates and education entirely unchanged.
+- Rewrite the professional summary to be punchy and tailored to this job.
+- Reorder/expand the skills list to surface the job's key skills the candidate genuinely has.
+- Rewrite each role's bullets using strong action verbs, JD keywords and quantified impact. If a bullet has no metric, you MAY add a realistic placeholder like [X%] or [N users] — never fabricate specific numbers.
+- Return EXACTLY the same number of experience entries, in the same order.
+- Respond with valid JSON only. No prose, no markdown.
+
+${context(profile, analysis)}
+
+JSON schema:
+{
+  "summary": "rewritten professional summary",
+  "skills": "comma-separated, prioritised skills",
+  "certs": "newline-separated certifications (keep existing, do not invent)",
+  "experience": [
+    { "bullets": "newline-separated rewritten bullets for role 1" }
+  ]
+}`;
+  const r = (await callAI(prompt, providers)) as {
+    summary?: string;
+    skills?: string;
+    certs?: string;
+    experience?: { bullets?: string }[];
+  };
+  return {
+    ...profile,
+    summary: String(r.summary ?? profile.summary),
+    skills: String(r.skills ?? profile.skills),
+    certs: String(r.certs ?? profile.certs),
+    experience: profile.experience.map((e, i) => ({
+      ...e,
+      bullets: String(r.experience?.[i]?.bullets ?? e.bullets),
+    })),
+  };
+}

@@ -176,3 +176,34 @@ export interface ResumeScore {
   categories: ScoreCategory[];
   issues: ScoreIssue[];
 }
+
+
+// ---------- Mock interview ----------
+
+export interface InterviewFeedback {
+  score: number; // 0-100
+  strengths: string[];
+  improvements: string[];
+  modelAnswer: string;
+}
+
+export interface InterviewTurn {
+  question: string;
+  answer?: string;
+  feedback?: InterviewFeedback;
+}
+
+// ---------- Job matcher ----------
+
+export type MatchVerdict = "strong" | "good" | "stretch" | "weak";
+
+export interface JobMatch {
+  id: string;
+  company: string;
+  title: string;
+  fit: number; // 0-100
+  verdict: MatchVerdict;
+  reasons: string[];
+  gaps: string[];
+  jd: string;
+}

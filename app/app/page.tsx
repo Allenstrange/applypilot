@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, ClipboardList, Settings } from "lucide-react";
+import { Search, User, ClipboardList, Settings, Target, Mic } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated, useNow } from "@/lib/useHydrated";
 import PageHeader from "@/components/PageHeader";
@@ -40,6 +40,12 @@ export default function DashboardPage() {
           <div className="space-y-2">
             <QuickAction href="/app/analyze" primary icon={<Search className="w-4 h-4" />}>
               Analyse a New Job
+            </QuickAction>
+            <QuickAction href="/app/match" icon={<Target className="w-4 h-4" />}>
+              Match &amp; Rank Jobs
+            </QuickAction>
+            <QuickAction href="/app/interview" icon={<Mic className="w-4 h-4" />}>
+              Practise Mock Interview
             </QuickAction>
             <QuickAction href="/app/profile" icon={<User className="w-4 h-4" />}>
               Edit Master Profile

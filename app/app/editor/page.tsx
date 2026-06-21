@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   Save,
+  Wand2,
   FileText,
   Mail,
   ListChecks,
@@ -23,6 +24,7 @@ import {
   generateInterviewPrep,
   generateOutreach,
   enhanceBullet,
+  optimizeResumeForJob,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
 import { copyToClipboard } from "@/lib/download";
@@ -131,8 +133,28 @@ export default function EditorPage() {
 
 function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) {
   const updateDraftCV = useStore((s) => s.updateDraftCV);
+  const setDraftCV = useStore((s) => s.setDraftCV);
   const providers = useStore((s) => s.providers);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
+
+  async function optimizeAll() {
+    if (!isAIConfigured(providers)) {
+      toast("⚠ AI provider not configured");
+      return;
+    }
+    setOptimizing(true);
+    toast("⏳ ATS-optimising your whole CV…");
+    try {
+      const optimized = await optimizeResumeForJob(draftCV, analysis, providers);
+      setDraftCV(optimized);
+      toast("✓ CV optimised for this job");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setOptimizing(false);
+    }
+  }
 
   const updateExp = (i: number, patch: Partial<Profile["experience"][number]>) =>
     updateDraftCV({
@@ -227,9 +249,14 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
             ))}
           </div>
         </Section>
-        <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-          <Download className="w-4 h-4" /> Download CV (PDF)
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-500">
+            {optimizing ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />} One-click ATS optimise
+          </button>
+          <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} data-testid="download-cv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download CV (PDF)
+          </button>
+        </div>
       </div>
 
       {/* Preview */}

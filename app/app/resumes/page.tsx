@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FilePlus2, Copy, Trash2, FileText } from "lucide-react";
+import { FilePlus2, Copy, Trash2, FileText, GitCompare } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";
@@ -32,9 +32,16 @@ export default function ResumesPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
         <PageHeader title="Resumes" subtitle="Build and keep multiple tailored resume versions." />
-        <button type="button" onClick={createFromProfile} className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-          <FilePlus2 className="w-4 h-4" /> New resume
-        </button>
+        <div className="flex items-center gap-2">
+          {resumes.length >= 1 ? (
+            <Link href="/app/compare" data-testid="compare-link" className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+              <GitCompare className="w-4 h-4" /> Compare
+            </Link>
+          ) : null}
+          <button type="button" onClick={createFromProfile} className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+            <FilePlus2 className="w-4 h-4" /> New resume
+          </button>
+        </div>
       </div>
 
       {list.length === 0 ? (

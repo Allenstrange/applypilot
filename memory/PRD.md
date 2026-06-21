@@ -51,7 +51,7 @@ User choices:
   (or vs Master Profile) → side-by-side score rings, per-category breakdown with winner trophies,
   case-insensitive skills set-diff (Only A / Both / Only B), and LCS word-level summary diff.
   Nav "Compare Resumes" (GitCompare) + "Compare" link on the Resumes page.
-### Phase 4 — Export & share (2026-06-21) — DONE (verified via compile/route/round-trip; full test cycle skipped to conserve credits)
+### Phase 4 — Export & share (2026-06-21) — DONE & verified (100%, testing agent iteration_4)
 - #1 **Job URL import** (`lib/jobUrl.ts`, analyze page): paste a posting URL → fetches readable
   text via the r.jina.ai reader proxy (CORS-friendly) and, if AI is configured, auto-fills
   company/title/location. Graceful "paste manually" fallback. NOTE: depends on the external

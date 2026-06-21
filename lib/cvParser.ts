@@ -60,7 +60,53 @@ async function readDocxText(file: File): Promise<string> {
   return result.value || "";
 }
 
+/**
+ * Safari/WebKit does not implement async iteration on ReadableStream
+ * (`ReadableStream.prototype[Symbol.asyncIterator]` is undefined), which makes
+ * pdf.js v6's `getTextContent()` throw "undefined is not a function (near
+ * '...value of readableStream...')". This adds the WHATWG-spec async iterator.
+ */
+function ensureReadableStreamAsyncIterator() {
+  if (typeof ReadableStream === "undefined") return;
+  const proto = ReadableStream.prototype as unknown as Record<symbol | string, unknown>;
+  if (typeof proto[Symbol.asyncIterator] === "function") return;
+  const values = function (
+    this: ReadableStream,
+    { preventCancel = false }: { preventCancel?: boolean } = {},
+  ) {
+    const reader = this.getReader();
+    return {
+      async next() {
+        try {
+          const result = await reader.read();
+          if (result.done) reader.releaseLock();
+          return result;
+        } catch (e) {
+          reader.releaseLock();
+          throw e;
+        }
+      },
+      async return(value: unknown) {
+        if (!preventCancel) {
+          const cancelPromise = reader.cancel(value);
+          reader.releaseLock();
+          await cancelPromise;
+        } else {
+          reader.releaseLock();
+        }
+        return { done: true, value };
+      },
+      [Symbol.asyncIterator]() {
+        return this;
+      },
+    };
+  };
+  proto.values = values;
+  proto[Symbol.asyncIterator] = values;
+}
+
 async function readPdfText(file: File): Promise<string> {
+  ensureReadableStreamAsyncIterator();
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
   const arrayBuffer = await file.arrayBuffer();

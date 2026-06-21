@@ -121,6 +121,13 @@ Built 8 features benchmarked against FlowCV/Jobscan/Teal/Rezi/Kickresume/Enhancv
 - Store gained `onboarded: boolean` + `setOnboarded`. Sidebar nav links carry `data-tour` selectors.
 - Verified e2e: welcome → tour → step/route advance all work; tsc clean.
 
+## Bug fix — CV import crash on Safari (2026-06-21)
+- Symptom: "undefined is not a function (near '...value of readableStream...')" when importing a PDF.
+- Cause: `pdfjs-dist@6` `getTextContent()` uses `for await (const v of readableStream)`; Safari/WebKit
+  has no `ReadableStream.prototype[Symbol.asyncIterator]`.
+- Fix: added the WHATWG-spec async-iterator polyfill (guarded, only when missing) in
+  `lib/cvParser.ts` `readPdfText()` before pdf.js loads. Verified PDF import runs without error.
+
 ## Notes / constraints
 - No backend by user choice. #1 and #13 must be client-side approximations.
 - Provider API keys are user-supplied and stored only in the browser.

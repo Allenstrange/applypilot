@@ -65,6 +65,28 @@ User choices:
 
 ## ALL 10 SELECTED FEATURES COMPLETE (1,2,3,4,6,7,12,13,14,15).
 
+## Enhancement round 1 — Partials completed (2026-06-21)
+Finished 5 partially-built enhancement items:
+- **Bulk CV tailoring** (`app/app/match/page.tsx`, uses `lib/generate.optimizeResumeForJob`):
+  per-result "Tailor CV" (saves a tailored resume to the library + downloads PDF) and a
+  "Tailor CVs for all" bulk button that ATS-optimises every ranked job and saves each to the
+  resume library. (AI-dependent — runs with the user's configured provider key.)
+- **Funnel analytics depth** (`lib/insights.ts`, insights page): added `computeResponse`
+  (avg days applied→interview, interview→offer, and applied→first-response from statusHistory)
+  and `computeCVPerf` (best-performing CV angle, grouped by target role, ranked by interview
+  rate). Two new cards on the Insights page. Verified end-to-end with seeded data.
+- **3-option AI bullet rewriter** (`lib/generate.enhanceBulletVariants`, editor CVTab):
+  the per-bullet ✨AI menu now fetches THREE rewrite options shown in a pick-list. (AI-dependent.)
+- **Inline keyword gaps** (editor CVTab Live Match Rate panel): missing JD keywords now shown
+  inline as red dashed chips (+ matched in green), updating live as you type. Verified visually.
+- **Notes edit UI** (`app/app/tracker/page.tsx` `NotesEditor`, store `updateApplicationNotes`):
+  editable per-application notes textarea with Save + unsaved-changes indicator. Verified e2e.
+
+## Ops notes (2026-06-21)
+- Repo had no node_modules and no supervisor program. Ran `yarn install --ignore-engines`
+  (Node 20 vs pdfjs-dist wanting 22 — client-side lib, safe) and created
+  `/etc/supervisor/conf.d/nextapp.conf` (`yarn dev`, port 3000, dir /app). App runs as `nextapp`.
+
 ## Notes / constraints
 - No backend by user choice. #1 and #13 must be client-side approximations.
 - Provider API keys are user-supplied and stored only in the browser.

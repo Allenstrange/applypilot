@@ -83,6 +83,7 @@ interface AppState {
   addApplication: (app: Application) => void;
   removeApplication: (id: number) => void;
   setApplicationStatus: (id: number, status: Application["status"]) => void;
+  updateApplicationNotes: (id: number, notes: string) => void;
   saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
   loadApplication: (id: number) => boolean;
 
@@ -170,6 +171,12 @@ export const useStore = create<AppState>()(
                 : [...hist, { status, at: new Date().toISOString() }];
             return { ...a, status, statusHistory };
           }),
+        })),
+      updateApplicationNotes: (id, notes) =>
+        set((s) => ({
+          applications: s.applications.map((a) =>
+            a.id === id ? { ...a, notes } : a,
+          ),
         })),
       saveCurrentToTracker: () => {
         const s = get();

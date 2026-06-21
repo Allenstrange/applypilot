@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Target, Plus, Trash2, Sparkles, ClipboardList } from "lucide-react";
+import { Target, Plus, Trash2, Sparkles, ClipboardList, Wand2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { isAIConfigured, AI_PROVIDERS } from "@/lib/ai";
 import { matchJob } from "@/lib/match";
+import { optimizeResumeForJob } from "@/lib/generate";
+import { exportCVPDF } from "@/lib/pdf";
 import { toast } from "@/lib/toast";
-import type { JobMatch, Application } from "@/lib/types";
+import type { JobMatch, Application, Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 
 interface JobInput {
@@ -29,10 +31,13 @@ export default function MatchPage() {
   const profile = useStore((s) => s.profile);
   const providers = useStore((s) => s.providers);
   const addApplication = useStore((s) => s.addApplication);
+  const addResume = useStore((s) => s.addResume);
 
   const [jobs, setJobs] = useState<JobInput[]>([{ id: crypto.randomUUID(), text: "" }]);
   const [results, setResults] = useState<JobMatch[]>([]);
   const [busy, setBusy] = useState(false);
+  const [tailoring, setTailoring] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const aiReady = hydrated && isAIConfigured(providers);
   const profileReady = hydrated && !!(profile.name && profile.skills);
@@ -95,6 +100,49 @@ export default function MatchPage() {
     };
     addApplication(app);
     toast("✓ Added to tracker");
+  }
+
+  function matchToAnalysis(m: JobMatch): Analysis {
+    return {
+      company: m.company, title: m.title, location: "", url: "", jd: m.jd,
+      jdKeywords: [], matched: [], missing: [], gaps: [], overallFit: m.fit,
+      senioritySignal: "", domainTags: [], atsWarnings: [], isSemantic: false,
+    };
+  }
+
+  async function tailorOne(m: JobMatch) {
+    if (!profileReady) { toast("⚠ Complete your master profile first"); return; }
+    if (!aiReady) { toast("⚠ Configure an AI provider in Settings"); return; }
+    setTailoring(m.id);
+    toast("⏳ Tailoring your CV for this role…");
+    try {
+      const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
+      addResume(`${m.title} – ${m.company}`, "classic", tailored);
+      exportCVPDF(tailored);
+      toast("✓ Tailored CV saved to your library & downloaded");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setTailoring(null);
+    }
+  }
+
+  async function tailorAll() {
+    if (!profileReady) { toast("⚠ Complete your master profile first"); return; }
+    if (!aiReady) { toast("⚠ Configure an AI provider in Settings"); return; }
+    if (results.length === 0) return;
+    setBulkBusy(true);
+    toast(`⏳ Tailoring ${results.length} CV${results.length > 1 ? "s" : ""}…`);
+    let ok = 0;
+    for (const m of results) {
+      try {
+        const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
+        addResume(`${m.title} – ${m.company}`, "classic", tailored);
+        ok += 1;
+      } catch { /* skip individual failures */ }
+    }
+    setBulkBusy(false);
+    toast(ok ? `✓ Saved ${ok} tailored CV${ok > 1 ? "s" : ""} to your library` : "✕ Tailoring failed — check your API key");
   }
 
   return (
@@ -174,11 +222,30 @@ export default function MatchPage() {
 
       {results.length > 0 ? (
         <div className="space-y-4" data-testid="match-results">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Ranked results ({results.length})
-          </h2>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              Ranked results ({results.length})
+            </h2>
+            <button
+              type="button"
+              onClick={tailorAll}
+              disabled={bulkBusy}
+              data-testid="bulk-tailor-btn"
+              className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+            >
+              {bulkBusy ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />}
+              Tailor CVs for all
+            </button>
+          </div>
           {results.map((m, i) => (
-            <ResultCard key={m.id} match={m} rank={i + 1} onTrack={() => track(m)} />
+            <ResultCard
+              key={m.id}
+              match={m}
+              rank={i + 1}
+              onTrack={() => track(m)}
+              onTailor={() => tailorOne(m)}
+              tailoring={tailoring === m.id}
+            />
           ))}
         </div>
       ) : null}
@@ -186,7 +253,7 @@ export default function MatchPage() {
   );
 }
 
-function ResultCard({ match: m, rank, onTrack }: { match: JobMatch; rank: number; onTrack: () => void }) {
+function ResultCard({ match: m, rank, onTrack, onTailor, tailoring }: { match: JobMatch; rank: number; onTrack: () => void; onTailor: () => void; tailoring: boolean }) {
   const v = VERDICT_STYLE[m.verdict];
   const C = 2 * Math.PI * 26;
   return (
@@ -219,14 +286,25 @@ function ResultCard({ match: m, rank, onTrack }: { match: JobMatch; rank: number
           <div className="text-sm text-slate-500 dark:text-slate-400">{m.company}</div>
         </div>
 
-        <button
-          type="button"
-          onClick={onTrack}
-          data-testid={`track-match-${rank}`}
-          className="btn-ghost px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 self-start"
-        >
-          <ClipboardList className="w-3.5 h-3.5" /> Track
-        </button>
+        <div className="flex flex-col gap-2 self-start">
+          <button
+            type="button"
+            onClick={onTrack}
+            data-testid={`track-match-${rank}`}
+            className="btn-ghost px-3 py-2 rounded-lg text-xs flex items-center gap-1.5"
+          >
+            <ClipboardList className="w-3.5 h-3.5" /> Track
+          </button>
+          <button
+            type="button"
+            onClick={onTailor}
+            disabled={tailoring}
+            data-testid={`tailor-match-${rank}`}
+            className="btn-primary px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {tailoring ? <span className="spinner" /> : <Wand2 className="w-3.5 h-3.5" />} Tailor CV
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">

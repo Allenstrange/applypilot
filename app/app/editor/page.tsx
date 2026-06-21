@@ -23,7 +23,7 @@ import {
   generateResumeSummary,
   generateInterviewPrep,
   generateOutreach,
-  enhanceBullet,
+  enhanceBulletVariants,
   optimizeResumeForJob,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
@@ -138,6 +138,8 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   const providers = useStore((s) => s.providers);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
+  const [variants, setVariants] = useState<{ key: string; options: string[] } | null>(null);
+  const [variantsLoading, setVariantsLoading] = useState<string | null>(null);
 
   async function optimizeAll() {
     if (!isAIConfigured(providers)) {
@@ -168,21 +170,32 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     updateExp(i, { bullets: lines.join("\n") });
   };
 
-  async function enhance(i: number, j: number, mode: "star" | "professional" | "metrics") {
+  async function loadVariants(i: number, j: number, mode: "star" | "professional" | "metrics") {
     setOpenMenu(null);
     if (!isAIConfigured(providers)) {
       toast("⚠ AI provider not configured");
       return;
     }
     const lines = draftCV.experience[i].bullets.split("\n");
-    toast("⏳ Enhancing bullet…");
+    const key = `${i}-${j}`;
+    setVariants(null);
+    setVariantsLoading(key);
+    toast("⏳ Generating 3 rewrite options…");
     try {
-      const enhanced = await enhanceBullet(lines[j], mode, providers);
-      updateBullet(i, j, enhanced);
-      toast("✓ Bullet enhanced");
+      const options = await enhanceBulletVariants(lines[j], mode, providers);
+      setVariants({ key, options });
+      toast("✓ Pick your favourite rewrite");
     } catch (err) {
       toast("✕ " + (err as Error).message);
+    } finally {
+      setVariantsLoading(null);
     }
+  }
+
+  function applyVariant(i: number, j: number, text: string) {
+    updateBullet(i, j, text);
+    setVariants(null);
+    toast("✓ Bullet updated");
   }
 
   // Live match rate
@@ -194,6 +207,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     draftCV.experience.map((e) => e.tools + " " + e.bullets).join(" ")
   ).toLowerCase();
   const matched = analysis.jdKeywords.filter((k) => draftText.includes(k.toLowerCase()));
+  const missing = analysis.jdKeywords.filter((k) => !draftText.includes(k.toLowerCase()));
   const score = analysis.jdKeywords.length
     ? Math.round((matched.length / analysis.jdKeywords.length) * 100)
     : 0;
@@ -228,16 +242,36 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                       />
                       <button
                         type="button"
+                        data-testid={`bullet-ai-${i}-${j}`}
                         onClick={() => setOpenMenu(openMenu === `${i}-${j}` ? null : `${i}-${j}`)}
                         className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
                       >
-                        ✨ AI
+                        {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>
                       {openMenu === `${i}-${j}` ? (
                         <div className="absolute top-7 right-1 z-10 glass rounded-lg p-1 text-xs min-w-44 shadow-xl">
-                          <MenuItem onClick={() => enhance(i, j, "star")}>Rewrite in STAR format</MenuItem>
-                          <MenuItem onClick={() => enhance(i, j, "professional")}>Make more professional</MenuItem>
-                          <MenuItem onClick={() => enhance(i, j, "metrics")}>Add metric placeholders</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "star")}>Rewrite in STAR format</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "professional")}>Make more professional</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "metrics")}>Add metric placeholders</MenuItem>
+                        </div>
+                      ) : null}
+                      {variants && variants.key === `${i}-${j}` ? (
+                        <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`bullet-variants-${i}-${j}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+                            <button type="button" onClick={() => setVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
+                          </div>
+                          {variants.options.map((opt, k) => (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={() => applyVariant(i, j, opt)}
+                              data-testid={`bullet-variant-${i}-${j}-${k}`}
+                              className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+                            >
+                              <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+                            </button>
+                          ))}
                         </div>
                       ) : null}
                     </div>
@@ -273,6 +307,42 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>
           </div>
+          {analysis.jdKeywords.length ? (
+            <div className="mt-3 space-y-2" data-testid="inline-keyword-gaps">
+              {missing.length ? (
+                <>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
+                    Missing keywords ({missing.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {missing.map((k) => (
+                      <span
+                        key={k}
+                        title="Not yet in your CV — weave it in if you have the experience"
+                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30"
+                      >
+                        + {k}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-[11px] text-green-600 dark:text-green-400">✓ All JD keywords present</div>
+              )}
+              {matched.length ? (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {matched.map((k) => (
+                    <span
+                      key={k}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25"
+                    >
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div className="rounded-xl overflow-hidden">
           <CVPreview profile={draftCV} keywords={analysis.jdKeywords} />

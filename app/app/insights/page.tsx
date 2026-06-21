@@ -99,6 +99,56 @@ export default function InsightsPage() {
               <Rate label="Overall offer rate" value={f.conv.offerRate} color="#6366f1" testid="rate-offer" />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="card rounded-xl p-6" data-testid="response-times">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Response times</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Average days between stages, from your status history.</p>
+              <div className="grid grid-cols-3 gap-3">
+                <MiniStat label="Avg response" value={f.response.avgResponseDays} testid="stat-avg-response" />
+                <MiniStat label="Applied → Interview" value={f.response.appliedToInterviewDays} testid="stat-applied-interview-days" />
+                <MiniStat label="Interview → Offer" value={f.response.interviewToOfferDays} testid="stat-interview-offer-days" />
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+                {f.response.sampleSize} application{f.response.sampleSize === 1 ? "" : "s"} with a recorded response
+              </p>
+            </div>
+
+            <div className="card rounded-xl p-6 lg:col-span-2" data-testid="best-cv">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Best-performing CV angle</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Which target role / positioning gets you the most interviews.</p>
+              {f.cvPerf.length === 0 ? (
+                <div className="text-sm text-slate-500 dark:text-slate-400">Apply to a few roles to see which CV angle performs best.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                        <th className="py-2 pr-4">CV angle</th>
+                        <th className="py-2 px-2">Applied</th>
+                        <th className="py-2 px-2">Interview</th>
+                        <th className="py-2 px-2">Offer</th>
+                        <th className="py-2 pl-2">Interview rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {f.cvPerf.map((c, i) => (
+                        <tr key={c.label} data-testid={`cv-perf-row-${i}`} className="border-b border-slate-100 dark:border-slate-800">
+                          <td className="py-2 pr-4 font-medium text-slate-900 dark:text-slate-100">
+                            {i === 0 ? <span className="mr-1" title="Top performer">🏆</span> : null}{c.label}
+                          </td>
+                          <td className="py-2 px-2 text-slate-600 dark:text-slate-300">{c.applied}</td>
+                          <td className="py-2 px-2 text-amber-600 dark:text-amber-400">{c.interview}</td>
+                          <td className="py-2 px-2 text-green-600 dark:text-green-400">{c.offer}</td>
+                          <td className="py-2 pl-2 font-semibold text-slate-900 dark:text-slate-100">{c.interviewRate}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>
@@ -110,6 +160,16 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
     <div className="card stat-card rounded-xl p-5">
       <div className="text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">{label}</div>
       <div className={`text-3xl font-bold mt-2 ${color}`}>{value}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, testid }: { label: string; value: number; testid: string }) {
+  return (
+    <div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-center" data-testid={testid}>
+      <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value > 0 ? value : "–"}</div>
+      <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1 dark:text-slate-400">{label}</div>
+      <div className="text-[10px] text-slate-400 h-3">{value > 0 ? "days" : ""}</div>
     </div>
   );
 }

@@ -163,6 +163,27 @@ Original: "${bullet}"`;
   return r.enhanced ?? bullet;
 }
 
+/** Produce THREE distinct rewrite options for a single CV bullet. */
+export async function enhanceBulletVariants(
+  bullet: string,
+  mode: "star" | "professional" | "metrics",
+  providers: ProviderSettings,
+): Promise<string[]> {
+  const instructions: Record<typeof mode, string> = {
+    star: "Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise.",
+    professional:
+      "Make this CV bullet point more professional and impactful. Use strong action verbs.",
+    metrics:
+      "Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]).",
+  };
+  const prompt = `${instructions[mode]} Produce THREE meaningfully different options the candidate can choose from. Keep each truthful and concise (one line each). Return valid JSON only: {"options": ["option 1", "option 2", "option 3"]}
+
+Original: "${bullet}"`;
+  const r = (await callAI(prompt, providers)) as { options?: unknown };
+  const opts = asArray(r.options).map((s) => s.trim()).filter(Boolean);
+  return opts.length ? opts.slice(0, 3) : [bullet];
+}
+
 /**
  * One-click ATS optimisation: rewrites summary, skills and every experience
  * bullet to align with the job — without inventing roles, companies or dates.

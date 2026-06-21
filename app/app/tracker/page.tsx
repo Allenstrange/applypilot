@@ -202,11 +202,40 @@ function Timeline({ app }: { app: Application }) {
           </motion.li>
         ))}
       </ol>
-      {app.notes ? (
-        <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-          <span className="font-semibold">Notes: </span>{app.notes}
-        </p>
-      ) : null}
+      <NotesEditor app={app} />
+    </div>
+  );
+}
+
+function NotesEditor({ app }: { app: Application }) {
+  const updateNotes = useStore((s) => s.updateApplicationNotes);
+  const [value, setValue] = useState(app.notes ?? "");
+  const dirty = value !== (app.notes ?? "");
+  return (
+    <div className="mt-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+        Edit notes
+      </div>
+      <textarea
+        rows={3}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        data-testid={`notes-input-${app.id}`}
+        placeholder="Add private notes — recruiter name, salary, next steps…"
+        className="w-full px-3 py-2 rounded-lg text-xs"
+      />
+      <div className="flex items-center gap-2 mt-1.5">
+        <button
+          type="button"
+          disabled={!dirty}
+          onClick={() => { updateNotes(app.id, value.trim()); toast("✓ Notes saved"); }}
+          data-testid={`notes-save-${app.id}`}
+          className="btn-primary px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
+        >
+          Save notes
+        </button>
+        {dirty ? <span className="text-[11px] text-amber-600 dark:text-amber-400">Unsaved changes</span> : null}
+      </div>
     </div>
   );
 }

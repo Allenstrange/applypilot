@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Menu,
   X,
+  Compass,
   type LucideIcon,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -67,6 +68,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             key={href}
             href={href}
             onClick={onNavigate}
+            data-tour={href}
             className={`sidebar-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 text-sm ${
               active ? "active" : ""
             }`}
@@ -84,6 +86,14 @@ function SidebarFooter() {
   return (
     <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-3">
       <ThemeToggle />
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event("applypilot:start-tour"))}
+        data-testid="start-tour-btn"
+        className="text-xs text-[var(--text-faint)] flex items-center gap-2 hover:text-[var(--text-muted)]"
+      >
+        <Compass className="w-3.5 h-3.5" /> Take a tour
+      </button>
       <Link href="/" className="text-xs text-[var(--text-faint)] flex items-center gap-2 hover:text-[var(--text-muted)]">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to site
       </Link>

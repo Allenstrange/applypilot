@@ -56,6 +56,7 @@ interface AppState {
   generations: Generations;
   resumes: ResumeDoc[];
   providers: ProviderSettings;
+  onboarded: boolean;
 
   // ----- profile -----
   setProfile: (patch: Partial<Profile>) => void;
@@ -91,6 +92,9 @@ interface AppState {
   // ----- providers -----
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, patch: Partial<ProviderConfig>) => void;
+
+  // ----- onboarding -----
+  setOnboarded: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -103,6 +107,7 @@ export const useStore = create<AppState>()(
       generations: {},
       resumes: [],
       providers: defaultProviders,
+      onboarded: false,
 
       setProfile: (patch) =>
         set((s) => ({ profile: { ...s.profile, ...patch } })),
@@ -240,6 +245,8 @@ export const useStore = create<AppState>()(
             [id]: { ...s.providers[id], ...patch },
           },
         })),
+
+      setOnboarded: (v) => set({ onboarded: v }),
     }),
     {
       name: "applypilot_v4",

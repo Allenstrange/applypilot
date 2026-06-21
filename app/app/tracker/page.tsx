@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Download, Trash2, FolderOpen, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { Download, Trash2, FolderOpen, Clock, ChevronDown, ChevronRight, LayoutGrid, Table2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { downloadText } from "@/lib/download";
@@ -31,6 +31,8 @@ export default function TrackerPage() {
   const resumes = useStore((s) => s.resumes);
   const setAppResume = useStore((s) => s.setApplicationResume);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [view, setView] = useState<"table" | "board">("table");
+  const [dragId, setDragId] = useState<number | null>(null);
 
   const apps = hydrated ? applications : [];
 
@@ -64,13 +66,83 @@ export default function TrackerPage() {
     }
   }
 
+  function KanbanBoard() {
+    return (
+      <div className="p-4 overflow-x-auto" data-testid="kanban-board">
+        <div className="flex gap-4 min-w-max">
+          {STATUSES.map((st) => {
+            const col = apps.filter((a) => a.status === st);
+            return (
+              <div
+                key={st}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (dragId !== null) {
+                    setStatus(dragId, st);
+                    toast("✓ Moved to " + st);
+                    setDragId(null);
+                  }
+                }}
+                data-testid={`kanban-col-${st}`}
+                className="w-64 shrink-0"
+              >
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLOR[st] }} />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 capitalize">{st}</span>
+                  <span className="text-xs text-slate-400">{col.length}</span>
+                </div>
+                <div className="space-y-2 min-h-[64px] rounded-lg p-1.5 bg-slate-50 dark:bg-slate-800/40">
+                  {col.map((app) => (
+                    <div
+                      key={app.id}
+                      draggable
+                      onDragStart={() => setDragId(app.id)}
+                      onDragEnd={() => setDragId(null)}
+                      data-testid={`kanban-card-${app.id}`}
+                      className={`card rounded-lg p-3 cursor-grab active:cursor-grabbing ${dragId === app.id ? "opacity-50" : ""}`}
+                    >
+                      <div className="font-medium text-sm text-slate-900 dark:text-slate-100">{app.company}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{app.title}</div>
+                      {app.resumeName ? (
+                        <div className="text-[10px] mt-1.5 inline-block px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 max-w-full truncate">
+                          {app.resumeName}
+                        </div>
+                      ) : null}
+                      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                        {app.snapshot ? (
+                          <button type="button" onClick={() => openApp(app.id)} className="text-amber-600 text-[11px] hover:text-amber-700 dark:text-amber-400">Open</button>
+                        ) : null}
+                        <button type="button" onClick={() => { removeApp(app.id); toast("✓ Deleted"); }} className="text-red-600 text-[11px] hover:text-red-700 ml-auto dark:text-red-400">Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                  {col.length === 0 ? <div className="text-[11px] text-slate-400 text-center py-4">Drop here</div> : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
         <PageHeader title="Application Tracker" subtitle="All your job applications in one place." />
-        <button type="button" onClick={exportCSV} data-testid="export-csv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-          <Download className="w-4 h-4" /> Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <button type="button" onClick={() => setView("table")} data-testid="view-table" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "table" ? "bg-indigo-500 text-white" : "text-slate-500 dark:text-slate-400"}`}>
+              <Table2 className="w-4 h-4" /> Table
+            </button>
+            <button type="button" onClick={() => setView("board")} data-testid="view-board" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "board" ? "bg-indigo-500 text-white" : "text-slate-500 dark:text-slate-400"}`}>
+              <LayoutGrid className="w-4 h-4" /> Board
+            </button>
+          </div>
+          <button type="button" onClick={exportCSV} data-testid="export-csv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="card rounded-xl overflow-hidden">
@@ -78,6 +150,8 @@ export default function TrackerPage() {
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">
             No applications tracked yet. Analyse a job and save it from the Editing Room.
           </div>
+        ) : view === "board" ? (
+          <KanbanBoard />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

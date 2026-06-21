@@ -97,6 +97,22 @@ Finished 5 partially-built enhancement items:
   (Node 20 vs pdfjs-dist wanting 22 — client-side lib, safe) and created
   `/etc/supervisor/conf.d/nextapp.conf` (`yarn dev`, port 3000, dir /app). App runs as `nextapp`.
 
+## Enhancement round 3 — Competitor-inspired features (2026-06-21)
+Built 8 features benchmarked against FlowCV/Jobscan/Teal/Rezi/Kickresume/Enhancv. All verified e2e; tsc clean.
+- **#1 Kanban tracker view** (`tracker/page.tsx`): Table/Board toggle; 5 status columns with
+  HTML5 drag-and-drop cards (drop → setApplicationStatus); cards show linked resume.
+- **#2 Live Resume Score in Editing Room** (`editor/page.tsx`): added `ResumeScorePanel` to the CV tab.
+- **#4 Cover-letter tone selector** (`generate.generateCoverLetter(tone)`): 6 tones in CoverLetterTab.
+- **#5 Match-rate benchmark** ("Aim for 75%+") on the editor Live Match Rate panel.
+- **#6 Templates + design controls** (`templates.ts`, `resumes/[id]`): 3→6 templates, accent colour
+  picker (swatches + custom), threaded into preview/PDF/DOCX via optional `accent` on ResumeDoc.
+- **#8 Inline AI for summary & skills** (`generate.enhanceTextVariants`): 3-option rewrites in CV tab.
+- **#10 Inline canvas editing** (`ResumePreview.tsx`): click-to-edit contentEditable fields
+  (name/summary/skills/experience/education), commit on blur. Enabled in `resumes/[id]`.
+- **#11 Section reordering** (`ResumeDoc.sectionOrder`): drag + up/down arrows; honored in
+  preview, PDF and DOCX. `SectionKey`/`DEFAULT_SECTION_ORDER`/`SECTION_LABELS` in templates.ts.
+- Backward-compatible: `accent`/`sectionOrder` optional, default to template/standard order.
+
 ## Notes / constraints
 - No backend by user choice. #1 and #13 must be client-side approximations.
 - Provider API keys are user-supplied and stored only in the browser.

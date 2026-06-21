@@ -65,7 +65,7 @@ interface AppState {
   addResume: (name: string, templateId: TemplateId, profile: Profile) => string;
   updateResume: (
     id: string,
-    patch: Partial<Pick<ResumeDoc, "name" | "templateId" | "profile">>,
+    patch: Partial<Pick<ResumeDoc, "name" | "templateId" | "profile" | "accent" | "sectionOrder">>,
   ) => void;
   removeResume: (id: string) => void;
   duplicateResume: (id: string) => string | null;

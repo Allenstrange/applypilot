@@ -24,6 +24,7 @@ import {
   generateInterviewPrep,
   generateOutreach,
   enhanceBulletVariants,
+  enhanceTextVariants,
   optimizeResumeForJob,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
@@ -40,6 +41,7 @@ import type {
 } from "@/lib/types";
 import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
+import ResumeScorePanel from "@/components/ResumeScorePanel";
 
 type Tab = "cv" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
 
@@ -140,6 +142,68 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   const [optimizing, setOptimizing] = useState(false);
   const [variants, setVariants] = useState<{ key: string; options: string[] } | null>(null);
   const [variantsLoading, setVariantsLoading] = useState<string | null>(null);
+  const [secVariants, setSecVariants] = useState<{ kind: "summary" | "skills"; options: string[] } | null>(null);
+  const [secLoading, setSecLoading] = useState<string | null>(null);
+
+  async function loadSectionVariants(kind: "summary" | "skills") {
+    if (!isAIConfigured(providers)) {
+      toast("⚠ AI provider not configured");
+      return;
+    }
+    setSecVariants(null);
+    setSecLoading(kind);
+    toast("⏳ Generating 3 options…");
+    try {
+      const text = kind === "summary" ? draftCV.summary : draftCV.skills;
+      const options = await enhanceTextVariants(text, kind, providers);
+      setSecVariants({ kind, options });
+      toast("✓ Pick an option");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setSecLoading(null);
+    }
+  }
+
+  function applySec(kind: "summary" | "skills", text: string) {
+    updateDraftCV(kind === "summary" ? { summary: text } : { skills: text });
+    setSecVariants(null);
+    toast("✓ Updated");
+  }
+
+  function renderSecAI(kind: "summary" | "skills") {
+    return (
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={() => loadSectionVariants(kind)}
+          data-testid={`sec-ai-${kind}`}
+          className="text-xs px-2 py-1 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white inline-flex items-center gap-1"
+        >
+          {secLoading === kind ? "…" : "✨ AI rewrite (3 options)"}
+        </button>
+        {secVariants?.kind === kind ? (
+          <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`sec-variants-${kind}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+              <button type="button" onClick={() => setSecVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
+            </div>
+            {secVariants.options.map((opt, k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => applySec(kind, opt)}
+                data-testid={`sec-variant-${kind}-${k}`}
+                className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+              >
+                <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   async function optimizeAll() {
     if (!isAIConfigured(providers)) {
@@ -219,9 +283,11 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
       <div className="space-y-4">
         <Section title="Professional Summary">
           <textarea rows={4} className="w-full px-3 py-2 rounded-lg text-sm" value={draftCV.summary} onChange={(e) => updateDraftCV({ summary: e.target.value })} />
+          {renderSecAI("summary")}
         </Section>
         <Section title="Skills">
           <textarea rows={2} className="w-full px-3 py-2 rounded-lg text-sm" value={draftCV.skills} onChange={(e) => updateDraftCV({ skills: e.target.value })} />
+          {renderSecAI("skills")}
         </Section>
         <Section title="Work Experience">
           <div className="space-y-4">
@@ -307,6 +373,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>
           </div>
+          <div className={`text-[11px] mt-1.5 font-medium ${score >= 75 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`} data-testid="match-benchmark">
+            {score >= 75 ? "✓ Above the 75% ATS benchmark" : "Aim for 75%+ to clear most ATS filters"}
+          </div>
           {analysis.jdKeywords.length ? (
             <div className="mt-3 space-y-2" data-testid="inline-keyword-gaps">
               {missing.length ? (
@@ -343,6 +412,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               ) : null}
             </div>
           ) : null}
+        </div>
+        <div className="mb-3" data-testid="editor-resume-score">
+          <ResumeScorePanel profile={draftCV} />
         </div>
         <div className="rounded-xl overflow-hidden">
           <CVPreview profile={draftCV} keywords={analysis.jdKeywords} />
@@ -421,8 +493,9 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
   const providers = useStore((s) => s.providers);
   const data = useStore((s) => s.generations.coverLetter);
   const setGeneration = useStore((s) => s.setGeneration);
+  const [tone, setTone] = useState("Professional");
   const { busy, go } = useGenerate<CoverLetter>(
-    () => generateCoverLetter(draftCV, analysis, providers),
+    () => generateCoverLetter(draftCV, analysis, providers, tone),
     (v) => setGeneration("coverLetter", v),
   );
 
@@ -437,12 +510,25 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
       onGenerate={go}
       hasData={!!data}
       actions={
-        data ? (
-          <>
-            <CopyBtn text={() => plainText(data)} />
-            <PdfBtn onClick={() => exportCoverLetterPDF(data, analysis.company)} />
-          </>
-        ) : null
+        <>
+          <select
+            value={tone}
+            onChange={(e) => setTone(e.target.value)}
+            data-testid="cover-tone-select"
+            className="text-xs px-2 py-2 rounded-lg"
+            aria-label="Cover letter tone"
+          >
+            {["Professional", "Formal", "Friendly", "Confident", "Concise", "Enthusiastic"].map((t) => (
+              <option key={t} value={t}>{t} tone</option>
+            ))}
+          </select>
+          {data ? (
+            <>
+              <CopyBtn text={() => plainText(data)} />
+              <PdfBtn onClick={() => exportCoverLetterPDF(data, analysis.company)} />
+            </>
+          ) : null}
+        </>
       }
     >
       {data ? (

@@ -1,8 +1,8 @@
 // ============== TEMPLATE-AWARE RESUME PDF (jsPDF) ==============
 
 import { jsPDF } from "jspdf";
-import type { Profile, TemplateId } from "./types";
-import { getTemplate } from "./templates";
+import type { Profile, TemplateId, SectionKey } from "./types";
+import { getTemplate, DEFAULT_SECTION_ORDER } from "./templates";
 import { slugify } from "./download";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -10,10 +10,16 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function exportResumePDF(profile: Profile, templateId: TemplateId) {
+export function exportResumePDF(
+  profile: Profile,
+  templateId: TemplateId,
+  accentOverride?: string,
+  order?: SectionKey[],
+) {
   const tpl = getTemplate(templateId);
-  const accent = hexToRgb(tpl.accent);
+  const accent = hexToRgb(accentOverride || tpl.accent);
   const bodyFont = tpl.font === "serif" ? "times" : "helvetica";
+  const sectionOrder = order && order.length ? order : DEFAULT_SECTION_ORDER;
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const margin = tpl.id === "compact" ? 44 : 54;
@@ -85,51 +91,60 @@ export function exportResumePDF(profile: Profile, templateId: TemplateId) {
     if (contact1) write(contact1, { size: 9.5, gap: 0, color: [90, 90, 90] });
     if (contact2) write(contact2, { size: 9.5, gap: 4, color: [90, 90, 90] });
     if (tpl.header === "rule") {
-      doc.setDrawColor(17, 24, 39);
+      doc.setDrawColor(accent[0], accent[1], accent[2]);
       doc.setLineWidth(1);
       doc.line(margin, y, pageW - margin, y);
       y += 8;
     }
   }
 
-  // ----- Body -----
-  if (profile.summary) {
-    heading("Professional Summary");
-    write(profile.summary, { gap: 4 });
-  }
-  if (profile.skills) {
-    heading("Core Skills");
-    write(profile.skills, { gap: 4 });
-  }
-  if (profile.experience.length) {
-    heading("Professional Experience");
-    profile.experience.forEach((exp) => {
-      write(`${exp.role}${exp.company ? "  —  " + exp.company : ""}`, { size: 11, bold: true, gap: 0 });
-      const dates = [exp.start, exp.end].filter(Boolean).join(" – ");
-      if (dates) write(dates, { size: 9, gap: 2, color: [120, 120, 120] });
-      exp.bullets
+  // ----- Body sections (rendered in the chosen order) -----
+  const renderers: Record<SectionKey, () => void> = {
+    summary: () => {
+      if (!profile.summary) return;
+      heading("Professional Summary");
+      write(profile.summary, { gap: 4 });
+    },
+    skills: () => {
+      if (!profile.skills) return;
+      heading("Core Skills");
+      write(profile.skills, { gap: 4 });
+    },
+    experience: () => {
+      if (!profile.experience.length) return;
+      heading("Professional Experience");
+      profile.experience.forEach((exp) => {
+        write(`${exp.role}${exp.company ? "  —  " + exp.company : ""}`, { size: 11, bold: true, gap: 0 });
+        const dates = [exp.start, exp.end].filter(Boolean).join(" – ");
+        if (dates) write(dates, { size: 9, gap: 2, color: [120, 120, 120] });
+        exp.bullets
+          .split("\n")
+          .map((b) => b.replace(/^[-•]\s*/, "").trim())
+          .filter(Boolean)
+          .forEach((b) => write("•  " + b, { gap: 1.5 }));
+        if (exp.tools) write("Tools: " + exp.tools, { size: 9, gap: 6, color: [90, 90, 90] });
+      });
+    },
+    education: () => {
+      if (!profile.education.length) return;
+      heading("Education");
+      profile.education.forEach((ed) => {
+        write(ed.degree || ed.institution, { size: 10.5, bold: true, gap: 0 });
+        const line = [ed.institution, ed.year].filter(Boolean).join(", ");
+        if (line) write(line, { size: 9.5, gap: 4, color: [90, 90, 90] });
+      });
+    },
+    certs: () => {
+      if (!profile.certs) return;
+      heading("Certifications");
+      profile.certs
         .split("\n")
-        .map((b) => b.replace(/^[-•]\s*/, "").trim())
         .filter(Boolean)
-        .forEach((b) => write("•  " + b, { gap: 1.5 }));
-      if (exp.tools) write("Tools: " + exp.tools, { size: 9, gap: 6, color: [90, 90, 90] });
-    });
-  }
-  if (profile.education.length) {
-    heading("Education");
-    profile.education.forEach((ed) => {
-      write(ed.degree || ed.institution, { size: 10.5, bold: true, gap: 0 });
-      const line = [ed.institution, ed.year].filter(Boolean).join(", ");
-      if (line) write(line, { size: 9.5, gap: 4, color: [90, 90, 90] });
-    });
-  }
-  if (profile.certs) {
-    heading("Certifications");
-    profile.certs
-      .split("\n")
-      .filter(Boolean)
-      .forEach((c) => write("•  " + c.trim(), { gap: 1.5 }));
-  }
+        .forEach((c) => write("•  " + c.trim(), { gap: 1.5 }));
+    },
+  };
+
+  sectionOrder.forEach((key) => renderers[key]());
 
   doc.save(`${slugify(profile.name || "resume")}_${tpl.id}.pdf`);
 }

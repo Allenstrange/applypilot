@@ -151,13 +151,25 @@ export interface Application {
 
 // ---------- Resume library ----------
 
-export type TemplateId = "classic" | "modern" | "compact";
+export type TemplateId =
+  | "classic"
+  | "modern"
+  | "compact"
+  | "executive"
+  | "minimal"
+  | "creative";
+
+export type SectionKey = "summary" | "skills" | "experience" | "education" | "certs";
 
 export interface ResumeDoc {
   id: string;
   name: string;
   templateId: TemplateId;
   profile: Profile;
+  /** Optional accent colour override (else uses the template's accent). */
+  accent?: string;
+  /** Optional custom section order. */
+  sectionOrder?: SectionKey[];
   createdAt: string;
   updatedAt: string;
 }

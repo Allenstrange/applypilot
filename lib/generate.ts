@@ -40,11 +40,12 @@ export async function generateCoverLetter(
   profile: Profile,
   analysis: Analysis,
   providers: ProviderSettings,
+  tone: string = "Professional",
 ): Promise<CoverLetter> {
   const prompt = `You are an expert career coach writing a highly tailored, persuasive cover letter.
 ${context(profile, analysis)}
 
-Write a confident, professional 3-4 paragraph cover letter. Frame any gaps positively without stating the candidate lacks a skill.
+Write a ${tone.toLowerCase()}, ${tone.toLowerCase() === "concise" ? "tight 2-3" : "compelling 3-4"} paragraph cover letter in a distinctly ${tone} tone. Frame any gaps positively without stating the candidate lacks a skill.
 ${KEYWORD_RULE}
 
 JSON schema:
@@ -182,6 +183,24 @@ Original: "${bullet}"`;
   const r = (await callAI(prompt, providers)) as { options?: unknown };
   const opts = asArray(r.options).map((s) => s.trim()).filter(Boolean);
   return opts.length ? opts.slice(0, 3) : [bullet];
+}
+
+/** Produce THREE rewrite options for the summary or skills section. */
+export async function enhanceTextVariants(
+  text: string,
+  kind: "summary" | "skills",
+  providers: ProviderSettings,
+): Promise<string[]> {
+  const instr =
+    kind === "summary"
+      ? "Rewrite this professional summary to be punchy, specific and ATS-friendly. Keep it truthful — 2 to 4 sentences."
+      : "Improve and reprioritise this comma-separated skills list. Keep it truthful, surface industry-standard skill phrases, and return a single comma-separated line per option.";
+  const prompt = `${instr} Produce THREE meaningfully different options. Return valid JSON only: {"options": ["option 1", "option 2", "option 3"]}
+
+Current ${kind}: "${text}"`;
+  const r = (await callAI(prompt, providers)) as { options?: unknown };
+  const opts = asArray(r.options).map((s) => s.trim()).filter(Boolean);
+  return opts.length ? opts.slice(0, 3) : [text];
 }
 
 /**

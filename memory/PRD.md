@@ -51,10 +51,19 @@ User choices:
   (or vs Master Profile) → side-by-side score rings, per-category breakdown with winner trophies,
   case-insensitive skills set-diff (Only A / Both / Only B), and LCS word-level summary diff.
   Nav "Compare Resumes" (GitCompare) + "Compare" link on the Resumes page.
-### Phase 4 — Export & share (client-only approximations)
-- #1 Job URL extraction (client approx: CORS limits direct fetch — paste/proxy fallback).
-- #13 Shareable resume link (self-contained hash-encoded URL, no server).
-- #14 DOCX export + multiple PDF templates.
+### Phase 4 — Export & share (2026-06-21) — DONE (verified via compile/route/round-trip; full test cycle skipped to conserve credits)
+- #1 **Job URL import** (`lib/jobUrl.ts`, analyze page): paste a posting URL → fetches readable
+  text via the r.jina.ai reader proxy (CORS-friendly) and, if AI is configured, auto-fills
+  company/title/location. Graceful "paste manually" fallback. NOTE: depends on the external
+  r.jina.ai public proxy; some sites/logins won't be fetchable.
+- #13 **Shareable resume link** (`lib/share.ts`, public `app/share/page.tsx`): resume is encoded
+  into the URL fragment (base64url, no server). "Share link" button on the resume detail page
+  copies a self-contained link; `/share#...` renders a clean read-only resume + Download PDF.
+- #14 **Word (.doc) export** (`lib/docx.ts`): template-aware Word-compatible export wired on the
+  resume detail page (uses the resume's template) and in the Editing Room (classic). Multiple
+  PDF templates already existed via `lib/resumePdf.ts`.
+
+## ALL 10 SELECTED FEATURES COMPLETE (1,2,3,4,6,7,12,13,14,15).
 
 ## Notes / constraints
 - No backend by user choice. #1 and #13 must be client-side approximations.

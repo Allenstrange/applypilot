@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Share2, FileType } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { TEMPLATES } from "@/lib/templates";
 import { exportResumePDF } from "@/lib/resumePdf";
+import { exportResumeDOCX } from "@/lib/docx";
+import { buildShareUrl } from "@/lib/share";
+import { copyToClipboard } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type { Profile, TemplateId } from "@/lib/types";
 import ProfileFields from "@/components/ProfileFields";
@@ -37,6 +40,17 @@ export default function ResumeEditorPage() {
   const patchProfile = (patch: Partial<Profile>) =>
     updateResume(id, { profile: { ...resume.profile, ...patch } });
 
+  async function shareLink() {
+    if (!resume) return;
+    const url = buildShareUrl(window.location.origin, resume.profile, resume.templateId);
+    try {
+      await copyToClipboard(url);
+      toast("✓ Share link copied to clipboard");
+    } catch {
+      toast("Link: " + url);
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -51,13 +65,32 @@ export default function ResumeEditorPage() {
             aria-label="Resume name"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => { exportResumePDF(resume.profile, resume.templateId); toast("✓ PDF downloaded"); }}
-          className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" /> Download PDF
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={shareLink}
+            data-testid="share-resume-btn"
+            className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Share2 className="w-4 h-4" /> Share link
+          </button>
+          <button
+            type="button"
+            onClick={() => { exportResumeDOCX(resume.profile, resume.templateId); toast("✓ Word downloaded"); }}
+            data-testid="download-word-btn"
+            className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <FileType className="w-4 h-4" /> Word
+          </button>
+          <button
+            type="button"
+            onClick={() => { exportResumePDF(resume.profile, resume.templateId); toast("✓ PDF downloaded"); }}
+            data-testid="download-pdf-btn"
+            className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" /> Download PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

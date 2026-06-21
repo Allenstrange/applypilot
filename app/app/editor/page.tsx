@@ -27,6 +27,7 @@ import {
   optimizeResumeForJob,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
+import { exportResumeDOCX } from "@/lib/docx";
 import { copyToClipboard } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type {
@@ -255,6 +256,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           </button>
           <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} data-testid="download-cv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             <Download className="w-4 h-4" /> Download CV (PDF)
+          </button>
+          <button type="button" onClick={() => { exportResumeDOCX(draftCV, "classic"); toast("✓ Word downloaded"); }} data-testid="download-cv-word-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Word (.doc)
           </button>
         </div>
       </div>

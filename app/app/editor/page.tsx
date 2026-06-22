@@ -42,6 +42,7 @@ import type {
 import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
+import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
 type Tab = "cv" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
 
@@ -61,7 +62,7 @@ export default function EditorPage() {
   const [tab, setTab] = useState<Tab>("cv");
 
   if (!hydrated) {
-    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
+    return <PageSkeleton />;
   }
 
   if (!analysis || !draftCV) {
@@ -696,7 +697,17 @@ function OutputShell({
           </button>
         </div>
       </div>
-      {hasData ? children : (
+      {busy && !hasData ? (
+        <div className="card rounded-xl p-6 space-y-3" data-testid="generation-skeleton">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+      ) : hasData ? (
+        children
+      ) : (
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400">
           Click <span className="text-amber-600 dark:text-amber-400">Generate</span> to create tailored, keyword-rich content.
         </div>

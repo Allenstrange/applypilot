@@ -16,6 +16,7 @@ import type { Profile, TemplateId, SectionKey } from "@/lib/types";
 import ProfileFields from "@/components/ProfileFields";
 import ResumePreview from "@/components/ResumePreview";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
+import { PageSkeleton } from "@/components/Skeleton";
 
 export default function ResumeEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function ResumeEditorPage() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   if (!hydrated) {
-    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
+    return <PageSkeleton />;
   }
 
   if (!resume) {

@@ -44,8 +44,10 @@ export default function ResumePreview({
   const updateEdu = (i: number, p: Partial<Profile["education"][number]>) =>
     patch({ education: profile.education.map((e, idx) => (idx === i ? { ...e, ...p } : e)) });
 
-  const editCls =
-    "rounded-sm px-0.5 -mx-0.5 hover:bg-amber-100/70 focus:bg-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-text transition-colors";
+  const baseCls =
+    "rounded-sm cursor-text transition-colors hover:bg-amber-100/70 focus:bg-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-400";
+  const inlineCls = `${baseCls} px-0.5 -mx-0.5 underline decoration-dotted decoration-slate-300/70 underline-offset-2 hover:decoration-amber-400`;
+  const blockCls = `${baseCls} block border-l-2 border-dashed border-slate-200 pl-2 hover:border-amber-400`;
 
   function field(
     value: string,
@@ -56,7 +58,8 @@ export default function ResumePreview({
     const common = {
       contentEditable: true,
       suppressContentEditableWarning: true,
-      className: editCls,
+      title: "Click to edit",
+      className: opts.block ? blockCls : inlineCls,
       onBlur: (e: React.FocusEvent<HTMLElement>) => {
         const v = readText(e);
         if (v !== value) onCommit(v);

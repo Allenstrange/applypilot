@@ -131,3 +131,9 @@ Built 8 features benchmarked against FlowCV/Jobscan/Teal/Rezi/Kickresume/Enhancv
 ## Notes / constraints
 - No backend by user choice. #1 and #13 must be client-side approximations.
 - Provider API keys are user-supplied and stored only in the browser.
+
+## UI/UX round 5 (2026-06-22)
+- Inline-edit affordance (ResumePreview.tsx): dotted underline (inline) / dashed left-border (block) + "click to edit" tooltip.
+- Kanban polish (tracker/page.tsx): colour-tinted column headers per status, pill count badges, drag-over column highlight (dragOverCol), smooth card transitions.
+- Mobile: kanban columns w-[78vw] with snap-x scroll on phones.
+- Loading skeletons: components/Skeleton.tsx (Skeleton + PageSkeleton, shimmer in globals.css) for editor/resume-editor hydration and AI-generation busy state.

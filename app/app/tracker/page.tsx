@@ -33,6 +33,7 @@ export default function TrackerPage() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [view, setView] = useState<"table" | "board">("table");
   const [dragId, setDragId] = useState<number | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const apps = hydrated ? applications : [];
 
@@ -68,38 +69,42 @@ export default function TrackerPage() {
 
   function KanbanBoard() {
     return (
-      <div className="p-4 overflow-x-auto" data-testid="kanban-board">
+      <div className="p-4 overflow-x-auto scrollbar snap-x" data-testid="kanban-board">
         <div className="flex gap-4 min-w-max">
           {STATUSES.map((st) => {
             const col = apps.filter((a) => a.status === st);
             return (
               <div
                 key={st}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => { e.preventDefault(); if (dragOverCol !== st) setDragOverCol(st); }}
                 onDrop={() => {
                   if (dragId !== null) {
                     setStatus(dragId, st);
                     toast("✓ Moved to " + st);
-                    setDragId(null);
                   }
+                  setDragId(null);
+                  setDragOverCol(null);
                 }}
                 data-testid={`kanban-col-${st}`}
-                className="w-64 shrink-0"
+                className="w-[78vw] sm:w-64 shrink-0 snap-start"
               >
-                <div className="flex items-center gap-2 mb-2 px-1">
+                <div
+                  className="flex items-center gap-2 mb-2 px-2.5 py-1.5 rounded-lg"
+                  style={{ background: `color-mix(in srgb, ${STATUS_COLOR[st]} 14%, transparent)` }}
+                >
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLOR[st] }} />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 capitalize">{st}</span>
-                  <span className="text-xs text-slate-400">{col.length}</span>
+                  <span className="text-sm font-semibold capitalize" style={{ color: STATUS_COLOR[st] }}>{st}</span>
+                  <span className="ml-auto text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/40 text-slate-600 dark:text-slate-300">{col.length}</span>
                 </div>
-                <div className="space-y-2 min-h-[64px] rounded-lg p-1.5 bg-slate-50 dark:bg-slate-800/40">
+                <div className={`space-y-2 min-h-[64px] rounded-lg p-1.5 transition-colors ${dragOverCol === st && dragId !== null ? "bg-indigo-500/10 ring-2 ring-indigo-400" : "bg-slate-50 dark:bg-slate-800/40"}`}>
                   {col.map((app) => (
                     <div
                       key={app.id}
                       draggable
                       onDragStart={() => setDragId(app.id)}
-                      onDragEnd={() => setDragId(null)}
+                      onDragEnd={() => { setDragId(null); setDragOverCol(null); }}
                       data-testid={`kanban-card-${app.id}`}
-                      className={`card rounded-lg p-3 cursor-grab active:cursor-grabbing ${dragId === app.id ? "opacity-50" : ""}`}
+                      className={`card rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${dragId === app.id ? "opacity-50 scale-95" : ""}`}
                     >
                       <div className="font-medium text-sm text-slate-900 dark:text-slate-100">{app.company}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{app.title}</div>

@@ -38,8 +38,8 @@ export default function FeaturesPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="card p-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4 dark:bg-indigo-950/40">
-                <Icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center mb-4 dark:bg-violet-950/40">
+                <Icon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{title}</h3>
               <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{desc}</p>

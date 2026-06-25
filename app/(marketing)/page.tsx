@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Check, ShieldCheck } from "lucide-react";
-import { FEATURES, STEPS } from "@/components/marketing/content";
+import { ArrowRight, Check, ShieldCheck, ChevronDown } from "lucide-react";
+import { FEATURES, STEPS, STATS, FAQS } from "@/components/marketing/content";
 import SectionHeading from "@/components/marketing/SectionHeading";
 
 export default function LandingPage() {
@@ -65,6 +65,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="border-b border-slate-200 dark:border-slate-700">
+        <div className="mx-auto max-w-6xl px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+          {STATS.map((s) => (
+            <div key={s.label}>
+              <div className="text-3xl sm:text-4xl font-extrabold brand-gradient-text">{s.value}</div>
+              <div className="text-xs text-slate-500 mt-1 dark:text-slate-400">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <SectionHeading
@@ -102,6 +114,24 @@ export default function LandingPage() {
                 <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{s.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{s.desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-slate-50 border-t border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <SectionHeading eyebrow="FAQ" title="Questions, answered" />
+          <div className="mt-10 space-y-3">
+            {FAQS.map((f) => (
+              <details key={f.q} className="card rounded-xl p-5 group">
+                <summary className="flex items-center justify-between gap-3 cursor-pointer font-semibold text-slate-900 dark:text-slate-100 list-none">
+                  {f.q}
+                  <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed dark:text-slate-300">{f.a}</p>
+              </details>
             ))}
           </div>
         </div>

@@ -154,12 +154,20 @@ export type TemplateId =
   | "minimal"
   | "bold"
   | "profile"
-  | "onyx";
+  | "onyx"
+  | "cobalt"
+  | "sage"
+  | "noir"
+  | "ruby";
 
 export interface ResumeDoc {
   id: string;
   name: string;
   templateId: TemplateId;
+  /** Optional per-resume accent colour override (customization). */
+  accent?: string;
+  /** Optional per-resume body font override (customization). */
+  font?: "serif" | "sans";
   profile: Profile;
   createdAt: string;
   updatedAt: string;

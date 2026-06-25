@@ -20,8 +20,17 @@ function parseList(str: string): string[] {
   return str.split(/[\n·|,]+/).map((s) => s.trim()).filter(Boolean);
 }
 
-export function exportResumePDF(profile: Profile, templateId: TemplateId) {
-  const tpl = getTemplate(templateId);
+export function exportResumePDF(
+  profile: Profile,
+  templateId: TemplateId,
+  opts?: { accent?: string; font?: "serif" | "sans" },
+) {
+  const base = getTemplate(templateId);
+  const tpl: TemplateDef = {
+    ...base,
+    ...(opts?.accent ? { accent: opts.accent } : {}),
+    ...(opts?.font ? { font: opts.font } : {}),
+  };
   if (tpl.layout === "sidebar") {
     sidebarPDF(profile, tpl);
   } else {

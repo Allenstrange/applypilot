@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { useStore, emptyProfile } from "@/lib/store";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, CATEGORIES } from "@/lib/templates";
+import type { TemplateCategory } from "@/lib/templates";
 import { SAMPLE_PERSONAS, getPersona } from "@/lib/sampleResumes";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
@@ -15,8 +16,10 @@ export default function TemplatesPage() {
   const profile = useStore((s) => s.profile);
   const addResume = useStore((s) => s.addResume);
   const [personaId, setPersonaId] = useState(SAMPLE_PERSONAS[0].id);
+  const [category, setCategory] = useState<TemplateCategory | "all">("all");
 
   const persona = getPersona(personaId);
+  const shown = category === "all" ? TEMPLATES : TEMPLATES.filter((t) => t.category === category);
 
   function applyTemplate(templateId: (typeof TEMPLATES)[number]["id"]) {
     const base = profile.name ? profile : emptyProfile;
@@ -50,8 +53,29 @@ export default function TemplatesPage() {
         </label>
       </div>
 
+      {/* Category tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {CATEGORIES.map((c) => {
+          const active = category === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCategory(c.id)}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                active
+                  ? "bg-[var(--brand)] border-[var(--brand)] text-white"
+                  : "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+              }`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {TEMPLATES.map((t) => (
+        {shown.map((t) => (
           <div key={t.id} className="card rounded-xl p-4 flex flex-col">
             <div className="rounded-lg overflow-hidden border border-[var(--border)] bg-white flex justify-center">
               <TemplateThumbnail profile={persona.profile} templateId={t.id} width={300} />

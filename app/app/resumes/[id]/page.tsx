@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, ACCENT_SWATCHES, getTemplate } from "@/lib/templates";
 import { exportResumePDF } from "@/lib/resumePdf";
 import { toast } from "@/lib/toast";
 import type { Profile, TemplateId } from "@/lib/types";
@@ -54,7 +54,10 @@ export default function ResumeEditorPage() {
         </div>
         <button
           type="button"
-          onClick={() => { exportResumePDF(resume.profile, resume.templateId); toast("✓ PDF downloaded"); }}
+          onClick={() => {
+            exportResumePDF(resume.profile, resume.templateId, { accent: resume.accent, font: resume.font });
+            toast("✓ PDF downloaded");
+          }}
           className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
         >
           <Download className="w-4 h-4" /> Download PDF
@@ -96,6 +99,58 @@ export default function ResumeEditorPage() {
               })}
             </div>
           </div>
+
+          {/* Customize: accent colour + font */}
+          <div className="card rounded-xl p-5 mb-6">
+            <div className="text-sm font-semibold text-slate-900 mb-3 dark:text-slate-100">Customize</div>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="text-xs text-[var(--text-muted)] w-14">Colour</span>
+              <button
+                type="button"
+                onClick={() => updateResume(id, { accent: undefined })}
+                title="Use template default"
+                className={`h-6 px-2 rounded-full text-[11px] border ${
+                  !resume.accent ? "border-[var(--brand)] text-[var(--brand)]" : "border-[var(--border-strong)] text-[var(--text-muted)]"
+                }`}
+              >
+                Default
+              </button>
+              {ACCENT_SWATCHES.map((c) => {
+                const active = resume.accent === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => updateResume(id, { accent: c })}
+                    aria-label={`Accent ${c}`}
+                    className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${active ? "ring-2 ring-offset-2 ring-[var(--text)] ring-offset-[var(--surface)]" : ""}`}
+                    style={{ background: c }}
+                  />
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[var(--text-muted)] w-14">Font</span>
+              {(["sans", "serif"] as const).map((f) => {
+                const effective = resume.font ?? getTemplate(resume.templateId).font;
+                const active = effective === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => updateResume(id, { font: f })}
+                    className={`px-3 py-1.5 rounded-lg text-xs border-2 capitalize ${
+                      active ? "border-[var(--brand)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
+                    }`}
+                    style={{ fontFamily: f === "serif" ? "Georgia, serif" : "inherit" }}
+                  >
+                    {f === "sans" ? "Sans" : "Serif"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <ProfileFields profile={resume.profile} onPatch={patchProfile} />
         </div>
 
@@ -103,7 +158,12 @@ export default function ResumeEditorPage() {
         <div className="space-y-6">
           <div className="lg:sticky lg:top-6 space-y-6">
             <ResumeScorePanel profile={resume.profile} />
-            <ResumePreview profile={resume.profile} templateId={resume.templateId} />
+            <ResumePreview
+              profile={resume.profile}
+              templateId={resume.templateId}
+              accent={resume.accent}
+              font={resume.font}
+            />
           </div>
         </div>
       </div>

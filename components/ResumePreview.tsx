@@ -283,11 +283,22 @@ function SidebarLayout({ profile, tpl }: { profile: Profile; tpl: TemplateDef })
 export default function ResumePreview({
   profile,
   templateId,
+  accent,
+  font,
 }: {
   profile: Profile;
   templateId: TemplateId;
+  /** Optional accent-colour override (customization). */
+  accent?: string;
+  /** Optional body-font override (customization). */
+  font?: "serif" | "sans";
 }) {
-  const tpl = getTemplate(templateId);
+  const base = getTemplate(templateId);
+  const tpl: TemplateDef = {
+    ...base,
+    ...(accent ? { accent } : {}),
+    ...(font ? { font } : {}),
+  };
   if (tpl.layout === "sidebar") return <SidebarLayout profile={profile} tpl={tpl} />;
   return <SingleColumn profile={profile} tpl={tpl} />;
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { FEATURES, STEPS } from "@/components/marketing/content";
 import SectionHeading from "@/components/marketing/SectionHeading";
@@ -7,34 +8,59 @@ export default function LandingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="hero-grid border-b border-slate-200 dark:border-slate-700">
-        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 mb-6 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            No sign-up · runs in your browser
+      <section className="hero-grid relative overflow-hidden border-b border-slate-200 dark:border-slate-700">
+        <div className="blob bg-[#7c3aed] w-[28rem] h-[28rem] -top-32 -left-24 dark:opacity-40" />
+        <div className="blob bg-[#fb6f4c] w-[24rem] h-[24rem] top-10 -right-20 dark:opacity-30" style={{ animationDelay: "-6s" }} />
+        <div className="relative mx-auto max-w-6xl px-6 py-16 sm:py-20 grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+          {/* Left: copy */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 mb-6 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700">
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--brand)]" />
+              No sign-up · runs in your browser
+            </div>
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08] dark:text-slate-100">
+              Land more interviews with <span className="brand-gradient-text">tailored</span> applications
+            </h1>
+            <p className="mt-6 text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 dark:text-slate-300">
+              ApplyPilot turns one job description into a tailored CV, a cover
+              letter, interview prep, and recruiter outreach — keyword-matched and
+              ATS-checked, in minutes instead of hours.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+              <Link href="/app" className="btn-primary px-6 py-3 rounded-lg text-sm font-semibold flex items-center gap-2">
+                Launch the app <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="/how-it-works" className="btn-ghost px-6 py-3 rounded-lg text-sm font-semibold">
+                See how it works
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+              {["Free & local", "Your own AI keys", "Export to PDF"].map((t) => (
+                <span key={t} className="inline-flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> {t}
+                </span>
+              ))}
+            </div>
           </div>
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-[1.1] dark:text-slate-100">
-            Land more interviews with <span className="brand-gradient-text">tailored</span> applications
-          </h1>
-          <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
-            ApplyPilot turns one job description into a tailored CV, a cover
-            letter, interview prep, and recruiter outreach — keyword-matched and
-            ATS-checked, in minutes instead of hours.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/app" className="btn-primary px-6 py-3 rounded-lg text-sm font-semibold flex items-center gap-2">
-              Launch the app <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/how-it-works" className="btn-ghost px-6 py-3 rounded-lg text-sm font-semibold">
-              See how it works
-            </Link>
-          </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
-            {["Free & local", "Your own AI keys", "Export to PDF"].map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> {t}
-              </span>
-            ))}
+
+          {/* Right: framed product screenshot */}
+          <div className="lg:[perspective:1600px]">
+            <div className="app-frame lg:[transform:rotateY(-9deg)_rotateX(3deg)] lg:hover:[transform:rotateY(-4deg)_rotateX(1deg)] transition-transform duration-500">
+              <div className="app-frame-bar">
+                <span className="app-frame-dot bg-[#ff5f57]" />
+                <span className="app-frame-dot bg-[#febc2e]" />
+                <span className="app-frame-dot bg-[#28c840]" />
+                <span className="ml-3 text-[11px] text-[var(--text-faint)] truncate">app.applypilot — Resume editor</span>
+              </div>
+              <Image
+                src="/hero-shot.png"
+                alt="ApplyPilot resume editor showing template switching, a resume score, and live preview"
+                width={1360}
+                height={880}
+                priority
+                className="block w-full h-auto"
+              />
+            </div>
           </div>
         </div>
       </section>

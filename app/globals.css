@@ -322,6 +322,41 @@ select optgroup {
   color: transparent;
 }
 
+/* Hero product mockup framed like an app window */
+.app-frame {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 40px 80px -32px rgba(76, 29, 149, 0.45), 0 16px 32px -16px var(--shadow);
+  overflow: hidden;
+}
+.app-frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.app-frame-dot { width: 10px; height: 10px; border-radius: 999px; }
+
+/* Slow-floating gradient blobs behind the hero */
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(24px, -18px) scale(1.1); }
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.55;
+  animation: blobFloat 16s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none; }
+}
+
 /* ---------- Scrollbar ---------- */
 .scrollbar::-webkit-scrollbar { width: 8px; }
 .scrollbar::-webkit-scrollbar-track { background: transparent; }

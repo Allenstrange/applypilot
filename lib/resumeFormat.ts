@@ -6,7 +6,7 @@
 export function parseBullets(str: string | undefined | null): string[] {
   return (str ?? "")
     .split("\n")
-    .map((b) => b.replace(/^[-•]\s*/, "").trim())
+    .map((b) => b.replace(/^\s*[-•]\s*/, "").trim())
     .filter(Boolean);
 }
 

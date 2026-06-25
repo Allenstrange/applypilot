@@ -5,35 +5,45 @@
 
 @theme inline {
   --font-sans: var(--font-inter);
+  --font-display: var(--font-sora);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-accent: var(--accent);
 }
 
-/* ---------- Design tokens ---------- */
+/* ---------- Design tokens ----------
+   Brand "Ascent": violet primary + coral accent on warm plum-tinted
+   neutrals. Re-theme the entire app by editing these two blocks. */
 :root {
-  --bg: #f8fafc;
+  --bg: #faf9fb;
   --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
-  --brand: #4f46e5;
-  --brand-hover: #4338ca;
-  --shadow: rgba(15, 23, 42, 0.08);
+  --surface-2: #f4f2f8;
+  --border: #e8e4ef;
+  --border-strong: #d6cfe3;
+  --text: #1a1426;
+  --text-muted: #6b6479;
+  --text-faint: #9d95ab;
+  --brand: #7c3aed;
+  --brand-hover: #6d28d9;
+  --accent: #fb6f4c;
+  --accent-hover: #ef552f;
+  --shadow: rgba(26, 20, 38, 0.08);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0b1120;
-  --surface: #111827;
-  --surface-2: #1e293b;
-  --border: #1f2a3b;
-  --border-strong: #334155;
-  --text: #e5e7eb;
-  --text-muted: #94a3b8;
-  --text-faint: #64748b;
-  --brand: #6366f1;
-  --brand-hover: #818cf8;
+  --bg: #120e1b;
+  --surface: #1b1527;
+  --surface-2: #261d36;
+  --border: #2e2542;
+  --border-strong: #3f3458;
+  --text: #ece8f3;
+  --text-muted: #a79fb8;
+  --text-faint: #786e8d;
+  --brand: #a78bfa;
+  --brand-hover: #c4b5fd;
+  --accent: #fb7c5c;
+  --accent-hover: #fd9576;
   --shadow: rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
@@ -45,6 +55,15 @@ body {
 }
 body {
   min-height: 100vh;
+}
+
+/* Display typeface for headings (resumes keep their own font; see .doc-preview) */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* ---------- Surfaces ---------- */
@@ -76,8 +95,8 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #4f46e5, #6366f1, #f59e0b);
-  opacity: 0.85;
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #fb6f4c);
+  opacity: 0.9;
 }
 .stat-card:hover {
   transform: translateY(-2px);
@@ -109,7 +128,7 @@ body {
 .btn-primary:hover {
   background: var(--brand-hover);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
 }
 .btn-primary:active {
   transform: translateY(0);
@@ -150,7 +169,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
 }
 ::placeholder {
   color: var(--text-faint);
@@ -182,7 +201,7 @@ select optgroup {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(79, 70, 229, 0.25);
+  border: 2px solid rgba(124, 58, 237, 0.25);
   border-top-color: var(--brand);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -260,6 +279,9 @@ select optgroup {
   font-family: "Calibri", Arial, sans-serif;
   border: 1px solid var(--border);
 }
+.doc-preview h1,
+.doc-preview h2,
+.doc-preview h3 { font-family: "Calibri", Arial, sans-serif; letter-spacing: normal; }
 .doc-preview h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #000; }
 .doc-preview h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; color: #222; }
 .doc-preview h3 { font-size: 14px; font-weight: 700; margin-top: 10px; color: #111; }
@@ -290,11 +312,11 @@ select optgroup {
 /* ---------- Marketing helpers ---------- */
 .hero-grid {
   background-image:
-    radial-gradient(60rem 30rem at 70% -10%, rgba(79, 70, 229, 0.10), transparent 60%),
-    radial-gradient(40rem 24rem at 0% 0%, rgba(245, 158, 11, 0.08), transparent 55%);
+    radial-gradient(60rem 30rem at 70% -10%, rgba(124, 58, 237, 0.12), transparent 60%),
+    radial-gradient(40rem 24rem at 0% 0%, rgba(251, 111, 76, 0.10), transparent 55%);
 }
 .brand-gradient-text {
-  background: linear-gradient(120deg, #6366f1, #8b5cf6, #f59e0b);
+  background: linear-gradient(120deg, #7c3aed, #a855f7, #fb6f4c);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

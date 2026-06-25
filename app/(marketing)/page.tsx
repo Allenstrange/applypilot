@@ -49,8 +49,8 @@ export default function LandingPage() {
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="card p-6">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4 dark:bg-indigo-950/40">
-                <Icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center mb-4 dark:bg-violet-950/40">
+                <Icon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{title}</h3>
               <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{desc}</p>
@@ -70,7 +70,7 @@ export default function LandingPage() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s) => (
               <div key={s.n} className="card p-6">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-white font-bold flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#fb6f4c] text-white font-bold flex items-center justify-center mb-4">
                   {s.n}
                 </div>
                 <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{s.title}</h3>
@@ -83,15 +83,15 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-6 py-20">
-        <div className="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 px-8 py-16 text-center text-white">
+        <div className="rounded-3xl bg-gradient-to-br from-[#6d28d9] via-[#a855f7] to-[#fb6f4c] px-8 py-16 text-center text-white">
           <h2 className="text-3xl sm:text-4xl font-bold">Stop rewriting from scratch</h2>
-          <p className="mt-3 text-indigo-100 max-w-xl mx-auto">
+          <p className="mt-3 text-violet-50 max-w-xl mx-auto">
             Bring your own AI key and tailor your next application in minutes.
             Everything stays in your browser.
           </p>
           <Link
             href="/app"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition-colors dark:bg-slate-900 dark:text-indigo-300"
+            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition-colors dark:bg-slate-900 dark:text-violet-300"
           >
             Launch the app <ArrowRight className="w-4 h-4" />
           </Link>

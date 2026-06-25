@@ -75,6 +75,8 @@ export default function OnboardingTour() {
 
   // Auto-show the welcome for brand-new users, once, after hydration.
   useEffect(() => {
+    // Show the welcome once, after hydration, for brand-new users.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (hydrated && !onboarded && isFresh) setPhase("welcome");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);

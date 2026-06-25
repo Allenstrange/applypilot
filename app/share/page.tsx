@@ -13,6 +13,8 @@ export default function SharePage() {
 
   useEffect(() => {
     const h = window.location.hash.replace(/^#/, "");
+    // One-time, client-only read of the URL hash on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(decodeResume(h));
   }, []);
 
@@ -24,7 +26,7 @@ export default function SharePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-6" data-testid="share-invalid">
         <div className="text-slate-500 dark:text-slate-400">This share link is invalid or empty.</div>
-        <Link href="/" className="text-indigo-600 underline dark:text-indigo-400">Go to ApplyPilot</Link>
+        <Link href="/" className="text-[var(--brand)] underline">Go to ApplyPilot</Link>
       </div>
     );
   }

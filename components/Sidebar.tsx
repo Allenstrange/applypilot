@@ -8,6 +8,7 @@ import {
   User,
   FileText,
   GitCompare,
+  LayoutTemplate,
   Search,
   Target,
   PenLine,
@@ -22,6 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import Brandmark from "@/components/Brandmark";
 
 interface NavItem {
   href: string;
@@ -33,6 +35,7 @@ const NAV: NavItem[] = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard },
   { href: "/app/profile", label: "Master Profile", icon: User },
   { href: "/app/resumes", label: "Resumes", icon: FileText },
+  { href: "/app/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/app/compare", label: "Compare Resumes", icon: GitCompare },
   { href: "/app/analyze", label: "Job Analysis", icon: Search },
   { href: "/app/match", label: "Job Matcher", icon: Target },
@@ -46,9 +49,7 @@ const NAV: NavItem[] = [
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold">
-        AP
-      </div>
+      <Brandmark size={36} />
       <div>
         <div className="font-bold text-[var(--text)]">ApplyPilot</div>
         <div className="text-xs text-[var(--text-faint)]">AI Application Assistant</div>

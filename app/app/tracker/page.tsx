@@ -42,14 +42,18 @@ export default function TrackerPage() {
       toast("⚠ No applications to export");
       return;
     }
+    const safe = (v: unknown) => {
+      const s = String(v ?? "");
+      return /^[=+\-@]/.test(s) ? `'${s}` : s;
+    };
     const rows = [["Company", "Role", "Location", "Status", "Date"]];
     apps.forEach((a) =>
       rows.push([
-        a.company,
-        a.title,
-        a.location ?? "",
-        a.status,
-        new Date(a.createdAt).toLocaleDateString("en-GB"),
+        safe(a.company),
+        safe(a.title),
+        safe(a.location ?? ""),
+        safe(a.status),
+        safe(new Date(a.createdAt).toLocaleDateString("en-GB")),
       ]),
     );
     const csv = rows
@@ -67,7 +71,7 @@ export default function TrackerPage() {
     }
   }
 
-  function KanbanBoard() {
+  function renderKanban() {
     return (
       <div className="p-4 overflow-x-auto scrollbar snap-x" data-testid="kanban-board">
         <div className="flex gap-4 min-w-max">
@@ -96,7 +100,7 @@ export default function TrackerPage() {
                   <span className="text-sm font-semibold capitalize" style={{ color: STATUS_COLOR[st] }}>{st}</span>
                   <span className="ml-auto text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/40 text-slate-600 dark:text-slate-300">{col.length}</span>
                 </div>
-                <div className={`space-y-2 min-h-[64px] rounded-lg p-1.5 transition-colors ${dragOverCol === st && dragId !== null ? "bg-indigo-500/10 ring-2 ring-indigo-400" : "bg-slate-50 dark:bg-slate-800/40"}`}>
+                <div className={`space-y-2 min-h-[64px] rounded-lg p-1.5 transition-colors ${dragOverCol === st && dragId !== null ? "bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] ring-2 ring-[var(--brand)]" : "bg-slate-50 dark:bg-slate-800/40"}`}>
                   {col.map((app) => (
                     <div
                       key={app.id}
@@ -109,7 +113,7 @@ export default function TrackerPage() {
                       <div className="font-medium text-sm text-slate-900 dark:text-slate-100">{app.company}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{app.title}</div>
                       {app.resumeName ? (
-                        <div className="text-[10px] mt-1.5 inline-block px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 max-w-full truncate">
+                        <div className="text-[10px] mt-1.5 inline-block px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--brand)_10%,transparent)] text-[var(--brand)] max-w-full truncate">
                           {app.resumeName}
                         </div>
                       ) : null}
@@ -137,10 +141,10 @@ export default function TrackerPage() {
         <PageHeader title="Application Tracker" subtitle="All your job applications in one place." />
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <button type="button" onClick={() => setView("table")} data-testid="view-table" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "table" ? "bg-indigo-500 text-white" : "text-slate-500 dark:text-slate-400"}`}>
+            <button type="button" onClick={() => setView("table")} data-testid="view-table" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "table" ? "bg-[var(--brand)] text-white" : "text-slate-500 dark:text-slate-400"}`}>
               <Table2 className="w-4 h-4" /> Table
             </button>
-            <button type="button" onClick={() => setView("board")} data-testid="view-board" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "board" ? "bg-indigo-500 text-white" : "text-slate-500 dark:text-slate-400"}`}>
+            <button type="button" onClick={() => setView("board")} data-testid="view-board" className={`px-3 py-2 text-sm flex items-center gap-1.5 ${view === "board" ? "bg-[var(--brand)] text-white" : "text-slate-500 dark:text-slate-400"}`}>
               <LayoutGrid className="w-4 h-4" /> Board
             </button>
           </div>
@@ -156,7 +160,7 @@ export default function TrackerPage() {
             No applications tracked yet. Analyse a job and save it from the Editing Room.
           </div>
         ) : view === "board" ? (
-          <KanbanBoard />
+          renderKanban()
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

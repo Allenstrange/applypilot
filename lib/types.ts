@@ -157,7 +157,13 @@ export type TemplateId =
   | "compact"
   | "executive"
   | "minimal"
-  | "creative";
+  | "bold"
+  | "profile"
+  | "onyx"
+  | "cobalt"
+  | "sage"
+  | "noir"
+  | "ruby";
 
 export type SectionKey = "summary" | "skills" | "experience" | "education" | "certs";
 
@@ -165,11 +171,18 @@ export interface ResumeDoc {
   id: string;
   name: string;
   templateId: TemplateId;
-  profile: Profile;
-  /** Optional accent colour override (else uses the template's accent). */
+  /** Optional per-resume accent colour override (customization). */
   accent?: string;
-  /** Optional custom section order. */
+  /** Optional per-resume body font override (customization). */
+  font?: "serif" | "sans" | "mono";
+  /** Spacing / line-height preset (customization). */
+  density?: "compact" | "normal" | "relaxed";
+  /** Section-heading style toggles (customization). */
+  headingUppercase?: boolean;
+  headingUnderline?: boolean;
+  /** Optional custom section order (used by DOCX export). */
   sectionOrder?: SectionKey[];
+  profile: Profile;
   createdAt: string;
   updatedAt: string;
 }

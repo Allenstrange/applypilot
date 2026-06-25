@@ -14,6 +14,10 @@ import { toast } from "@/lib/toast";
 import type { JobMatch, Application, Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 
+// Module-scope id generator keeps the impure Date.now()/Math.random() calls
+// out of the component render path (react-compiler purity rule).
+const newAppId = () => Date.now() + Math.floor(Math.random() * 1000);
+
 interface JobInput {
   id: string;
   text: string;
@@ -93,7 +97,7 @@ export default function MatchPage() {
 
   function track(m: JobMatch) {
     const app: Application = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
+      id: newAppId(),
       company: m.company,
       title: m.title,
       status: "planned",
@@ -127,7 +131,7 @@ export default function MatchPage() {
         setApplicationResume(existing.id, resumeId);
       } else {
         addApplication({
-          id: Date.now() + Math.floor(Math.random() * 1000),
+          id: newAppId(),
           company: m.company,
           title: m.title,
           status: "planned",

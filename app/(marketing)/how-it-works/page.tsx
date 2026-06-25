@@ -27,7 +27,7 @@ export default function HowItWorksPage() {
         <ol className="relative border-l-2 border-slate-200 ml-4 dark:border-slate-700">
           {STEPS.map((s) => (
             <li key={s.n} className="mb-10 ml-8">
-              <span className="absolute -left-[1.15rem] flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-white font-bold text-sm ring-4 ring-white">
+              <span className="absolute -left-[1.15rem] flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#fb6f4c] text-white font-bold text-sm ring-4 ring-white dark:ring-slate-900">
                 {s.n}
               </span>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{s.title}</h3>

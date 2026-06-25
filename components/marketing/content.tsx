@@ -59,6 +59,50 @@ export const FEATURES: Feature[] = [
   },
 ];
 
+export interface Stat {
+  value: string;
+  label: string;
+}
+
+export const STATS: Stat[] = [
+  { value: "12", label: "résumé templates" },
+  { value: "5", label: "AI providers" },
+  { value: "100%", label: "runs in your browser" },
+  { value: "£0", label: "free, no sign-up" },
+];
+
+export interface FAQ {
+  q: string;
+  a: string;
+}
+
+export const FAQS: FAQ[] = [
+  {
+    q: "Is ApplyPilot free?",
+    a: "Yes. The app is free and runs entirely in your browser — you only bring your own AI provider key, so you pay your provider directly for what you use.",
+  },
+  {
+    q: "Is my data safe?",
+    a: "Your profile, résumés, applications, and API keys are stored locally in your browser. Nothing is sent to our servers — content only goes to the AI provider you choose, when you ask it to generate something.",
+  },
+  {
+    q: "Which AI providers can I use?",
+    a: "OpenAI, Anthropic (Claude), Google Gemini, xAI Grok, or any OpenAI-compatible endpoint. Switch between them anytime in AI Settings.",
+  },
+  {
+    q: "Will my résumé pass ATS screening?",
+    a: "ApplyPilot runs an ATS safety scan that flags missing sections and weak metrics, and every template is built to be machine-readable. The Minimal and Classic templates are the safest single-column choices.",
+  },
+  {
+    q: "Do I need to install anything?",
+    a: "No. ApplyPilot is a web app — open it and start. Your work is saved in the browser automatically.",
+  },
+  {
+    q: "Can I export my résumé?",
+    a: "Yes. Every template exports to a clean PDF, and you can export your data as JSON and your applications as CSV.",
+  },
+];
+
 export interface Step {
   n: number;
   title: string;

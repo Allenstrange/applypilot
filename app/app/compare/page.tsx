@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { GitCompare, Trophy, Minus } from "lucide-react";
+import { Trophy, Minus } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";

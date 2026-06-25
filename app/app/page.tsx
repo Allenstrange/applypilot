@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, ClipboardList, Settings, Target, Mic } from "lucide-react";
+import { Search, User, ClipboardList, Settings, Target, Mic, Sparkles, ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated, useNow } from "@/lib/useHydrated";
 import PageHeader from "@/components/PageHeader";
@@ -28,10 +28,10 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Applications" value={stats.total} className="text-slate-900 dark:text-slate-100" />
-        <StatCard label="Interviews" value={stats.interviews} className="text-amber-600 dark:text-amber-400" />
-        <StatCard label="Offers" value={stats.offers} className="text-green-600 dark:text-green-400" />
-        <StatCard label="This Week" value={stats.week} className="text-indigo-600 dark:text-indigo-400" />
+        <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" />
+        <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" />
+        <StatCard label="Offers" value={stats.offers} hint={stats.offers ? "🎉 nice work" : "keep going"} className="text-green-600 dark:text-green-400" />
+        <StatCard label="This Week" value={stats.week} hint="added this week" className="text-[var(--brand)]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -63,8 +63,20 @@ export default function DashboardPage() {
           <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Recent Activity</h2>
           <div className="space-y-3 text-sm">
             {apps.length === 0 ? (
-              <div className="text-slate-500 text-center py-4 dark:text-slate-400">
-                No recent activity. Start by analysing a job.
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                  <Sparkles className="w-6 h-6 text-[var(--brand)]" />
+                </div>
+                <div className="font-medium text-slate-900 dark:text-slate-100">No activity yet</div>
+                <p className="text-slate-500 text-xs mt-1 mb-4 dark:text-slate-400">
+                  Analyse your first job to start tailoring applications.
+                </p>
+                <Link
+                  href="/app/analyze"
+                  className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold"
+                >
+                  Analyse your first job <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             ) : (
               apps.slice(0, 5).map((a) => (
@@ -93,16 +105,19 @@ export default function DashboardPage() {
 function StatCard({
   label,
   value,
+  hint,
   className,
 }: {
   label: string;
   value: number;
+  hint?: string;
   className?: string;
 }) {
   return (
     <div className="card stat-card rounded-xl p-5">
       <div className="text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">{label}</div>
       <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
+      {hint ? <div className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{hint}</div> : null}
     </div>
   );
 }

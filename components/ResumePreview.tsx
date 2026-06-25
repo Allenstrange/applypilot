@@ -1,240 +1,295 @@
-"use client";
+import type { Profile, TemplateId } from "@/lib/types";
+import { resolveTemplate, type ResolvedTemplate, type StyleOverrides } from "@/lib/templates";
+import { parseBullets, parseList, parseLines } from "@/lib/resumeFormat";
 
-import type React from "react";
-import type { Profile, TemplateId, SectionKey } from "@/lib/types";
-import { getTemplate, DEFAULT_SECTION_ORDER } from "@/lib/templates";
-
-interface Props {
-  profile: Profile;
-  templateId: TemplateId;
-  accent?: string;
-  order?: SectionKey[];
-  editable?: boolean;
-  onPatch?: (patch: Partial<Profile>) => void;
+function hexToRgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-function readText(e: React.FocusEvent<HTMLElement>): string {
-  return e.currentTarget.innerText.replace(/\u00a0/g, " ").trim();
+function fontFamily(font: "serif" | "sans" | "mono"): string {
+  if (font === "serif") return "Georgia, 'Times New Roman', serif";
+  if (font === "mono") return "'Courier New', Courier, monospace";
+  return "Arial, Helvetica, sans-serif";
 }
 
-export default function ResumePreview({
-  profile,
-  templateId,
-  accent: accentOverride,
-  order,
-  editable = false,
-  onPatch,
-}: Props) {
-  const tpl = getTemplate(templateId);
-  const accent = accentOverride || tpl.accent;
-  const fontFamily =
-    tpl.font === "serif" ? "Georgia, 'Times New Roman', serif" : "Arial, Helvetica, sans-serif";
-  const compact = tpl.id === "compact";
-  const plain = tpl.header === "plain";
-  const sectionOrder = order && order.length ? order : DEFAULT_SECTION_ORDER;
+const DENSITY = {
+  compact: { pad: 28, lh: 1.38, sec: 9, bullet: 1, head: 12 },
+  normal: { pad: 36, lh: 1.5, sec: 12, bullet: 2, head: 16 },
+  relaxed: { pad: 44, lh: 1.66, sec: 16, bullet: 4, head: 22 },
+};
 
-  const patch = (p: Partial<Profile>) => onPatch?.(p);
-  const updateExp = (i: number, p: Partial<Profile["experience"][number]>) =>
-    patch({ experience: profile.experience.map((e, idx) => (idx === i ? { ...e, ...p } : e)) });
-  const updateBulletLine = (i: number, j: number, text: string) => {
-    const lines = profile.experience[i].bullets.split("\n");
-    lines[j] = text;
-    updateExp(i, { bullets: lines.join("\n") });
-  };
-  const updateEdu = (i: number, p: Partial<Profile["education"][number]>) =>
-    patch({ education: profile.education.map((e, idx) => (idx === i ? { ...e, ...p } : e)) });
-
-  const baseCls =
-    "rounded-sm cursor-text transition-colors hover:bg-amber-100/70 focus:bg-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-400";
-  const inlineCls = `${baseCls} px-0.5 -mx-0.5 underline decoration-dotted decoration-slate-300/70 underline-offset-2 hover:decoration-amber-400`;
-  const blockCls = `${baseCls} block border-l-2 border-dashed border-slate-200 pl-2 hover:border-amber-400`;
-
-  function field(
-    value: string,
-    onCommit: (v: string) => void,
-    opts: { placeholder?: string; style?: React.CSSProperties; block?: boolean } = {},
-  ) {
-    if (!editable) return <span style={opts.style}>{value || opts.placeholder || ""}</span>;
-    const common = {
-      contentEditable: true,
-      suppressContentEditableWarning: true,
-      title: "Click to edit",
-      className: opts.block ? blockCls : inlineCls,
-      onBlur: (e: React.FocusEvent<HTMLElement>) => {
-        const v = readText(e);
-        if (v !== value) onCommit(v);
-      },
-    };
-    if (opts.block) {
-      return (
-        <div {...common} style={{ ...opts.style, whiteSpace: "pre-wrap", minHeight: "1em" }}>
-          {value}
-        </div>
-      );
-    }
-    return (
-      <span {...common} style={{ ...opts.style, display: "inline-block", minWidth: 6 }}>
-        {value}
-      </span>
-    );
-  }
-
-  const heading = (label: string) => (
+function PreviewHeading({
+  tpl,
+  marginTop,
+  children,
+}: {
+  tpl: ResolvedTemplate;
+  marginTop: number;
+  children: string;
+}) {
+  const underlineWidth = tpl.header === "plain" ? 1 : 2;
+  return (
     <h2
       style={{
-        color: accent,
+        color: tpl.accent,
         fontSize: 12,
         fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        marginTop: compact ? 12 : 16,
+        textTransform: tpl.headingUppercase ? "uppercase" : "none",
+        letterSpacing: tpl.headingUppercase ? 1 : 0,
+        marginTop,
         marginBottom: 6,
-        borderBottom: `${plain ? 1 : 2}px solid ${accent}`,
-        paddingBottom: 3,
+        borderBottom: tpl.headingUnderline ? `${underlineWidth}px solid ${tpl.accent}` : "none",
+        paddingBottom: tpl.headingUnderline ? 3 : 0,
       }}
     >
-      {label}
+      {children}
     </h2>
   );
+}
 
-  const sections: Record<SectionKey, React.ReactNode> = {
-    summary:
-      profile.summary || editable ? (
-        <div>
-          {heading("Professional Summary")}
-          {field(profile.summary, (v) => patch({ summary: v }), {
-            block: true,
-            placeholder: "Add a professional summary…",
-            style: { margin: 0 },
-          })}
-        </div>
-      ) : null,
+// ---------------- Single-column layout ----------------
 
-    skills:
-      profile.skills || editable ? (
-        <div>
-          {heading("Core Skills")}
-          {field(profile.skills, (v) => patch({ skills: v }), {
-            block: true,
-            placeholder: "Comma-separated skills…",
-            style: { margin: 0 },
-          })}
-        </div>
-      ) : null,
-
-    experience:
-      profile.experience.length || editable ? (
-        <div>
-          {heading("Professional Experience")}
-          {profile.experience.map((exp, i) => {
-            const lines = editable
-              ? exp.bullets.split("\n")
-              : exp.bullets
-                  .split("\n")
-                  .map((b) => b.replace(/^[-•]\s*/, "").trim())
-                  .filter(Boolean);
-            return (
-              <div key={i} style={{ marginBottom: compact ? 8 : 12 }}>
-                <div style={{ fontWeight: 700 }}>
-                  {field(exp.role, (v) => updateExp(i, { role: v }), { placeholder: "Role" })}
-                  {exp.company || editable ? (
-                    <>
-                      {" — "}
-                      {field(exp.company, (v) => updateExp(i, { company: v }), { placeholder: "Company" })}
-                    </>
-                  ) : null}
-                </div>
-                {[exp.start, exp.end].filter(Boolean).length || editable ? (
-                  <div style={{ fontSize: 11, color: "#777", fontStyle: "italic" }}>
-                    {field(exp.start, (v) => updateExp(i, { start: v }), { placeholder: "Start" })}
-                    {" – "}
-                    {field(exp.end, (v) => updateExp(i, { end: v }), { placeholder: "End" })}
-                  </div>
-                ) : null}
-                <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
-                  {lines.map((b, j) => (
-                    <li key={j} style={{ marginBottom: 2 }}>
-                      {field(b.replace(/^[-•]\s*/, ""), (v) => updateBulletLine(i, j, v), {
-                        placeholder: "Achievement…",
-                      })}
-                    </li>
-                  ))}
-                </ul>
-                {exp.tools || editable ? (
-                  <div style={{ fontSize: 11 }}>
-                    <strong>Tools:</strong>{" "}
-                    {field(exp.tools, (v) => updateExp(i, { tools: v }), { placeholder: "Tools" })}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      ) : null,
-
-    education: profile.education.length ? (
-      <div>
-        {heading("Education")}
-        {profile.education.map((ed, i) => (
-          <div key={i} style={{ marginBottom: 4 }}>
-            <div style={{ fontWeight: 700 }}>
-              {field(ed.degree || ed.institution, (v) => updateEdu(i, { degree: v }), { placeholder: "Degree" })}
-            </div>
-            <div style={{ fontSize: 11, color: "#555" }}>
-              {field(ed.institution, (v) => updateEdu(i, { institution: v }), { placeholder: "Institution" })}
-              {ed.year || editable ? <>{", "}{field(ed.year, (v) => updateEdu(i, { year: v }), { placeholder: "Year" })}</> : null}
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : null,
-
-    certs: profile.certs ? (
-      <div>
-        {heading("Certifications")}
-        <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
-          {profile.certs
-            .split("\n")
-            .filter(Boolean)
-            .map((c, i) => (
-              <li key={i}>{c.trim()}</li>
-            ))}
-        </ul>
-      </div>
-    ) : null,
-  };
-
+function SingleColumn({ profile, tpl }: { profile: Profile; tpl: ResolvedTemplate }) {
+  const d = DENSITY[tpl.density];
   const contact1 = [profile.title, profile.location].filter(Boolean).join("  |  ");
   const contact2 = [profile.email, profile.phone, profile.linkedin].filter(Boolean).join("  |  ");
 
   return (
     <div
       className="bg-white border border-slate-200 rounded-lg shadow-sm text-[#1a1a1a]"
-      style={{ fontFamily, padding: compact ? 28 : 36, lineHeight: 1.5, fontSize: 13 }}
+      style={{ fontFamily: fontFamily(tpl.font), padding: d.pad, lineHeight: d.lh, fontSize: 13 }}
     >
-      {/* Header */}
       {tpl.header === "band" ? (
-        <div style={{ background: accent, color: "#fff", margin: compact ? -28 : -36, marginBottom: 20, padding: compact ? "20px 28px" : "24px 36px" }}>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            {field(profile.name, (v) => patch({ name: v }), { placeholder: "Your Name" })}
-          </div>
-          {contact1 || editable ? <div style={{ fontSize: 11, opacity: 0.95, marginTop: 2 }}>{contact1 || (editable ? "Title  |  Location" : "")}</div> : null}
-          {contact2 || editable ? <div style={{ fontSize: 11, opacity: 0.95 }}>{contact2 || (editable ? "Email  |  Phone  |  LinkedIn" : "")}</div> : null}
+        <div style={{ background: tpl.accent, color: "#fff", margin: -d.pad, marginBottom: 20, padding: `${d.pad * 0.6}px ${d.pad}px` }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{profile.name || "Your Name"}</div>
+          {contact1 ? <div style={{ fontSize: 11, opacity: 0.95, marginTop: 2 }}>{contact1}</div> : null}
+          {contact2 ? <div style={{ fontSize: 11, opacity: 0.95 }}>{contact2}</div> : null}
         </div>
       ) : (
         <div style={{ marginBottom: 6 }}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#111" }}>
-            {field(profile.name, (v) => patch({ name: v }), { placeholder: "Your Name" })}
-          </div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#111" }}>{profile.name || "Your Name"}</div>
           {contact1 ? <div style={{ fontSize: 11, color: "#555" }}>{contact1}</div> : null}
           {contact2 ? <div style={{ fontSize: 11, color: "#555" }}>{contact2}</div> : null}
-          {tpl.header === "rule" ? <hr style={{ border: 0, borderTop: `1px solid ${accent}`, marginTop: 8 }} /> : null}
+          {tpl.header === "rule" ? <hr style={{ border: 0, borderTop: "1px solid #111", marginTop: 8 }} /> : null}
         </div>
       )}
 
-      {sectionOrder.map((key) => (
-        <div key={key}>{sections[key]}</div>
+      {profile.summary ? (
+        <>
+          <PreviewHeading tpl={tpl} marginTop={d.head}>Professional Summary</PreviewHeading>
+          <p style={{ margin: 0 }}>{profile.summary}</p>
+        </>
+      ) : null}
+
+      {profile.skills ? (
+        <>
+          <PreviewHeading tpl={tpl} marginTop={d.head}>Core Skills</PreviewHeading>
+          <p style={{ margin: 0 }}>{profile.skills}</p>
+        </>
+      ) : null}
+
+      {profile.experience.length ? <PreviewHeading tpl={tpl} marginTop={d.head}>Professional Experience</PreviewHeading> : null}
+      {profile.experience.map((exp, i) => (
+        <div key={i} style={{ marginBottom: d.sec }}>
+          <div style={{ fontWeight: 700 }}>
+            {exp.role}
+            {exp.company ? ` — ${exp.company}` : ""}
+          </div>
+          {[exp.start, exp.end].filter(Boolean).length ? (
+            <div style={{ fontSize: 11, color: "#777", fontStyle: "italic" }}>
+              {[exp.start, exp.end].filter(Boolean).join(" – ")}
+            </div>
+          ) : null}
+          <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
+            {parseBullets(exp.bullets).map((b, j) => (
+              <li key={j} style={{ marginBottom: d.bullet }}>{b}</li>
+            ))}
+          </ul>
+          {exp.tools ? <div style={{ fontSize: 11 }}><strong>Tools:</strong> {exp.tools}</div> : null}
+        </div>
       ))}
+
+      {profile.education.length ? <PreviewHeading tpl={tpl} marginTop={d.head}>Education</PreviewHeading> : null}
+      {profile.education.map((ed, i) => (
+        <div key={i} style={{ marginBottom: 4 }}>
+          <div style={{ fontWeight: 700 }}>{ed.degree || ed.institution}</div>
+          <div style={{ fontSize: 11, color: "#555" }}>{[ed.institution, ed.year].filter(Boolean).join(", ")}</div>
+        </div>
+      ))}
+
+      {profile.certs ? (
+        <>
+          <PreviewHeading tpl={tpl} marginTop={d.head}>Certifications</PreviewHeading>
+          <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
+            {parseLines(profile.certs).map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </div>
   );
+}
+
+// ---------------- Two-column (sidebar) layout ----------------
+
+function SidebarHead({ uppercase, underline, color, border, children }: { uppercase: boolean; underline: boolean; color: string; border: string; children: string }) {
+  return (
+    <div
+      style={{
+        color,
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: uppercase ? "uppercase" : "none",
+        letterSpacing: uppercase ? 1 : 0,
+        marginTop: 18,
+        marginBottom: 6,
+        paddingBottom: underline ? 3 : 0,
+        borderBottom: underline ? `1px solid ${border}` : "none",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function MainHead({ uppercase, underline, color, children }: { uppercase: boolean; underline: boolean; color: string; children: string }) {
+  return (
+    <h2
+      style={{
+        color,
+        fontSize: 12,
+        fontWeight: 700,
+        textTransform: uppercase ? "uppercase" : "none",
+        letterSpacing: uppercase ? 1 : 0,
+        marginTop: 16,
+        marginBottom: 6,
+        borderBottom: underline ? `2px solid ${color}` : "none",
+        paddingBottom: underline ? 3 : 0,
+      }}
+    >
+      {children}
+    </h2>
+  );
+}
+
+function SidebarLayout({ profile, tpl }: { profile: Profile; tpl: ResolvedTemplate }) {
+  const d = DENSITY[tpl.density];
+  const solid = tpl.sidebarStyle === "solid";
+
+  const sideBg = solid ? tpl.accent : hexToRgba(tpl.accent, 0.09);
+  const sideText = solid ? "rgba(255,255,255,0.92)" : "#374151";
+  const sideHeadColor = solid ? "#ffffff" : tpl.accent;
+  const sideHeadBorder = solid ? "rgba(255,255,255,0.3)" : hexToRgba(tpl.accent, 0.35);
+  const mainAccent = solid ? "#111827" : tpl.accent;
+  const up = tpl.headingUppercase;
+  const ul = tpl.headingUnderline;
+
+  const contacts = [profile.email, profile.phone, profile.location, profile.linkedin].filter(Boolean);
+  const skills = parseList(profile.skills);
+  const certs = parseLines(profile.certs);
+
+  return (
+    <div
+      className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden text-[#1a1a1a]"
+      style={{ fontFamily: fontFamily(tpl.font), fontSize: 13, lineHeight: d.lh, display: "flex", alignItems: "stretch" }}
+    >
+      {/* Sidebar */}
+      <aside style={{ width: "34%", background: sideBg, color: sideText, padding: `${d.pad * 0.75}px ${d.pad * 0.6}px` }}>
+        {contacts.length ? (
+          <>
+            <SidebarHead uppercase={up} underline={ul} color={sideHeadColor} border={sideHeadBorder}>Contact</SidebarHead>
+            {contacts.map((c, i) => (
+              <div key={i} style={{ fontSize: 11, marginBottom: 3, wordBreak: "break-word" }}>{c}</div>
+            ))}
+          </>
+        ) : null}
+
+        {skills.length ? (
+          <>
+            <SidebarHead uppercase={up} underline={ul} color={sideHeadColor} border={sideHeadBorder}>Skills</SidebarHead>
+            {skills.map((s, i) => (
+              <div key={i} style={{ fontSize: 11.5, marginBottom: 3, display: "flex", gap: 6 }}>
+                <span style={{ color: solid ? "rgba(255,255,255,0.7)" : tpl.accent }}>•</span>
+                <span>{s}</span>
+              </div>
+            ))}
+          </>
+        ) : null}
+
+        {profile.education.length ? (
+          <>
+            <SidebarHead uppercase={up} underline={ul} color={sideHeadColor} border={sideHeadBorder}>Education</SidebarHead>
+            {profile.education.map((ed, i) => (
+              <div key={i} style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700 }}>{ed.degree || ed.institution}</div>
+                <div style={{ fontSize: 10.5, opacity: 0.85 }}>{[ed.institution, ed.year].filter(Boolean).join(", ")}</div>
+              </div>
+            ))}
+          </>
+        ) : null}
+
+        {certs.length ? (
+          <>
+            <SidebarHead uppercase={up} underline={ul} color={sideHeadColor} border={sideHeadBorder}>Certifications</SidebarHead>
+            {certs.map((c, i) => (
+              <div key={i} style={{ fontSize: 11, marginBottom: 3 }}>{c}</div>
+            ))}
+          </>
+        ) : null}
+      </aside>
+
+      {/* Main column */}
+      <main style={{ flex: 1, padding: `${d.pad * 0.8}px ${d.pad * 0.8}px` }}>
+        <div style={{ fontSize: 26, fontWeight: 700, color: "#111", lineHeight: 1.1 }}>{profile.name || "Your Name"}</div>
+        {profile.title ? <div style={{ fontSize: 13, color: mainAccent, fontWeight: 600, marginTop: 2 }}>{profile.title}</div> : null}
+
+        {profile.summary ? (
+          <>
+            <MainHead uppercase={up} underline={ul} color={mainAccent}>Professional Summary</MainHead>
+            <p style={{ margin: 0 }}>{profile.summary}</p>
+          </>
+        ) : null}
+
+        {profile.experience.length ? <MainHead uppercase={up} underline={ul} color={mainAccent}>Professional Experience</MainHead> : null}
+        {profile.experience.map((exp, i) => (
+          <div key={i} style={{ marginBottom: d.sec }}>
+            <div style={{ fontWeight: 700 }}>
+              {exp.role}
+              {exp.company ? ` — ${exp.company}` : ""}
+            </div>
+            {[exp.start, exp.end].filter(Boolean).length ? (
+              <div style={{ fontSize: 11, color: "#777", fontStyle: "italic" }}>
+                {[exp.start, exp.end].filter(Boolean).join(" – ")}
+              </div>
+            ) : null}
+            <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
+              {parseBullets(exp.bullets).map((b, j) => (
+                <li key={j} style={{ marginBottom: d.bullet }}>{b}</li>
+              ))}
+            </ul>
+            {exp.tools ? <div style={{ fontSize: 11 }}><strong>Tools:</strong> {exp.tools}</div> : null}
+          </div>
+        ))}
+      </main>
+    </div>
+  );
+}
+
+export default function ResumePreview({
+  profile,
+  templateId,
+  accent,
+  font,
+  density,
+  headingUppercase,
+  headingUnderline,
+}: {
+  profile: Profile;
+  templateId: TemplateId;
+} & StyleOverrides) {
+  const tpl = resolveTemplate(templateId, { accent, font, density, headingUppercase, headingUnderline });
+  if (tpl.layout === "sidebar") return <SidebarLayout profile={profile} tpl={tpl} />;
+  return <SingleColumn profile={profile} tpl={tpl} />;
 }

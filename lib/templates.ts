@@ -4,12 +4,16 @@ export interface TemplateDef {
   id: TemplateId;
   name: string;
   description: string;
-  /** Accent colour used for headings / header band. */
+  /** Accent colour used for headings / header band / sidebar. */
   accent: string;
   /** Header treatment in the PDF/preview. */
   header: "plain" | "band" | "rule";
   /** Body font family. */
   font: "serif" | "sans";
+  /** Page layout. Defaults to single column. */
+  layout?: "single" | "sidebar";
+  /** For sidebar layouts: tinted (light) or solid (accent-filled) sidebar. */
+  sidebarStyle?: "tint" | "solid";
 }
 
 export const TEMPLATES: TemplateDef[] = [
@@ -60,6 +64,26 @@ export const TEMPLATES: TemplateDef[] = [
     accent: "#fb6f4c",
     header: "band",
     font: "sans",
+  },
+  {
+    id: "profile",
+    name: "Profile",
+    description: "Two-column layout with a tinted teal sidebar for skills and contact.",
+    accent: "#0d9488",
+    header: "plain",
+    font: "sans",
+    layout: "sidebar",
+    sidebarStyle: "tint",
+  },
+  {
+    id: "onyx",
+    name: "Onyx",
+    description: "Two-column layout with a solid slate sidebar. Striking and modern.",
+    accent: "#1f2937",
+    header: "plain",
+    font: "sans",
+    layout: "sidebar",
+    sidebarStyle: "solid",
   },
 ];
 

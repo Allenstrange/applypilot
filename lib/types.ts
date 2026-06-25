@@ -152,7 +152,9 @@ export type TemplateId =
   | "compact"
   | "executive"
   | "minimal"
-  | "bold";
+  | "bold"
+  | "profile"
+  | "onyx";
 
 export interface ResumeDoc {
   id: string;

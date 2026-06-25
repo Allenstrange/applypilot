@@ -16,6 +16,15 @@ import type {
   TemplateId,
 } from "./types";
 
+/** Ensure a tracked application has a seeded status timeline. */
+function withInitialHistory(app: Application): Application {
+  if (app.statusHistory && app.statusHistory.length) return app;
+  return {
+    ...app,
+    statusHistory: [{ status: app.status, at: app.createdAt }],
+  };
+}
+
 export const emptyProfile: Profile = {
   name: "",
   title: "",
@@ -47,6 +56,7 @@ interface AppState {
   generations: Generations;
   resumes: ResumeDoc[];
   providers: ProviderSettings;
+  onboarded: boolean;
 
   // ----- profile -----
   setProfile: (patch: Partial<Profile>) => void;
@@ -59,7 +69,7 @@ interface AppState {
     patch: Partial<
       Pick<
         ResumeDoc,
-        "name" | "templateId" | "profile" | "accent" | "font" | "density" | "headingUppercase" | "headingUnderline"
+        "name" | "templateId" | "profile" | "accent" | "font" | "density" | "headingUppercase" | "headingUnderline" | "sectionOrder"
       >
     >,
   ) => void;
@@ -79,12 +89,17 @@ interface AppState {
   addApplication: (app: Application) => void;
   removeApplication: (id: number) => void;
   setApplicationStatus: (id: number, status: Application["status"]) => void;
+  updateApplicationNotes: (id: number, notes: string) => void;
+  setApplicationResume: (id: number, resumeId: string) => void;
   saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
   loadApplication: (id: number) => boolean;
 
   // ----- providers -----
   setActiveProvider: (id: ProviderId) => void;
   updateProviderConfig: (id: ProviderId, patch: Partial<ProviderConfig>) => void;
+
+  // ----- onboarding -----
+  setOnboarded: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -97,6 +112,7 @@ export const useStore = create<AppState>()(
       generations: {},
       resumes: [],
       providers: defaultProviders,
+      onboarded: false,
 
       setProfile: (patch) =>
         set((s) => ({ profile: { ...s.profile, ...patch } })),
@@ -151,15 +167,39 @@ export const useStore = create<AppState>()(
         set((s) => ({ generations: { ...s.generations, [mode]: payload } })),
 
       addApplication: (app) =>
-        set((s) => ({ applications: [app, ...s.applications] })),
+        set((s) => ({ applications: [withInitialHistory(app), ...s.applications] })),
       removeApplication: (id) =>
         set((s) => ({ applications: s.applications.filter((a) => a.id !== id) })),
       setApplicationStatus: (id, status) =>
         set((s) => ({
+          applications: s.applications.map((a) => {
+            if (a.id !== id) return a;
+            const hist = a.statusHistory ?? [{ status: a.status, at: a.createdAt }];
+            const last = hist[hist.length - 1];
+            const statusHistory =
+              last && last.status === status
+                ? hist
+                : [...hist, { status, at: new Date().toISOString() }];
+            return { ...a, status, statusHistory };
+          }),
+        })),
+      updateApplicationNotes: (id, notes) =>
+        set((s) => ({
           applications: s.applications.map((a) =>
-            a.id === id ? { ...a, status } : a,
+            a.id === id ? { ...a, notes } : a,
           ),
         })),
+      setApplicationResume: (id, resumeId) =>
+        set((s) => {
+          const r = s.resumes.find((x) => x.id === resumeId);
+          return {
+            applications: s.applications.map((a) =>
+              a.id === id
+                ? { ...a, resumeId: resumeId || undefined, resumeName: r?.name }
+                : a,
+            ),
+          };
+        }),
       saveCurrentToTracker: () => {
         const s = get();
         const a = s.currentAnalysis;
@@ -180,6 +220,7 @@ export const useStore = create<AppState>()(
           status: "planned",
           createdAt: new Date().toISOString(),
           notes: "",
+          statusHistory: [{ status: "planned", at: new Date().toISOString() }],
           snapshot: {
             analysis: a,
             draftCV: s.draftCV ?? (JSON.parse(JSON.stringify(s.profile)) as Profile),
@@ -209,6 +250,8 @@ export const useStore = create<AppState>()(
             [id]: { ...s.providers[id], ...patch },
           },
         })),
+
+      setOnboarded: (v) => set({ onboarded: v }),
     }),
     {
       name: "applypilot_v4",

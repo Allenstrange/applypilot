@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Search, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, Link2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { isAIConfigured, AI_PROVIDERS } from "@/lib/ai";
 import { analyseJob } from "@/lib/analysis";
+import { fetchJobText, extractJobMeta } from "@/lib/jobUrl";
 import { toast } from "@/lib/toast";
 import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
@@ -46,11 +47,41 @@ export default function AnalyzePage() {
     jd: "",
   });
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const field =
     (key: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  async function importFromUrl() {
+    if (!form.url.trim()) {
+      toast("⚠ Paste a job posting URL first");
+      return;
+    }
+    setImporting(true);
+    toast("⏳ Fetching job posting…");
+    try {
+      const text = await fetchJobText(form.url);
+      const patch: Partial<typeof form> = { jd: text.slice(0, 12000) };
+      if (isAIConfigured(providers)) {
+        try {
+          const meta = await extractJobMeta(text, providers);
+          patch.company = form.company || meta.company;
+          patch.title = form.title || meta.title;
+          patch.location = form.location || meta.location;
+        } catch {
+          /* keep fetched text even if meta extraction fails */
+        }
+      }
+      setForm((f) => ({ ...f, ...patch }));
+      toast("✓ Imported — review and analyse");
+    } catch (err) {
+      toast("✕ " + (err as Error).message + " — paste it manually");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function analyse() {
     if (!form.company || !form.title || !form.jd) {
@@ -88,6 +119,25 @@ export default function AnalyzePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card rounded-xl p-6">
+          <div className="flex gap-2 mb-4">
+            <input
+              className="flex-1 px-3 py-2 rounded-lg text-sm"
+              placeholder="Paste a job posting URL to auto-fill…"
+              value={form.url}
+              onChange={field("url")}
+              data-testid="job-url-input"
+            />
+            <button
+              type="button"
+              onClick={importFromUrl}
+              disabled={importing}
+              data-testid="job-url-fetch"
+              className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2 shrink-0"
+            >
+              {importing ? <span className="spinner" /> : <Link2 className="w-4 h-4" />}
+              Import from URL
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <Labeled label="Company Name *">
               <input className="w-full px-3 py-2 rounded-lg text-sm" placeholder="Tetra Tech" value={form.company} onChange={field("company")} />

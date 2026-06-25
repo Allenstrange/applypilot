@@ -1,4 +1,5 @@
 import Sidebar from "@/components/Sidebar";
+import OnboardingTour from "@/components/OnboardingTour";
 
 export default function AppLayout({
   children,
@@ -9,6 +10,7 @@ export default function AppLayout({
     <div className="lg:flex min-h-screen">
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto scrollbar">{children}</main>
+      <OnboardingTour />
     </div>
   );
 }

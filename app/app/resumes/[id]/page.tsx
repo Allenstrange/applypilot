@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Share2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
-import { TEMPLATES, ACCENT_SWATCHES, DENSITY_LABELS, FONT_LABELS, resolveTemplate } from "@/lib/templates";
+import { TEMPLATES, ACCENT_SWATCHES, DENSITY_LABELS, FONT_LABELS, DEFAULT_SECTION_ORDER, SECTION_LABELS, resolveTemplate } from "@/lib/templates";
 import { exportResumePDF } from "@/lib/resumePdf";
+import { buildShareUrl } from "@/lib/share";
 import { toast } from "@/lib/toast";
-import type { Profile, TemplateId } from "@/lib/types";
+import type { Profile, TemplateId, SectionKey } from "@/lib/types";
 import ProfileFields from "@/components/ProfileFields";
 import ResumePreview from "@/components/ResumePreview";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
@@ -19,6 +21,7 @@ export default function ResumeEditorPage() {
   const hydrated = useHydrated();
   const resume = useStore((s) => s.resumes.find((r) => r.id === id));
   const updateResume = useStore((s) => s.updateResume);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   if (!hydrated) {
     return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
@@ -37,6 +40,26 @@ export default function ResumeEditorPage() {
 
   const patchProfile = (patch: Partial<Profile>) =>
     updateResume(id, { profile: { ...resume.profile, ...patch } });
+
+  const order: SectionKey[] = resume.sectionOrder?.length ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
+  function moveSection(from: number, to: number) {
+    if (to < 0 || to >= order.length || from === to) return;
+    const next = [...order];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    updateResume(id, { sectionOrder: next });
+  }
+
+  async function shareLink() {
+    if (!resume) return;
+    const url = buildShareUrl(window.location.origin, resume.profile, resume.templateId);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("✓ Share link copied to clipboard");
+    } catch {
+      toast("Link: " + url);
+    }
+  }
 
   // Effective style (template defaults merged with this resume's customizations).
   const resolved = resolveTemplate(resume.templateId, {
@@ -61,22 +84,37 @@ export default function ResumeEditorPage() {
             aria-label="Resume name"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            exportResumePDF(resume.profile, resume.templateId, {
-              accent: resume.accent,
-              font: resume.font,
-              density: resume.density,
-              headingUppercase: resume.headingUppercase,
-              headingUnderline: resume.headingUnderline,
-            });
-            toast("✓ PDF downloaded");
-          }}
-          className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" /> Download PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={shareLink}
+            data-testid="share-resume-btn"
+            className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Share2 className="w-4 h-4" /> Share link
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              exportResumePDF(
+                resume.profile,
+                resume.templateId,
+                {
+                  accent: resume.accent,
+                  font: resume.font,
+                  density: resume.density,
+                  headingUppercase: resume.headingUppercase,
+                  headingUnderline: resume.headingUnderline,
+                },
+                order,
+              );
+              toast("✓ PDF downloaded");
+            }}
+            className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" /> Download PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -205,6 +243,35 @@ export default function ResumeEditorPage() {
             </div>
           </div>
 
+          {/* Section order */}
+          <div className="card rounded-xl p-5 mb-6">
+            <div className="text-sm font-semibold text-slate-900 mb-1 dark:text-slate-100">Section order</div>
+            <p className="text-[11px] text-[var(--text-muted)] mb-3">Drag, or use the arrows, to reorder résumé sections.</p>
+            <div className="space-y-1.5">
+              {order.map((key, i) => (
+                <div
+                  key={key}
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => { if (dragIndex !== null) moveSection(dragIndex, i); setDragIndex(null); }}
+                  onDragEnd={() => setDragIndex(null)}
+                  data-testid={`section-row-${key}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] cursor-grab ${dragIndex === i ? "opacity-50" : ""}`}
+                >
+                  <GripVertical className="w-4 h-4 text-[var(--text-faint)] shrink-0" />
+                  <span className="text-sm text-[var(--text)] flex-1">{SECTION_LABELS[key]}</span>
+                  <button type="button" onClick={() => moveSection(i, i - 1)} disabled={i === 0} aria-label="Move up" className="text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-30">
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                  <button type="button" onClick={() => moveSection(i, i + 1)} disabled={i === order.length - 1} aria-label="Move down" className="text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-30">
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <ProfileFields profile={resume.profile} onPatch={patchProfile} />
         </div>
 
@@ -220,6 +287,7 @@ export default function ResumeEditorPage() {
               density={resume.density}
               headingUppercase={resume.headingUppercase}
               headingUnderline={resume.headingUnderline}
+              sectionOrder={order}
             />
           </div>
         </div>

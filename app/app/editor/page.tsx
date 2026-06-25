@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   Save,
+  Wand2,
   FileText,
   Mail,
   ListChecks,
@@ -22,9 +23,12 @@ import {
   generateResumeSummary,
   generateInterviewPrep,
   generateOutreach,
-  enhanceBullet,
+  enhanceBulletVariants,
+  enhanceTextVariants,
+  optimizeResumeForJob,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
+import { exportResumeDOCX } from "@/lib/docx";
 import { copyToClipboard } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type {
@@ -37,6 +41,8 @@ import type {
 } from "@/lib/types";
 import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
+import ResumeScorePanel from "@/components/ResumeScorePanel";
+import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
 type Tab = "cv" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
 
@@ -56,7 +62,7 @@ export default function EditorPage() {
   const [tab, setTab] = useState<Tab>("cv");
 
   if (!hydrated) {
-    return <div className="p-8 text-slate-500 dark:text-slate-400">Loading…</div>;
+    return <PageSkeleton />;
   }
 
   if (!analysis || !draftCV) {
@@ -131,8 +137,92 @@ export default function EditorPage() {
 
 function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) {
   const updateDraftCV = useStore((s) => s.updateDraftCV);
+  const setDraftCV = useStore((s) => s.setDraftCV);
   const providers = useStore((s) => s.providers);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
+  const [variants, setVariants] = useState<{ key: string; options: string[] } | null>(null);
+  const [variantsLoading, setVariantsLoading] = useState<string | null>(null);
+  const [secVariants, setSecVariants] = useState<{ kind: "summary" | "skills"; options: string[] } | null>(null);
+  const [secLoading, setSecLoading] = useState<string | null>(null);
+
+  async function loadSectionVariants(kind: "summary" | "skills") {
+    if (!isAIConfigured(providers)) {
+      toast("⚠ AI provider not configured");
+      return;
+    }
+    setSecVariants(null);
+    setSecLoading(kind);
+    toast("⏳ Generating 3 options…");
+    try {
+      const text = kind === "summary" ? draftCV.summary : draftCV.skills;
+      const options = await enhanceTextVariants(text, kind, providers);
+      setSecVariants({ kind, options });
+      toast("✓ Pick an option");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setSecLoading(null);
+    }
+  }
+
+  function applySec(kind: "summary" | "skills", text: string) {
+    updateDraftCV(kind === "summary" ? { summary: text } : { skills: text });
+    setSecVariants(null);
+    toast("✓ Updated");
+  }
+
+  function renderSecAI(kind: "summary" | "skills") {
+    return (
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={() => loadSectionVariants(kind)}
+          data-testid={`sec-ai-${kind}`}
+          className="text-xs px-2 py-1 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white inline-flex items-center gap-1"
+        >
+          {secLoading === kind ? "…" : "✨ AI rewrite (3 options)"}
+        </button>
+        {secVariants?.kind === kind ? (
+          <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`sec-variants-${kind}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+              <button type="button" onClick={() => setSecVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
+            </div>
+            {secVariants.options.map((opt, k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => applySec(kind, opt)}
+                data-testid={`sec-variant-${kind}-${k}`}
+                className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+              >
+                <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  async function optimizeAll() {
+    if (!isAIConfigured(providers)) {
+      toast("⚠ AI provider not configured");
+      return;
+    }
+    setOptimizing(true);
+    toast("⏳ ATS-optimising your whole CV…");
+    try {
+      const optimized = await optimizeResumeForJob(draftCV, analysis, providers);
+      setDraftCV(optimized);
+      toast("✓ CV optimised for this job");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setOptimizing(false);
+    }
+  }
 
   const updateExp = (i: number, patch: Partial<Profile["experience"][number]>) =>
     updateDraftCV({
@@ -145,21 +235,32 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     updateExp(i, { bullets: lines.join("\n") });
   };
 
-  async function enhance(i: number, j: number, mode: "star" | "professional" | "metrics") {
+  async function loadVariants(i: number, j: number, mode: "star" | "professional" | "metrics") {
     setOpenMenu(null);
     if (!isAIConfigured(providers)) {
       toast("⚠ AI provider not configured");
       return;
     }
     const lines = draftCV.experience[i].bullets.split("\n");
-    toast("⏳ Enhancing bullet…");
+    const key = `${i}-${j}`;
+    setVariants(null);
+    setVariantsLoading(key);
+    toast("⏳ Generating 3 rewrite options…");
     try {
-      const enhanced = await enhanceBullet(lines[j], mode, providers);
-      updateBullet(i, j, enhanced);
-      toast("✓ Bullet enhanced");
+      const options = await enhanceBulletVariants(lines[j], mode, providers);
+      setVariants({ key, options });
+      toast("✓ Pick your favourite rewrite");
     } catch (err) {
       toast("✕ " + (err as Error).message);
+    } finally {
+      setVariantsLoading(null);
     }
+  }
+
+  function applyVariant(i: number, j: number, text: string) {
+    updateBullet(i, j, text);
+    setVariants(null);
+    toast("✓ Bullet updated");
   }
 
   // Live match rate
@@ -171,6 +272,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     draftCV.experience.map((e) => e.tools + " " + e.bullets).join(" ")
   ).toLowerCase();
   const matched = analysis.jdKeywords.filter((k) => draftText.includes(k.toLowerCase()));
+  const missing = analysis.jdKeywords.filter((k) => !draftText.includes(k.toLowerCase()));
   const score = analysis.jdKeywords.length
     ? Math.round((matched.length / analysis.jdKeywords.length) * 100)
     : 0;
@@ -182,9 +284,11 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
       <div className="space-y-4">
         <Section title="Professional Summary">
           <textarea rows={4} className="w-full px-3 py-2 rounded-lg text-sm" value={draftCV.summary} onChange={(e) => updateDraftCV({ summary: e.target.value })} />
+          {renderSecAI("summary")}
         </Section>
         <Section title="Skills">
           <textarea rows={2} className="w-full px-3 py-2 rounded-lg text-sm" value={draftCV.skills} onChange={(e) => updateDraftCV({ skills: e.target.value })} />
+          {renderSecAI("skills")}
         </Section>
         <Section title="Work Experience">
           <div className="space-y-4">
@@ -205,16 +309,36 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                       />
                       <button
                         type="button"
+                        data-testid={`bullet-ai-${i}-${j}`}
                         onClick={() => setOpenMenu(openMenu === `${i}-${j}` ? null : `${i}-${j}`)}
                         className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
                       >
-                        ✨ AI
+                        {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>
                       {openMenu === `${i}-${j}` ? (
                         <div className="absolute top-7 right-1 z-10 glass rounded-lg p-1 text-xs min-w-44 shadow-xl">
-                          <MenuItem onClick={() => enhance(i, j, "star")}>Rewrite in STAR format</MenuItem>
-                          <MenuItem onClick={() => enhance(i, j, "professional")}>Make more professional</MenuItem>
-                          <MenuItem onClick={() => enhance(i, j, "metrics")}>Add metric placeholders</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "star")}>Rewrite in STAR format</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "professional")}>Make more professional</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "metrics")}>Add metric placeholders</MenuItem>
+                        </div>
+                      ) : null}
+                      {variants && variants.key === `${i}-${j}` ? (
+                        <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`bullet-variants-${i}-${j}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+                            <button type="button" onClick={() => setVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
+                          </div>
+                          {variants.options.map((opt, k) => (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={() => applyVariant(i, j, opt)}
+                              data-testid={`bullet-variant-${i}-${j}-${k}`}
+                              className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+                            >
+                              <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+                            </button>
+                          ))}
                         </div>
                       ) : null}
                     </div>
@@ -227,9 +351,17 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
             ))}
           </div>
         </Section>
-        <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-          <Download className="w-4 h-4" /> Download CV (PDF)
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-500">
+            {optimizing ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />} One-click ATS optimise
+          </button>
+          <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} data-testid="download-cv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download CV (PDF)
+          </button>
+          <button type="button" onClick={() => { exportResumeDOCX(draftCV, "classic"); toast("✓ Word downloaded"); }} data-testid="download-cv-word-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Word (.doc)
+          </button>
+        </div>
       </div>
 
       {/* Preview */}
@@ -242,6 +374,48 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>
           </div>
+          <div className={`text-[11px] mt-1.5 font-medium ${score >= 75 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`} data-testid="match-benchmark">
+            {score >= 75 ? "✓ Above the 75% ATS benchmark" : "Aim for 75%+ to clear most ATS filters"}
+          </div>
+          {analysis.jdKeywords.length ? (
+            <div className="mt-3 space-y-2" data-testid="inline-keyword-gaps">
+              {missing.length ? (
+                <>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
+                    Missing keywords ({missing.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {missing.map((k) => (
+                      <span
+                        key={k}
+                        title="Not yet in your CV — weave it in if you have the experience"
+                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30"
+                      >
+                        + {k}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-[11px] text-green-600 dark:text-green-400">✓ All JD keywords present</div>
+              )}
+              {matched.length ? (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {matched.map((k) => (
+                    <span
+                      key={k}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25"
+                    >
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="mb-3" data-testid="editor-resume-score">
+          <ResumeScorePanel profile={draftCV} />
         </div>
         <div className="rounded-xl overflow-hidden">
           <CVPreview profile={draftCV} keywords={analysis.jdKeywords} />
@@ -320,8 +494,9 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
   const providers = useStore((s) => s.providers);
   const data = useStore((s) => s.generations.coverLetter);
   const setGeneration = useStore((s) => s.setGeneration);
+  const [tone, setTone] = useState("Professional");
   const { busy, go } = useGenerate<CoverLetter>(
-    () => generateCoverLetter(draftCV, analysis, providers),
+    () => generateCoverLetter(draftCV, analysis, providers, tone),
     (v) => setGeneration("coverLetter", v),
   );
 
@@ -336,12 +511,25 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
       onGenerate={go}
       hasData={!!data}
       actions={
-        data ? (
-          <>
-            <CopyBtn text={() => plainText(data)} />
-            <PdfBtn onClick={() => exportCoverLetterPDF(data, analysis.company)} />
-          </>
-        ) : null
+        <>
+          <select
+            value={tone}
+            onChange={(e) => setTone(e.target.value)}
+            data-testid="cover-tone-select"
+            className="text-xs px-2 py-2 rounded-lg"
+            aria-label="Cover letter tone"
+          >
+            {["Professional", "Formal", "Friendly", "Confident", "Concise", "Enthusiastic"].map((t) => (
+              <option key={t} value={t}>{t} tone</option>
+            ))}
+          </select>
+          {data ? (
+            <>
+              <CopyBtn text={() => plainText(data)} />
+              <PdfBtn onClick={() => exportCoverLetterPDF(data, analysis.company)} />
+            </>
+          ) : null}
+        </>
       }
     >
       {data ? (
@@ -509,7 +697,17 @@ function OutputShell({
           </button>
         </div>
       </div>
-      {hasData ? children : (
+      {busy && !hasData ? (
+        <div className="card rounded-xl p-6 space-y-3" data-testid="generation-skeleton">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+      ) : hasData ? (
+        children
+      ) : (
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400">
           Click <span className="text-amber-600 dark:text-amber-400">Generate</span> to create tailored, keyword-rich content.
         </div>

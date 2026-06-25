@@ -1,6 +1,23 @@
-import type { TemplateId } from "./types";
+import type { TemplateId, SectionKey } from "./types";
 
-export type TemplateCategory = "simple" | "modern" | "creative" | "two-column";
+export type TemplateCategory = "simple" | "modern" | "creative";
+
+/** Default resume section order (used by DOCX export and section controls). */
+export const DEFAULT_SECTION_ORDER: SectionKey[] = [
+  "summary",
+  "skills",
+  "experience",
+  "education",
+  "certs",
+];
+
+export const SECTION_LABELS: Record<SectionKey, string> = {
+  summary: "Professional Summary",
+  skills: "Core Skills",
+  experience: "Professional Experience",
+  education: "Education",
+  certs: "Certifications",
+};
 
 export interface TemplateDef {
   id: TemplateId;
@@ -12,10 +29,6 @@ export interface TemplateDef {
   header: "plain" | "band" | "rule";
   /** Body font family. */
   font: "serif" | "sans" | "mono";
-  /** Page layout. Defaults to single column. */
-  layout?: "single" | "sidebar";
-  /** For sidebar layouts: tinted (light) or solid (accent-filled) sidebar. */
-  sidebarStyle?: "tint" | "solid";
   /** Gallery grouping. */
   category: TemplateCategory;
 }
@@ -93,57 +106,12 @@ export const TEMPLATES: TemplateDef[] = [
     font: "serif",
     category: "creative",
   },
-  {
-    id: "profile",
-    name: "Profile",
-    description: "Two-column layout with a tinted teal sidebar for skills and contact.",
-    accent: "#0d9488",
-    header: "plain",
-    font: "sans",
-    layout: "sidebar",
-    sidebarStyle: "tint",
-    category: "two-column",
-  },
-  {
-    id: "sage",
-    name: "Sage",
-    description: "Two-column with a soft sage-green sidebar. Calm and clean.",
-    accent: "#15803d",
-    header: "plain",
-    font: "sans",
-    layout: "sidebar",
-    sidebarStyle: "tint",
-    category: "two-column",
-  },
-  {
-    id: "onyx",
-    name: "Onyx",
-    description: "Two-column with a solid slate sidebar. Striking and modern.",
-    accent: "#1f2937",
-    header: "plain",
-    font: "sans",
-    layout: "sidebar",
-    sidebarStyle: "solid",
-    category: "two-column",
-  },
-  {
-    id: "noir",
-    name: "Noir",
-    description: "Solid charcoal sidebar paired with a serif main column.",
-    accent: "#0f172a",
-    header: "plain",
-    font: "serif",
-    layout: "sidebar",
-    sidebarStyle: "solid",
-    category: "two-column",
-  },
 ];
 
 export const CATEGORIES: { id: TemplateCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
   { id: "simple", label: "Simple" },
   { id: "modern", label: "Modern" },
-  { id: "two-column", label: "Two-Column" },
   { id: "creative", label: "Creative" },
 ];
 

@@ -136,6 +136,11 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   notes?: string;
+  /** Which resume version was used for this application (for resume performance analytics). */
+  resumeId?: string;
+  resumeName?: string;
+  /** Status change history for the per-application timeline. */
+  statusHistory?: { status: ApplicationStatus; at: string }[];
   /** Snapshot so past generations can be reloaded without new API calls. */
   snapshot?: {
     analysis: Analysis;
@@ -153,12 +158,10 @@ export type TemplateId =
   | "executive"
   | "minimal"
   | "bold"
-  | "profile"
-  | "onyx"
   | "cobalt"
-  | "sage"
-  | "noir"
   | "ruby";
+
+export type SectionKey = "summary" | "skills" | "experience" | "education" | "certs";
 
 export interface ResumeDoc {
   id: string;
@@ -173,6 +176,8 @@ export interface ResumeDoc {
   /** Section-heading style toggles (customization). */
   headingUppercase?: boolean;
   headingUnderline?: boolean;
+  /** Optional custom section order (used by DOCX export). */
+  sectionOrder?: SectionKey[];
   profile: Profile;
   createdAt: string;
   updatedAt: string;
@@ -196,4 +201,35 @@ export interface ResumeScore {
   overall: number;
   categories: ScoreCategory[];
   issues: ScoreIssue[];
+}
+
+
+// ---------- Mock interview ----------
+
+export interface InterviewFeedback {
+  score: number; // 0-100
+  strengths: string[];
+  improvements: string[];
+  modelAnswer: string;
+}
+
+export interface InterviewTurn {
+  question: string;
+  answer?: string;
+  feedback?: InterviewFeedback;
+}
+
+// ---------- Job matcher ----------
+
+export type MatchVerdict = "strong" | "good" | "stretch" | "weak";
+
+export interface JobMatch {
+  id: string;
+  company: string;
+  title: string;
+  fit: number; // 0-100
+  verdict: MatchVerdict;
+  reasons: string[];
+  gaps: string[];
+  jd: string;
 }

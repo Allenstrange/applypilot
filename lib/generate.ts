@@ -40,11 +40,12 @@ export async function generateCoverLetter(
   profile: Profile,
   analysis: Analysis,
   providers: ProviderSettings,
+  tone: string = "Professional",
 ): Promise<CoverLetter> {
   const prompt = `You are an expert career coach writing a highly tailored, persuasive cover letter.
 ${context(profile, analysis)}
 
-Write a confident, professional 3-4 paragraph cover letter. Frame any gaps positively without stating the candidate lacks a skill.
+Write a ${tone.toLowerCase()}, ${tone.toLowerCase() === "concise" ? "tight 2-3" : "compelling 3-4"} paragraph cover letter in a distinctly ${tone} tone. Frame any gaps positively without stating the candidate lacks a skill.
 ${KEYWORD_RULE}
 
 JSON schema:
@@ -161,4 +162,91 @@ export async function enhanceBullet(
 Original: "${bullet}"`;
   const r = (await callAI(prompt, providers)) as { enhanced?: string };
   return r.enhanced ?? bullet;
+}
+
+/** Produce THREE distinct rewrite options for a single CV bullet. */
+export async function enhanceBulletVariants(
+  bullet: string,
+  mode: "star" | "professional" | "metrics",
+  providers: ProviderSettings,
+): Promise<string[]> {
+  const instructions: Record<typeof mode, string> = {
+    star: "Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise.",
+    professional:
+      "Make this CV bullet point more professional and impactful. Use strong action verbs.",
+    metrics:
+      "Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]).",
+  };
+  const prompt = `${instructions[mode]} Produce THREE meaningfully different options the candidate can choose from. Keep each truthful and concise (one line each). Return valid JSON only: {"options": ["option 1", "option 2", "option 3"]}
+
+Original: "${bullet}"`;
+  const r = (await callAI(prompt, providers)) as { options?: unknown };
+  const opts = asArray(r.options).map((s) => s.trim()).filter(Boolean);
+  return opts.length ? opts.slice(0, 3) : [bullet];
+}
+
+/** Produce THREE rewrite options for the summary or skills section. */
+export async function enhanceTextVariants(
+  text: string,
+  kind: "summary" | "skills",
+  providers: ProviderSettings,
+): Promise<string[]> {
+  const instr =
+    kind === "summary"
+      ? "Rewrite this professional summary to be punchy, specific and ATS-friendly. Keep it truthful — 2 to 4 sentences."
+      : "Improve and reprioritise this comma-separated skills list. Keep it truthful, surface industry-standard skill phrases, and return a single comma-separated line per option.";
+  const prompt = `${instr} Produce THREE meaningfully different options. Return valid JSON only: {"options": ["option 1", "option 2", "option 3"]}
+
+Current ${kind}: "${text}"`;
+  const r = (await callAI(prompt, providers)) as { options?: unknown };
+  const opts = asArray(r.options).map((s) => s.trim()).filter(Boolean);
+  return opts.length ? opts.slice(0, 3) : [text];
+}
+
+/**
+ * One-click ATS optimisation: rewrites summary, skills and every experience
+ * bullet to align with the job — without inventing roles, companies or dates.
+ */
+export async function optimizeResumeForJob(
+  profile: Profile,
+  analysis: Analysis,
+  providers: ProviderSettings,
+): Promise<Profile> {
+  const prompt = `You are an ATS optimisation expert. Rewrite the candidate's resume CONTENT to maximise alignment with the target job, WITHOUT inventing experience, employers, dates or qualifications.
+
+Rules:
+- Keep the SAME companies, roles, dates and education entirely unchanged.
+- Rewrite the professional summary to be punchy and tailored to this job.
+- Reorder/expand the skills list to surface the job's key skills the candidate genuinely has.
+- Rewrite each role's bullets using strong action verbs, JD keywords and quantified impact. If a bullet has no metric, you MAY add a realistic placeholder like [X%] or [N users] — never fabricate specific numbers.
+- Return EXACTLY the same number of experience entries, in the same order.
+- Respond with valid JSON only. No prose, no markdown.
+
+${context(profile, analysis)}
+
+JSON schema:
+{
+  "summary": "rewritten professional summary",
+  "skills": "comma-separated, prioritised skills",
+  "certs": "newline-separated certifications (keep existing, do not invent)",
+  "experience": [
+    { "bullets": "newline-separated rewritten bullets for role 1" }
+  ]
+}`;
+  const r = (await callAI(prompt, providers)) as {
+    summary?: string;
+    skills?: string;
+    certs?: string;
+    experience?: { bullets?: string }[];
+  };
+  return {
+    ...profile,
+    summary: String(r.summary ?? profile.summary),
+    skills: String(r.skills ?? profile.skills),
+    certs: String(r.certs ?? profile.certs),
+    experience: profile.experience.map((e, i) => ({
+      ...e,
+      bullets: String(r.experience?.[i]?.bullets ?? e.bullets),
+    })),
+  };
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Brandmark from "@/components/Brandmark";
 
 const YEAR = new Date().getFullYear();
 
@@ -8,9 +9,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-12 grid gap-8 sm:grid-cols-2 md:grid-cols-4">
         <div className="sm:col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
-              AP
-            </div>
+            <Brandmark size={32} />
             <span className="font-bold text-slate-900 dark:text-slate-100">ApplyPilot</span>
           </div>
           <p className="text-sm text-slate-500 max-w-xs dark:text-slate-400">

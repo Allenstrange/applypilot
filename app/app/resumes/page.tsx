@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FilePlus2, Copy, Trash2, FileText } from "lucide-react";
+import { FilePlus2, Copy, Trash2, Plus, LayoutTemplate, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";
@@ -38,14 +38,44 @@ export default function ResumesPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400">
-          <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-          <div>No resumes yet.</div>
-          <p className="text-sm mt-1">
-            Create one from your{" "}
-            <Link href="/app/profile" className="text-indigo-600 underline dark:text-indigo-400">master profile</Link>{" "}
-            to get started.
-          </p>
+        <div className="card rounded-2xl p-10">
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">How do you want to start?</h2>
+            <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Build a tailored resume in whichever way suits you.</p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3 max-w-3xl mx-auto">
+            <button
+              type="button"
+              onClick={createFromProfile}
+              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                <Plus className="w-6 h-6 text-[var(--brand)]" />
+              </div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Start from your profile</div>
+              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Build a resume from your master profile.</p>
+            </button>
+            <Link
+              href="/app/templates"
+              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                <LayoutTemplate className="w-6 h-6 text-[var(--brand)]" />
+              </div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Browse templates</div>
+              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Pick a design, then make it yours.</p>
+            </Link>
+            <Link
+              href="/app/profile"
+              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                <Upload className="w-6 h-6 text-[var(--brand)]" />
+              </div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Import your CV</div>
+              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Upload a DOCX or PDF to fill your profile.</p>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

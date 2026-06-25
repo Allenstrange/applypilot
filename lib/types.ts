@@ -146,12 +146,33 @@ export interface Application {
 
 // ---------- Resume library ----------
 
-export type TemplateId = "classic" | "modern" | "compact";
+export type TemplateId =
+  | "classic"
+  | "modern"
+  | "compact"
+  | "executive"
+  | "minimal"
+  | "bold"
+  | "profile"
+  | "onyx"
+  | "cobalt"
+  | "sage"
+  | "noir"
+  | "ruby";
 
 export interface ResumeDoc {
   id: string;
   name: string;
   templateId: TemplateId;
+  /** Optional per-resume accent colour override (customization). */
+  accent?: string;
+  /** Optional per-resume body font override (customization). */
+  font?: "serif" | "sans" | "mono";
+  /** Spacing / line-height preset (customization). */
+  density?: "compact" | "normal" | "relaxed";
+  /** Section-heading style toggles (customization). */
+  headingUppercase?: boolean;
+  headingUnderline?: boolean;
   profile: Profile;
   createdAt: string;
   updatedAt: string;

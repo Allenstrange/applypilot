@@ -2,7 +2,7 @@
 
 import { jsPDF } from "jspdf";
 import type { Profile, TemplateId } from "./types";
-import { getTemplate, type TemplateDef } from "./templates";
+import { resolveTemplate, type ResolvedTemplate, type StyleOverrides } from "./templates";
 import { slugify } from "./download";
 
 type RGB = [number, number, number];
@@ -20,17 +20,20 @@ function parseList(str: string): string[] {
   return str.split(/[\n·|,]+/).map((s) => s.trim()).filter(Boolean);
 }
 
-export function exportResumePDF(
-  profile: Profile,
-  templateId: TemplateId,
-  opts?: { accent?: string; font?: "serif" | "sans" },
-) {
-  const base = getTemplate(templateId);
-  const tpl: TemplateDef = {
-    ...base,
-    ...(opts?.accent ? { accent: opts.accent } : {}),
-    ...(opts?.font ? { font: opts.font } : {}),
-  };
+function pdfFont(font: "serif" | "sans" | "mono"): string {
+  if (font === "serif") return "times";
+  if (font === "mono") return "courier";
+  return "helvetica";
+}
+
+const PDF_DENSITY = {
+  compact: { margin: 44, lh: 1.26, headTop: 6, secGap: 4, bulletGap: 1 },
+  normal: { margin: 54, lh: 1.38, headTop: 10, secGap: 6, bulletGap: 1.5 },
+  relaxed: { margin: 64, lh: 1.52, headTop: 15, secGap: 10, bulletGap: 3 },
+};
+
+export function exportResumePDF(profile: Profile, templateId: TemplateId, opts?: StyleOverrides) {
+  const tpl = resolveTemplate(templateId, opts);
   if (tpl.layout === "sidebar") {
     sidebarPDF(profile, tpl);
   } else {
@@ -40,16 +43,17 @@ export function exportResumePDF(
 
 // ---------------- Single-column ----------------
 
-function singleColumnPDF(profile: Profile, tpl: TemplateDef) {
+function singleColumnPDF(profile: Profile, tpl: ResolvedTemplate) {
   const accent = hexToRgb(tpl.accent);
-  const bodyFont = tpl.font === "serif" ? "times" : "helvetica";
+  const bodyFont = pdfFont(tpl.font);
+  const dz = PDF_DENSITY[tpl.density];
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const margin = tpl.id === "compact" ? 44 : 54;
+  const margin = dz.margin;
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const maxW = pageW - margin * 2;
-  const lh = tpl.id === "compact" ? 1.28 : 1.38;
+  const lh = dz.lh;
   let y = margin;
 
   const ensure = (space: number) => {
@@ -79,17 +83,21 @@ function singleColumnPDF(profile: Profile, tpl: TemplateDef) {
   };
 
   const heading = (label: string) => {
-    y += tpl.id === "compact" ? 6 : 10;
+    y += dz.headTop;
     ensure(20);
     doc.setFont(bodyFont, "bold");
     doc.setFontSize(11);
     doc.setTextColor(accent[0], accent[1], accent[2]);
-    doc.text(label.toUpperCase(), margin, y);
+    doc.text(tpl.headingUppercase ? label.toUpperCase() : label, margin, y);
     y += 5;
-    doc.setDrawColor(accent[0], accent[1], accent[2]);
-    doc.setLineWidth(tpl.header === "plain" ? 0.5 : 1.2);
-    doc.line(margin, y, pageW - margin, y);
-    y += 10;
+    if (tpl.headingUnderline) {
+      doc.setDrawColor(accent[0], accent[1], accent[2]);
+      doc.setLineWidth(tpl.header === "plain" ? 0.5 : 1.2);
+      doc.line(margin, y, pageW - margin, y);
+      y += 10;
+    } else {
+      y += 4;
+    }
   };
 
   const contact1 = [profile.title, profile.location].filter(Boolean).join("   |   ");
@@ -134,8 +142,8 @@ function singleColumnPDF(profile: Profile, tpl: TemplateDef) {
       write(`${exp.role}${exp.company ? "  —  " + exp.company : ""}`, { size: 11, bold: true, gap: 0 });
       const dates = [exp.start, exp.end].filter(Boolean).join(" – ");
       if (dates) write(dates, { size: 9, gap: 2, color: [120, 120, 120] });
-      parseBullets(exp.bullets).forEach((b) => write("•  " + b, { gap: 1.5 }));
-      if (exp.tools) write("Tools: " + exp.tools, { size: 9, gap: 6, color: [90, 90, 90] });
+      parseBullets(exp.bullets).forEach((b) => write("•  " + b, { gap: dz.bulletGap }));
+      if (exp.tools) write("Tools: " + exp.tools, { size: 9, gap: dz.secGap, color: [90, 90, 90] });
     });
   }
   if (profile.education.length) {
@@ -156,10 +164,11 @@ function singleColumnPDF(profile: Profile, tpl: TemplateDef) {
 
 // ---------------- Two-column (sidebar) ----------------
 
-function sidebarPDF(profile: Profile, tpl: TemplateDef) {
+function sidebarPDF(profile: Profile, tpl: ResolvedTemplate) {
   const accent = hexToRgb(tpl.accent);
   const solid = tpl.sidebarStyle === "solid";
-  const bodyFont = tpl.font === "serif" ? "times" : "helvetica";
+  const bodyFont = pdfFont(tpl.font);
+  const dz = PDF_DENSITY[tpl.density];
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -195,12 +204,16 @@ function sidebarPDF(profile: Profile, tpl: TemplateDef) {
     doc.setFont(bodyFont, "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(sideHeadColor[0], sideHeadColor[1], sideHeadColor[2]);
-    doc.text(label.toUpperCase(), sideX, yL);
+    doc.text(tpl.headingUppercase ? label.toUpperCase() : label, sideX, yL);
     yL += 4;
-    doc.setDrawColor(sideHeadColor[0], sideHeadColor[1], sideHeadColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(sideX, yL, sideX + sideW, yL);
-    yL += 9;
+    if (tpl.headingUnderline) {
+      doc.setDrawColor(sideHeadColor[0], sideHeadColor[1], sideHeadColor[2]);
+      doc.setLineWidth(0.5);
+      doc.line(sideX, yL, sideX + sideW, yL);
+      yL += 9;
+    } else {
+      yL += 5;
+    }
   };
   const sideWrite = (str: string, opts: { size?: number; bold?: boolean; gap?: number } = {}) => {
     if (!str) return;
@@ -255,24 +268,28 @@ function sidebarPDF(profile: Profile, tpl: TemplateDef) {
     const c = opts.color ?? [30, 30, 30];
     doc.setTextColor(c[0], c[1], c[2]);
     for (const ln of doc.splitTextToSize(str, mainW)) {
-      ensureMain(size * 1.4);
+      ensureMain(size * dz.lh);
       doc.text(ln, mainX, yM);
-      yM += size * 1.4;
+      yM += size * dz.lh;
     }
     yM += opts.gap ?? 0;
   };
   const mainHeading = (label: string) => {
-    yM += 12;
+    yM += dz.headTop + 2;
     ensureMain(20);
     doc.setFont(bodyFont, "bold");
     doc.setFontSize(11);
     doc.setTextColor(mainHeadColor[0], mainHeadColor[1], mainHeadColor[2]);
-    doc.text(label.toUpperCase(), mainX, yM);
+    doc.text(tpl.headingUppercase ? label.toUpperCase() : label, mainX, yM);
     yM += 5;
-    doc.setDrawColor(mainHeadColor[0], mainHeadColor[1], mainHeadColor[2]);
-    doc.setLineWidth(1.2);
-    doc.line(mainX, yM, mainRight, yM);
-    yM += 10;
+    if (tpl.headingUnderline) {
+      doc.setDrawColor(mainHeadColor[0], mainHeadColor[1], mainHeadColor[2]);
+      doc.setLineWidth(1.2);
+      doc.line(mainX, yM, mainRight, yM);
+      yM += 10;
+    } else {
+      yM += 4;
+    }
   };
 
   mainWrite(profile.name || "Your Name", { size: 20, bold: true, gap: 1, color: [17, 24, 39] });
@@ -287,8 +304,8 @@ function sidebarPDF(profile: Profile, tpl: TemplateDef) {
       mainWrite(`${exp.role}${exp.company ? "  —  " + exp.company : ""}`, { size: 11, bold: true, gap: 0 });
       const dates = [exp.start, exp.end].filter(Boolean).join(" – ");
       if (dates) mainWrite(dates, { size: 9, gap: 2, color: [120, 120, 120] });
-      parseBullets(exp.bullets).forEach((b) => mainWrite("•  " + b, { gap: 1.5 }));
-      if (exp.tools) mainWrite("Tools: " + exp.tools, { size: 9, gap: 6, color: [90, 90, 90] });
+      parseBullets(exp.bullets).forEach((b) => mainWrite("•  " + b, { gap: dz.bulletGap }));
+      if (exp.tools) mainWrite("Tools: " + exp.tools, { size: 9, gap: dz.secGap, color: [90, 90, 90] });
     });
   }
 

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
-import { TEMPLATES, ACCENT_SWATCHES, getTemplate } from "@/lib/templates";
+import { TEMPLATES, ACCENT_SWATCHES, DENSITY_LABELS, FONT_LABELS, resolveTemplate } from "@/lib/templates";
 import { exportResumePDF } from "@/lib/resumePdf";
 import { toast } from "@/lib/toast";
 import type { Profile, TemplateId } from "@/lib/types";
@@ -38,6 +38,15 @@ export default function ResumeEditorPage() {
   const patchProfile = (patch: Partial<Profile>) =>
     updateResume(id, { profile: { ...resume.profile, ...patch } });
 
+  // Effective style (template defaults merged with this resume's customizations).
+  const resolved = resolveTemplate(resume.templateId, {
+    accent: resume.accent,
+    font: resume.font,
+    density: resume.density,
+    headingUppercase: resume.headingUppercase,
+    headingUnderline: resume.headingUnderline,
+  });
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -55,7 +64,13 @@ export default function ResumeEditorPage() {
         <button
           type="button"
           onClick={() => {
-            exportResumePDF(resume.profile, resume.templateId, { accent: resume.accent, font: resume.font });
+            exportResumePDF(resume.profile, resume.templateId, {
+              accent: resume.accent,
+              font: resume.font,
+              density: resume.density,
+              headingUppercase: resume.headingUppercase,
+              headingUnderline: resume.headingUnderline,
+            });
             toast("✓ PDF downloaded");
           }}
           className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
@@ -129,25 +144,64 @@ export default function ResumeEditorPage() {
                 );
               })}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mb-4">
               <span className="text-xs text-[var(--text-muted)] w-14">Font</span>
-              {(["sans", "serif"] as const).map((f) => {
-                const effective = resume.font ?? getTemplate(resume.templateId).font;
-                const active = effective === f;
+              {FONT_LABELS.map((f) => {
+                const effective = resolved.font;
+                const active = effective === f.id;
                 return (
                   <button
-                    key={f}
+                    key={f.id}
                     type="button"
-                    onClick={() => updateResume(id, { font: f })}
-                    className={`px-3 py-1.5 rounded-lg text-xs border-2 capitalize ${
+                    onClick={() => updateResume(id, { font: f.id })}
+                    className={`px-3 py-1.5 rounded-lg text-xs border-2 ${
                       active ? "border-[var(--brand)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
                     }`}
-                    style={{ fontFamily: f === "serif" ? "Georgia, serif" : "inherit" }}
+                    style={{ fontFamily: f.id === "serif" ? "Georgia, serif" : f.id === "mono" ? "monospace" : "inherit" }}
                   >
-                    {f === "sans" ? "Sans" : "Serif"}
+                    {f.label}
                   </button>
                 );
               })}
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs text-[var(--text-muted)] w-14">Spacing</span>
+              {DENSITY_LABELS.map((dn) => {
+                const active = resolved.density === dn.id;
+                return (
+                  <button
+                    key={dn.id}
+                    type="button"
+                    onClick={() => updateResume(id, { density: dn.id })}
+                    className={`px-3 py-1.5 rounded-lg text-xs border-2 ${
+                      active ? "border-[var(--brand)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
+                    }`}
+                  >
+                    {dn.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)] w-14">Headings</span>
+              <button
+                type="button"
+                onClick={() => updateResume(id, { headingUppercase: !resolved.headingUppercase })}
+                className={`px-3 py-1.5 rounded-lg text-xs border-2 ${
+                  resolved.headingUppercase ? "border-[var(--brand)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
+                }`}
+              >
+                UPPERCASE
+              </button>
+              <button
+                type="button"
+                onClick={() => updateResume(id, { headingUnderline: !resolved.headingUnderline })}
+                className={`px-3 py-1.5 rounded-lg text-xs border-2 ${
+                  resolved.headingUnderline ? "border-[var(--brand)] text-[var(--brand)] underline" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
+                }`}
+              >
+                Underline
+              </button>
             </div>
           </div>
 
@@ -163,6 +217,9 @@ export default function ResumeEditorPage() {
               templateId={resume.templateId}
               accent={resume.accent}
               font={resume.font}
+              density={resume.density}
+              headingUppercase={resume.headingUppercase}
+              headingUnderline={resume.headingUnderline}
             />
           </div>
         </div>

@@ -167,7 +167,12 @@ export interface ResumeDoc {
   /** Optional per-resume accent colour override (customization). */
   accent?: string;
   /** Optional per-resume body font override (customization). */
-  font?: "serif" | "sans";
+  font?: "serif" | "sans" | "mono";
+  /** Spacing / line-height preset (customization). */
+  density?: "compact" | "normal" | "relaxed";
+  /** Section-heading style toggles (customization). */
+  headingUppercase?: boolean;
+  headingUnderline?: boolean;
   profile: Profile;
   createdAt: string;
   updatedAt: string;

@@ -11,7 +11,7 @@ export interface TemplateDef {
   /** Header treatment in the PDF/preview. */
   header: "plain" | "band" | "rule";
   /** Body font family. */
-  font: "serif" | "sans";
+  font: "serif" | "sans" | "mono";
   /** Page layout. Defaults to single column. */
   layout?: "single" | "sidebar";
   /** For sidebar layouts: tinted (light) or solid (accent-filled) sidebar. */
@@ -164,3 +164,46 @@ export const ACCENT_SWATCHES = [
 export function getTemplate(id: TemplateId): TemplateDef {
   return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
 }
+
+// ---------- Customization resolution ----------
+
+export type Density = "compact" | "normal" | "relaxed";
+
+export interface StyleOverrides {
+  accent?: string;
+  font?: "serif" | "sans" | "mono";
+  density?: Density;
+  headingUppercase?: boolean;
+  headingUnderline?: boolean;
+}
+
+export interface ResolvedTemplate extends TemplateDef {
+  density: Density;
+  headingUppercase: boolean;
+  headingUnderline: boolean;
+}
+
+/** Merge a template's defaults with per-resume customization overrides. */
+export function resolveTemplate(id: TemplateId, o?: StyleOverrides): ResolvedTemplate {
+  const base = getTemplate(id);
+  return {
+    ...base,
+    accent: o?.accent ?? base.accent,
+    font: o?.font ?? base.font,
+    density: o?.density ?? (base.id === "compact" ? "compact" : "normal"),
+    headingUppercase: o?.headingUppercase ?? true,
+    headingUnderline: o?.headingUnderline ?? true,
+  };
+}
+
+export const DENSITY_LABELS: { id: Density; label: string }[] = [
+  { id: "compact", label: "Compact" },
+  { id: "normal", label: "Normal" },
+  { id: "relaxed", label: "Relaxed" },
+];
+
+export const FONT_LABELS: { id: "sans" | "serif" | "mono"; label: string }[] = [
+  { id: "sans", label: "Sans" },
+  { id: "serif", label: "Serif" },
+  { id: "mono", label: "Mono" },
+];

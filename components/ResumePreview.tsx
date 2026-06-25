@@ -1,19 +1,6 @@
 import type { Profile, TemplateId } from "@/lib/types";
 import { resolveTemplate, type ResolvedTemplate, type StyleOverrides } from "@/lib/templates";
-
-function parseBullets(str: string): string[] {
-  return str
-    .split("\n")
-    .map((b) => b.replace(/^[-•]\s*/, "").trim())
-    .filter(Boolean);
-}
-
-function parseList(str: string): string[] {
-  return str
-    .split(/[\n·|,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+import { parseBullets, parseList, parseLines } from "@/lib/resumeFormat";
 
 function hexToRgba(hex: string, alpha: number): string {
   const n = parseInt(hex.replace("#", ""), 16);
@@ -135,8 +122,8 @@ function SingleColumn({ profile, tpl }: { profile: Profile; tpl: ResolvedTemplat
         <>
           <PreviewHeading tpl={tpl} marginTop={d.head}>Certifications</PreviewHeading>
           <ul style={{ margin: "4px 0", paddingLeft: 18, listStyle: "disc" }}>
-            {profile.certs.split("\n").filter(Boolean).map((c, i) => (
-              <li key={i}>{c.trim()}</li>
+            {parseLines(profile.certs).map((c, i) => (
+              <li key={i}>{c}</li>
             ))}
           </ul>
         </>
@@ -201,7 +188,7 @@ function SidebarLayout({ profile, tpl }: { profile: Profile; tpl: ResolvedTempla
 
   const contacts = [profile.email, profile.phone, profile.location, profile.linkedin].filter(Boolean);
   const skills = parseList(profile.skills);
-  const certs = profile.certs.split("\n").map((c) => c.trim()).filter(Boolean);
+  const certs = parseLines(profile.certs);
 
   return (
     <div

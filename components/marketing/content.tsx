@@ -65,7 +65,7 @@ export interface Stat {
 }
 
 export const STATS: Stat[] = [
-  { value: "8", label: "résumé templates" },
+  { value: "12", label: "résumé templates" },
   { value: "5", label: "AI providers" },
   { value: "100%", label: "runs in your browser" },
   { value: "£0", label: "free, no sign-up" },

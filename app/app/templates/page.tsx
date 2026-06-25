@@ -22,9 +22,10 @@ export default function TemplatesPage() {
   const shown = category === "all" ? TEMPLATES : TEMPLATES.filter((t) => t.category === category);
 
   function applyTemplate(templateId: (typeof TEMPLATES)[number]["id"]) {
-    const base = profile.name ? profile : emptyProfile;
-    const copy = JSON.parse(JSON.stringify(base));
-    const name = profile.name ? `${profile.name.split(" ")[0]}'s Resume` : "Untitled Resume";
+    // Always carry over the master profile's data; the name only decides the title.
+    const copy = JSON.parse(JSON.stringify(profile ?? emptyProfile));
+    const firstName = profile.name.trim().split(/\s+/)[0];
+    const name = firstName ? `${firstName}'s Resume` : "Untitled Resume";
     const id = addResume(name, templateId, copy);
     toast("✓ Resume created");
     router.push(`/app/resumes/${id}`);

@@ -33,14 +33,20 @@ export default function TrackerPage() {
       toast("⚠ No applications to export");
       return;
     }
+    // Neutralise spreadsheet formula injection: a leading =,+,-,@ makes Excel /
+    // Sheets evaluate the cell, so prefix those with a single quote.
+    const safe = (v: unknown) => {
+      const s = String(v ?? "");
+      return /^[=+\-@]/.test(s) ? `'${s}` : s;
+    };
     const rows = [["Company", "Role", "Location", "Status", "Date"]];
     apps.forEach((a) =>
       rows.push([
-        a.company,
-        a.title,
-        a.location ?? "",
-        a.status,
-        new Date(a.createdAt).toLocaleDateString("en-GB"),
+        safe(a.company),
+        safe(a.title),
+        safe(a.location ?? ""),
+        safe(a.status),
+        safe(new Date(a.createdAt).toLocaleDateString("en-GB")),
       ]),
     );
     const csv = rows
@@ -67,7 +73,7 @@ export default function TrackerPage() {
         </button>
       </div>
 
-      {apps.length === 0 ? (
+      {!hydrated ? null : apps.length === 0 ? (
         <div className="card rounded-xl p-12 text-center">
           <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
             <ClipboardList className="w-6 h-6 text-[var(--brand)]" />

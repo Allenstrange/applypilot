@@ -3,6 +3,7 @@
 import { jsPDF } from "jspdf";
 import type { Profile, TemplateId } from "./types";
 import { resolveTemplate, type ResolvedTemplate, type StyleOverrides } from "./templates";
+import { parseBullets, parseList, parseLines } from "./resumeFormat";
 import { slugify } from "./download";
 
 type RGB = [number, number, number];
@@ -10,14 +11,6 @@ type RGB = [number, number, number];
 function hexToRgb(hex: string): RGB {
   const n = parseInt(hex.replace("#", ""), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-function parseBullets(str: string): string[] {
-  return str.split("\n").map((b) => b.replace(/^[-•]\s*/, "").trim()).filter(Boolean);
-}
-
-function parseList(str: string): string[] {
-  return str.split(/[\n·|,]+/).map((s) => s.trim()).filter(Boolean);
 }
 
 function pdfFont(font: "serif" | "sans" | "mono"): string {
@@ -156,7 +149,7 @@ function singleColumnPDF(profile: Profile, tpl: ResolvedTemplate) {
   }
   if (profile.certs) {
     heading("Certifications");
-    profile.certs.split("\n").filter(Boolean).forEach((c) => write("•  " + c.trim(), { gap: 1.5 }));
+    parseLines(profile.certs).forEach((c) => write("•  " + c, { gap: dz.bulletGap }));
   }
 
   doc.save(`${slugify(profile.name || "resume")}_${tpl.id}.pdf`);
@@ -245,7 +238,7 @@ function sidebarPDF(profile: Profile, tpl: ResolvedTemplate) {
       sideWrite([ed.institution, ed.year].filter(Boolean).join(", "), { size: 8, gap: 3 });
     });
   }
-  const certs = profile.certs.split("\n").map((c) => c.trim()).filter(Boolean);
+  const certs = parseLines(profile.certs);
   if (certs.length) {
     sideHeading("Certifications");
     certs.forEach((c) => sideWrite(c, { size: 8.5, gap: 1 }));

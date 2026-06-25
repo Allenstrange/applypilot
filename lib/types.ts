@@ -158,11 +158,7 @@ export type TemplateId =
   | "executive"
   | "minimal"
   | "bold"
-  | "profile"
-  | "onyx"
   | "cobalt"
-  | "sage"
-  | "noir"
   | "ruby";
 
 export type SectionKey = "summary" | "skills" | "experience" | "education" | "certs";

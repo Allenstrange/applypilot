@@ -146,7 +146,13 @@ export interface Application {
 
 // ---------- Resume library ----------
 
-export type TemplateId = "classic" | "modern" | "compact";
+export type TemplateId =
+  | "classic"
+  | "modern"
+  | "compact"
+  | "executive"
+  | "minimal"
+  | "bold";
 
 export interface ResumeDoc {
   id: string;

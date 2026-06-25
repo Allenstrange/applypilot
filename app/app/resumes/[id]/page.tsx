@@ -12,6 +12,7 @@ import type { Profile, TemplateId } from "@/lib/types";
 import ProfileFields from "@/components/ProfileFields";
 import ResumePreview from "@/components/ResumePreview";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
+import TemplateThumbnail from "@/components/TemplateThumbnail";
 
 export default function ResumeEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,21 +66,34 @@ export default function ResumeEditorPage() {
         <div>
           <div className="card rounded-xl p-5 mb-6">
             <div className="text-sm font-semibold text-slate-900 mb-3 dark:text-slate-100">Template</div>
-            <div className="grid grid-cols-3 gap-2">
-              {TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => updateResume(id, { templateId: t.id as TemplateId })}
-                  className={`text-left p-3 rounded-lg border-2 transition-colors ${
-                    resume.templateId === t.id ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <span className="block w-full h-1.5 rounded-full mb-2" style={{ background: t.accent }} />
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{t.name}</span>
-                  <span className="block text-[11px] text-slate-500 mt-0.5 leading-tight dark:text-slate-400">{t.description}</span>
-                </button>
-              ))}
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {TEMPLATES.map((t) => {
+                const selected = resume.templateId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => updateResume(id, { templateId: t.id as TemplateId })}
+                    title={t.description}
+                    className={`group rounded-lg border-2 p-1 transition-colors ${
+                      selected
+                        ? "border-[var(--brand)] bg-[color-mix(in_srgb,var(--brand)_8%,transparent)]"
+                        : "border-[var(--border)] hover:border-[var(--border-strong)]"
+                    }`}
+                  >
+                    <div className="rounded overflow-hidden border border-[var(--border)] bg-white">
+                      <TemplateThumbnail profile={resume.profile} templateId={t.id} width={110} />
+                    </div>
+                    <span
+                      className={`block text-[11px] font-medium mt-1.5 ${
+                        selected ? "text-[var(--brand)]" : "text-[var(--text-muted)]"
+                      }`}
+                    >
+                      {t.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <ProfileFields profile={resume.profile} onPatch={patchProfile} />

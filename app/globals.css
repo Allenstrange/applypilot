@@ -94,9 +94,9 @@ h4 {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #7c3aed, #a855f7, #fb6f4c);
-  opacity: 0.9;
+  height: 2px;
+  background: var(--brand);
+  opacity: 0.85;
 }
 .stat-card:hover {
   transform: translateY(-2px);

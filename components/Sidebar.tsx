@@ -31,19 +31,45 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-const NAV: NavItem[] = [
-  { href: "/app", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/app/profile", label: "Master Profile", icon: User },
-  { href: "/app/resumes", label: "Resumes", icon: FileText },
-  { href: "/app/templates", label: "Templates", icon: LayoutTemplate },
-  { href: "/app/compare", label: "Compare Resumes", icon: GitCompare },
-  { href: "/app/analyze", label: "Job Analysis", icon: Search },
-  { href: "/app/match", label: "Job Matcher", icon: Target },
-  { href: "/app/editor", label: "Editing Room", icon: PenLine },
-  { href: "/app/interview", label: "Mock Interview", icon: Mic },
-  { href: "/app/tracker", label: "Application Tracker", icon: ClipboardList },
-  { href: "/app/insights", label: "Insights", icon: BarChart3 },
-  { href: "/app/settings", label: "AI Settings", icon: Settings },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/app", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "Build",
+    items: [
+      { href: "/app/profile", label: "Master Profile", icon: User },
+      { href: "/app/resumes", label: "Resumes", icon: FileText },
+      { href: "/app/templates", label: "Templates", icon: LayoutTemplate },
+      { href: "/app/compare", label: "Compare Resumes", icon: GitCompare },
+    ],
+  },
+  {
+    label: "Apply",
+    items: [
+      { href: "/app/analyze", label: "Job Analysis", icon: Search },
+      { href: "/app/match", label: "Job Matcher", icon: Target },
+      { href: "/app/editor", label: "Editing Room", icon: PenLine },
+      { href: "/app/interview", label: "Mock Interview", icon: Mic },
+    ],
+  },
+  {
+    label: "Track",
+    items: [
+      { href: "/app/tracker", label: "Application Tracker", icon: ClipboardList },
+      { href: "/app/insights", label: "Insights", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Setup",
+    items: [{ href: "/app/settings", label: "AI Settings", icon: Settings }],
+  },
 ];
 
 function Logo() {
@@ -61,24 +87,35 @@ function Logo() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav className="flex-1 space-y-1">
-      {NAV.map(({ href, label, icon: Icon }) => {
-        const active = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            data-tour={href}
-            className={`sidebar-item w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 text-sm ${
-              active ? "active" : ""
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 overflow-y-auto scrollbar -mx-1 px-1">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label} className="mb-4 last:mb-0">
+          <div className="px-4 mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
+            {group.label}
+          </div>
+          <div className="space-y-0.5">
+            {group.items.map(({ href, label, icon: Icon }) => {
+              const active =
+                href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onNavigate}
+                  data-tour={href}
+                  aria-current={active ? "page" : undefined}
+                  className={`sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center gap-3 text-sm ${
+                    active ? "active" : ""
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }

@@ -181,8 +181,8 @@ export default function MatchPage() {
         </div>
       ) : null}
       {profileReady && !aiReady ? (
-        <div className="card rounded-xl p-4 mb-6 text-sm bg-indigo-500/10 border border-indigo-500/20">
-          <span className="text-indigo-600 dark:text-indigo-400">ℹ AI provider not configured. </span>
+        <div className="card rounded-xl p-4 mb-6 text-sm bg-violet-500/10 border border-violet-500/20">
+          <span className="text-violet-600 dark:text-violet-400">ℹ AI provider not configured. </span>
           <Link href="/app/settings" className="underline">Set one up</Link> — matching needs AI.
         </div>
       ) : null}

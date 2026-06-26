@@ -135,7 +135,7 @@ export default function OnboardingTour() {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" data-testid="onboarding-welcome">
         <div className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-indigo-600 to-violet-500 p-6 text-white">
+          <div className="bg-gradient-to-br from-violet-600 to-violet-500 p-6 text-white">
             <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-3">
               <Sparkles className="w-6 h-6" />
             </div>
@@ -210,7 +210,7 @@ export default function OnboardingTour() {
           data-testid="tour-tooltip"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
               Step {step + 1} of {STEPS.length}
             </span>
             <button type="button" onClick={finish} data-testid="tour-close" aria-label="End tour" className="text-[var(--text-faint)] hover:text-[var(--text-muted)]">
@@ -224,7 +224,7 @@ export default function OnboardingTour() {
             {STEPS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-indigo-500" : "w-1.5 bg-slate-300 dark:bg-slate-600"}`}
+                className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-violet-500" : "w-1.5 bg-slate-300 dark:bg-slate-600"}`}
               />
             ))}
           </div>

@@ -37,14 +37,14 @@ export default function InsightsPage() {
       {apps.length === 0 ? (
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400" data-testid="insights-empty">
           No data yet. Add jobs from the{" "}
-          <Link href="/app/match" className="text-indigo-600 underline dark:text-indigo-400">Job Matcher</Link>{" "}
+          <Link href="/app/match" className="text-violet-600 underline dark:text-violet-400">Job Matcher</Link>{" "}
           or save analyses to the tracker to see your funnel.
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <Stat label="Total" value={f.total} color="text-slate-900 dark:text-slate-100" />
-            <Stat label="Active" value={f.active} color="text-indigo-600 dark:text-indigo-400" />
+            <Stat label="Active" value={f.active} color="text-violet-600 dark:text-violet-400" />
             <Stat label="Interviews" value={f.byStatus.interview} color="text-amber-600 dark:text-amber-400" />
             <Stat label="Offers" value={f.byStatus.offer} color="text-green-600 dark:text-green-400" />
           </div>

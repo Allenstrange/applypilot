@@ -130,15 +130,15 @@ export default function InterviewPage() {
       </div>
 
       {!aiReady ? (
-        <div className="card rounded-xl p-4 mb-6 text-sm bg-indigo-500/10 border border-indigo-500/20">
-          <span className="text-indigo-600 dark:text-indigo-400">ℹ AI provider not configured. </span>
+        <div className="card rounded-xl p-4 mb-6 text-sm bg-violet-500/10 border border-violet-500/20">
+          <span className="text-violet-600 dark:text-violet-400">ℹ AI provider not configured. </span>
           <Link href="/app/settings" className="underline">Set one up</Link> to start the interview.
         </div>
       ) : null}
 
       {!started ? (
         <div className="card rounded-xl p-10 text-center" data-testid="interview-intro">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-violet-500 flex items-center justify-center mx-auto mb-4">
             <Mic className="w-7 h-7 text-white" />
           </div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Ready to practise?</h2>
@@ -226,7 +226,7 @@ function TurnCard({ turn, index }: { turn: InterviewTurn; index: number }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3" data-testid={`turn-${index}`}>
       <div className="card rounded-xl p-4">
-        <div className="text-xs font-semibold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 mb-1">
+        <div className="text-xs font-semibold uppercase tracking-wider text-violet-500 dark:text-violet-400 mb-1">
           Question {index + 1}
         </div>
         <div className="text-slate-900 dark:text-slate-100 font-medium">{turn.question}</div>
@@ -278,7 +278,7 @@ function TurnCard({ turn, index }: { turn: InterviewTurn; index: number }) {
 
             {fb.modelAnswer ? (
               <details className="text-sm">
-                <summary className="cursor-pointer text-indigo-600 dark:text-indigo-400 font-medium">Show model answer</summary>
+                <summary className="cursor-pointer text-violet-600 dark:text-violet-400 font-medium">Show model answer</summary>
                 <p className="mt-2 text-slate-600 dark:text-slate-300 whitespace-pre-line">{fb.modelAnswer}</p>
               </details>
             ) : null}

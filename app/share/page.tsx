@@ -51,7 +51,7 @@ export default function SharePage() {
         <div data-testid="share-resume">
           <ResumePreview profile={data.profile} templateId={data.templateId} />
         </div>
-        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">Shared via ApplyPilot</p>
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6">Shared via ApplyPilot</p>
       </div>
     </div>
   );

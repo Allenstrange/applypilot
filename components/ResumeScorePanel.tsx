@@ -67,7 +67,7 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
                 <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${cls}`} />
                 <span className="text-slate-700 dark:text-slate-200">
                   {issue.message}
-                  {issue.where ? <span className="text-slate-400 dark:text-slate-500"> · {issue.where}</span> : null}
+                  {issue.where ? <span className="text-slate-500 dark:text-slate-400"> · {issue.where}</span> : null}
                 </span>
               </li>
             );

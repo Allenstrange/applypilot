@@ -114,7 +114,7 @@ export default function InterviewPage() {
           </span>
           {ctx.company ? <span className="text-slate-500 dark:text-slate-400"> · {ctx.company}</span> : null}
           {!analysis ? (
-            <span className="text-xs text-slate-400 dark:text-slate-500 ml-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 ml-2">
               (<Link href="/app/analyze" className="underline">analyse a job</Link> for role-specific questions)
             </span>
           ) : null}
@@ -212,7 +212,7 @@ export default function InterviewPage() {
       )}
 
       {hydrated && aiReady ? (
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-6">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
           Powered by {AI_PROVIDERS[providers.activeProvider].name}.
         </p>
       ) : null}
@@ -234,7 +234,7 @@ function TurnCard({ turn, index }: { turn: InterviewTurn; index: number }) {
 
       {turn.answer ? (
         <div className="rounded-xl p-4 bg-slate-100 dark:bg-slate-800/60 ml-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
             Your answer
           </div>
           <div className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line">{turn.answer}</div>

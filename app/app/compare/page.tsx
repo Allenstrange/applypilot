@@ -161,7 +161,7 @@ function Comparison({ a, b }: { a: Source; b: Source }) {
         <p className="text-xs mb-4 flex flex-wrap items-center gap-2">
           <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">Removed in B</span>
           <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">Added in B</span>
-          <span className="text-slate-400 dark:text-slate-500">unchanged</span>
+          <span className="text-slate-500 dark:text-slate-400">unchanged</span>
         </p>
         {a.profile.summary || b.profile.summary ? (
           <p className="text-sm leading-relaxed">
@@ -221,7 +221,7 @@ function ScoreColumn({ source, score, winner, side, testid }: { source: Source; 
 function SkillBucket({ title, skills, cls }: { title: string; skills: string[]; cls: string }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">{title}</div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{title}</div>
       <div className="flex flex-wrap gap-1.5">
         {skills.length ? skills.map((s, i) => (
           <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${cls}`}>{s}</span>

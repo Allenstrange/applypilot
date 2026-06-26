@@ -58,7 +58,7 @@ function FooterCol({
 }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 dark:text-slate-500">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 dark:text-slate-400">
         {title}
       </div>
       <ul className="space-y-2">

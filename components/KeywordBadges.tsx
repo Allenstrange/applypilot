@@ -13,7 +13,7 @@ export default function KeywordBadges({ keywords }: { keywords: string[] }) {
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.03 }}
-          className="bg-amber-400/15 text-amber-300 font-semibold text-xs px-2 py-0.5 rounded-full border border-amber-500/25"
+          className="bg-amber-400/15 text-amber-700 dark:text-amber-300 font-semibold text-xs px-2 py-0.5 rounded-full border border-amber-500/25"
         >
           {k}
         </motion.span>

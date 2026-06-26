@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import { buildKeywordRegex } from "@/lib/keywords";
 
 const BADGE_CLASS =
-  "bg-amber-400/15 text-amber-300 font-semibold px-1.5 py-0.5 rounded border border-amber-500/25 inline-block";
+  "bg-amber-400/15 text-amber-700 dark:text-amber-300 font-semibold px-1.5 py-0.5 rounded border border-amber-500/25 inline-block";
 
 /**
  * Renders `text` with every keyword highlighted.

@@ -24,8 +24,8 @@ export default function FeaturesPage() {
     <>
       <section className="hero-grid border-b border-slate-200 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            Everything you need to <span className="brand-gradient-text">apply faster</span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
+            Everything you need to <span className="text-[var(--brand)]">apply faster</span>
           </h1>
           <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
             One tool for the entire application loop — diagnose, tailor,
@@ -50,7 +50,7 @@ export default function FeaturesPage() {
 
       <section className="bg-slate-50 border-y border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <SectionHeading eyebrow="Why it's different" title="Built to beat the ATS, honestly" />
+          <SectionHeading title="Built to beat the ATS, honestly" />
           <div className="mt-10 grid gap-3 sm:grid-cols-2 max-w-3xl mx-auto">
             {HIGHLIGHTS.map((h) => (
               <div key={h} className="flex items-start gap-3 card p-4">

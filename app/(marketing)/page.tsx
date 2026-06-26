@@ -18,8 +18,8 @@ export default function LandingPage() {
               <ShieldCheck className="w-3.5 h-3.5 text-[var(--brand)]" />
               No sign-up · runs in your browser
             </div>
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08] dark:text-slate-100">
-              Land more interviews with <span className="brand-gradient-text">tailored</span> applications
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08] dark:text-slate-100 text-balance">
+              Land more interviews with <span className="text-[var(--brand)]">tailored</span> applications
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 dark:text-slate-300">
               ApplyPilot turns one job description into a tailored CV, a cover
@@ -67,11 +67,11 @@ export default function LandingPage() {
 
       {/* Stats */}
       <section className="border-b border-slate-200 dark:border-slate-700">
-        <div className="mx-auto max-w-6xl px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+        <div className="mx-auto max-w-5xl px-6 py-8 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 sm:gap-x-16">
           {STATS.map((s) => (
-            <div key={s.label}>
-              <div className="text-3xl sm:text-4xl font-extrabold brand-gradient-text">{s.value}</div>
-              <div className="text-xs text-slate-500 mt-1 dark:text-slate-400">{s.label}</div>
+            <div key={s.label} className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{s.value}</span>
+              <span className="text-sm text-slate-600 dark:text-slate-300">{s.label}</span>
             </div>
           ))}
         </div>
@@ -80,7 +80,6 @@ export default function LandingPage() {
       {/* Features */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <SectionHeading
-          eyebrow="Everything in one place"
           title="The whole application loop, automated"
           subtitle="The best parts of JobScan, Teal, Rezi and Kickresume — without juggling five different tabs."
         />
@@ -91,38 +90,43 @@ export default function LandingPage() {
                 <Icon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{desc}</p>
+              <p className="text-sm text-slate-600 leading-relaxed dark:text-slate-400">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it works — a connected sequence, not another card grid */}
       <section className="bg-slate-50 border-y border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <SectionHeading
-            eyebrow="How it works"
             title="From job description to ready-to-send"
             subtitle="Four steps. No copy-pasting between tools."
           />
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s) => (
-              <div key={s.n} className="card p-6">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#fb6f4c] text-white font-bold flex items-center justify-center mb-4">
+          <ol className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {STEPS.map((s, i) => (
+              <li key={s.n} className="relative flex flex-col items-center text-center lg:items-start lg:text-left">
+                {i < STEPS.length - 1 ? (
+                  <span
+                    aria-hidden
+                    className="hidden lg:block absolute top-5 left-[3.25rem] right-[-1.5rem] h-px bg-[var(--border-strong)]"
+                  />
+                ) : null}
+                <span className="relative z-[1] flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-white font-bold ring-4 ring-slate-50 dark:ring-slate-800/50">
                   {s.n}
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-1.5 dark:text-slate-100">{s.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed dark:text-slate-400">{s.desc}</p>
-              </div>
+                </span>
+                <h3 className="mt-5 font-semibold text-slate-900 dark:text-slate-100">{s.title}</h3>
+                <p className="mt-1.5 text-sm text-slate-600 leading-relaxed dark:text-slate-300">{s.desc}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="bg-slate-50 border-t border-slate-200 dark:bg-slate-800/50 dark:border-slate-700">
         <div className="mx-auto max-w-3xl px-6 py-20">
-          <SectionHeading eyebrow="FAQ" title="Questions, answered" />
+          <SectionHeading title="Questions, answered" />
           <div className="mt-10 space-y-3">
             {FAQS.map((f) => (
               <details key={f.q} className="card rounded-xl p-5 group">

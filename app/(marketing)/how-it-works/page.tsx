@@ -14,8 +14,8 @@ export default function HowItWorksPage() {
     <>
       <section className="hero-grid border-b border-slate-200 dark:border-slate-700">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            From job post to <span className="brand-gradient-text">ready-to-send</span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
+            From job post to <span className="text-[var(--brand)]">ready-to-send</span>
           </h1>
           <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
             Four steps, one tool. Here&apos;s the whole flow.
@@ -27,7 +27,7 @@ export default function HowItWorksPage() {
         <ol className="relative border-l-2 border-slate-200 ml-4 dark:border-slate-700">
           {STEPS.map((s) => (
             <li key={s.n} className="mb-10 ml-8">
-              <span className="absolute -left-[1.15rem] flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#fb6f4c] text-white font-bold text-sm ring-4 ring-white dark:ring-slate-900">
+              <span className="absolute -left-[1.15rem] flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white font-bold text-sm ring-4 ring-white dark:ring-slate-900">
                 {s.n}
               </span>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{s.title}</h3>

@@ -9,6 +9,7 @@ import { scoreResume } from "@/lib/resumeScore";
 import { getTemplate } from "@/lib/templates";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
+import TemplateThumbnail from "@/components/TemplateThumbnail";
 
 export default function ResumesPage() {
   const hydrated = useHydrated();
@@ -91,21 +92,33 @@ export default function ResumesPage() {
             const tpl = getTemplate(r.templateId);
             const scoreColor = score >= 80 ? "text-green-600" : score >= 55 ? "text-amber-600" : "text-red-600";
             return (
-              <div key={r.id} className="card rounded-xl p-5 flex flex-col">
-                <Link href={`/app/resumes/${r.id}`} className="flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">{r.name}</div>
-                    <span className={`text-sm font-bold ${scoreColor}`}>{score}</span>
+              <div key={r.id} className="card rounded-xl overflow-hidden flex flex-col group">
+                <Link
+                  href={`/app/resumes/${r.id}`}
+                  className="relative block h-44 overflow-hidden bg-slate-50 dark:bg-slate-800/40 border-b border-[var(--border)] flex justify-center"
+                >
+                  <div className="pt-4 transition-transform duration-300 group-hover:-translate-y-1">
+                    <TemplateThumbnail profile={r.profile} templateId={r.templateId} width={240} className="shadow-sm" />
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                      <span className="w-2 h-2 rounded-full" style={{ background: tpl.accent }} />
-                      {tpl.name}
-                    </span>
-                    <span>· {new Date(r.updatedAt).toLocaleDateString("en-GB")}</span>
-                  </div>
+                  <span
+                    title="Resume score"
+                    className={`absolute top-2.5 right-2.5 text-xs font-bold px-2 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)] ${scoreColor}`}
+                  >
+                    {score}
+                  </span>
                 </Link>
-                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <div className="p-5 flex flex-col flex-1">
+                  <Link href={`/app/resumes/${r.id}`}>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 mb-2 truncate">{r.name}</div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <span className="w-2 h-2 rounded-full" style={{ background: tpl.accent }} />
+                        {tpl.name}
+                      </span>
+                      <span>· {new Date(r.updatedAt).toLocaleDateString("en-GB")}</span>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
                   <Link href={`/app/resumes/${r.id}`} className="text-violet-600 text-xs font-medium hover:text-violet-700 dark:text-violet-400">
                     Edit
                   </Link>
@@ -123,6 +136,7 @@ export default function ResumesPage() {
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
+                  </div>
                 </div>
               </div>
             );

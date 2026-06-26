@@ -36,7 +36,7 @@ export default function SharePage() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-500 flex items-center justify-center text-white text-sm">AP</span>
+            <span className="w-8 h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white text-sm">AP</span>
             ApplyPilot
           </Link>
           <button

@@ -179,7 +179,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           type="button"
           onClick={() => loadSectionVariants(kind)}
           data-testid={`sec-ai-${kind}`}
-          className="text-xs px-2 py-1 rounded bg-gradient-to-r from-violet-500 to-violet-500 text-white inline-flex items-center gap-1"
+          className="text-xs px-2 py-1 rounded bg-[var(--brand)] text-white inline-flex items-center gap-1"
         >
           {secLoading === kind ? "…" : "✨ AI rewrite (3 options)"}
         </button>
@@ -311,7 +311,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                         type="button"
                         data-testid={`bullet-ai-${i}-${j}`}
                         onClick={() => setOpenMenu(openMenu === `${i}-${j}` ? null : `${i}-${j}`)}
-                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-gradient-to-r from-violet-500 to-violet-500 text-white"
+                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand)] text-white"
                       >
                         {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>
@@ -352,7 +352,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           </div>
         </Section>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500">
+          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             {optimizing ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />} One-click ATS optimise
           </button>
           <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} data-testid="download-cv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">

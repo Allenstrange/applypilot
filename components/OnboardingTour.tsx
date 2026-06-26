@@ -135,7 +135,7 @@ export default function OnboardingTour() {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" data-testid="onboarding-welcome">
         <div className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-violet-600 to-violet-500 p-6 text-white">
+          <div className="bg-gradient-to-br from-[var(--brand)] to-[var(--accent)] p-6 text-white">
             <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-3">
               <Sparkles className="w-6 h-6" />
             </div>

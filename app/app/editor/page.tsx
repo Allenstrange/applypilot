@@ -29,6 +29,8 @@ import {
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
 import { exportResumeDOCX } from "@/lib/docx";
+import { exportResumeTXT } from "@/lib/resumeText";
+import { checkBullet } from "@/lib/writingChecks";
 import { copyToClipboard } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type {
@@ -341,6 +343,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                           ))}
                         </div>
                       ) : null}
+                      <BulletChecks text={bullet} />
                     </div>
                   ))}
                   <button type="button" onClick={() => updateExp(i, { bullets: exp.bullets + "\nNew bullet point here" })} className="text-xs text-amber-600 hover:text-amber-600 dark:text-amber-400">
@@ -360,6 +363,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           </button>
           <button type="button" onClick={() => { exportResumeDOCX(draftCV, "classic"); toast("✓ Word downloaded"); }} data-testid="download-cv-word-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             <Download className="w-4 h-4" /> Word (.doc)
+          </button>
+          <button type="button" onClick={() => { exportResumeTXT(draftCV); toast("✓ Plain text downloaded"); }} data-testid="download-cv-txt-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download className="w-4 h-4" /> Text (.txt)
           </button>
         </div>
       </div>
@@ -752,6 +758,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="card rounded-xl p-4">
       <h3 className="text-sm font-semibold text-slate-600 mb-2 dark:text-slate-300">{title}</h3>
       {children}
+    </div>
+  );
+}
+
+function BulletChecks({ text }: { text: string }) {
+  const issues = checkBullet(text);
+  if (!issues.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1" data-testid="bullet-checks">
+      {issues.map((iss) => (
+        <span
+          key={iss.id}
+          title={iss.detail}
+          className={`text-[10px] px-1.5 py-0.5 rounded-full border cursor-help ${
+            iss.severity === "warn"
+              ? "border-red-400/40 bg-red-500/10 text-red-600 dark:text-red-400"
+              : "border-[var(--border)] bg-[var(--surface-2)] text-slate-500 dark:text-slate-400"
+          }`}
+        >
+          {iss.label}
+        </span>
+      ))}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { fetchJobText, extractJobMeta } from "@/lib/jobUrl";
 import { toast } from "@/lib/toast";
 import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
+import JdKeywords from "@/components/JdKeywords";
 
 const SAMPLE_JD = `About the role:
 We are looking for a 1st/2nd Line Support Analyst to join our IT services team in Birmingham. You will provide technical support to internal users across multiple offices, handling incidents, service requests, and problems in line with SLA targets.
@@ -179,6 +180,8 @@ export default function AnalyzePage() {
               </button>
             </div>
           </div>
+
+          <JdKeywords jd={form.jd} />
         </div>
 
         <div className="card rounded-xl p-6">

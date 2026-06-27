@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FilePlus2, Copy, Trash2, GitCompare, Plus, LayoutTemplate, Upload } from "lucide-react";
@@ -7,6 +8,8 @@ import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";
 import { getTemplate } from "@/lib/templates";
+import { isAIConfigured } from "@/lib/ai";
+import { parseCVFile } from "@/lib/cvParser";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import TemplateThumbnail from "@/components/TemplateThumbnail";
@@ -16,9 +19,13 @@ export default function ResumesPage() {
   const router = useRouter();
   const resumes = useStore((s) => s.resumes);
   const profile = useStore((s) => s.profile);
+  const providers = useStore((s) => s.providers);
   const addResume = useStore((s) => s.addResume);
   const duplicateResume = useStore((s) => s.duplicateResume);
   const removeResume = useStore((s) => s.removeResume);
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   function createFromProfile() {
     const copy = JSON.parse(JSON.stringify(profile));
@@ -27,18 +34,69 @@ export default function ResumesPage() {
     router.push(`/app/resumes/${id}`);
   }
 
+  // Upload a CV file and save it as its own new resume in the library.
+  async function handleUpload(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast("⚠ File too large (max 10MB)");
+      return;
+    }
+    const ai = isAIConfigured(providers);
+    setUploading(true);
+    toast(ai ? "⏳ AI is reading your CV…" : `⏳ Reading ${file.name}…`);
+    try {
+      const { profile: parsed, source } = await parseCVFile(file, providers, ai);
+      const base = file.name.replace(/\.[^.]+$/, "").trim();
+      const name = parsed.name?.trim()
+        ? `${parsed.name.split(" ")[0]}'s CV`
+        : base || "Imported CV";
+      const id = addResume(name, "classic", parsed);
+      toast(
+        source === "local"
+          ? "ℹ Saved a blank resume — add an AI key in Settings for full extraction"
+          : "✓ CV imported as a new resume",
+      );
+      router.push(`/app/resumes/${id}`);
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const list = hydrated ? resumes : [];
 
   return (
     <div className="p-8">
+      {/* shared hidden file input for all "Upload CV" entry points */}
+      <input
+        ref={fileRef}
+        type="file"
+        className="hidden"
+        accept=".docx,.pdf,.json,.txt"
+        onChange={(e) => {
+          handleUpload(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+
       <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
-        <PageHeader title="Resumes" subtitle="Build and keep multiple tailored resume versions." />
+        <PageHeader title="Resumes" subtitle="Upload, build, and keep a tailored CV for every role." />
         <div className="flex items-center gap-2">
           {resumes.length >= 1 ? (
             <Link href="/app/compare" data-testid="compare-link" className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
               <GitCompare className="w-4 h-4" /> Compare
             </Link>
           ) : null}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            data-testid="upload-cv-btn"
+            className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            {uploading ? <span className="spinner" /> : <Upload className="w-4 h-4" />} Upload CV
+          </button>
           <button type="button" onClick={createFromProfile} className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
             <FilePlus2 className="w-4 h-4" /> New resume
           </button>
@@ -52,6 +110,22 @@ export default function ResumesPage() {
             <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Build a tailored resume in whichever way suits you.</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-3 max-w-3xl mx-auto">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors disabled:opacity-60"
+            >
+              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                {uploading ? (
+                  <span className="spinner" />
+                ) : (
+                  <Upload className="w-6 h-6 text-[var(--brand)]" />
+                )}
+              </div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Upload a CV</div>
+              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">DOCX, PDF, JSON or TXT — saved as a new resume.</p>
+            </button>
             <button
               type="button"
               onClick={createFromProfile}
@@ -72,16 +146,6 @@ export default function ResumesPage() {
               </div>
               <div className="font-semibold text-slate-900 dark:text-slate-100">Browse templates</div>
               <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Pick a design, then make it yours.</p>
-            </Link>
-            <Link
-              href="/app/profile"
-              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors"
-            >
-              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
-                <Upload className="w-6 h-6 text-[var(--brand)]" />
-              </div>
-              <div className="font-semibold text-slate-900 dark:text-slate-100">Import your CV</div>
-              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Upload a DOCX or PDF to fill your profile.</p>
             </Link>
           </div>
         </div>

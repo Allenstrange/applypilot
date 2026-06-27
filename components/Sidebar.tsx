@@ -195,8 +195,12 @@ export default function Sidebar() {
 
   // Restore the persisted desktop collapse preference after mount.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+    } catch {
+      /* storage unavailable — keep the default expanded state */
+    }
   }, []);
 
   function toggleCollapsed() {

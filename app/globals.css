@@ -21,8 +21,8 @@
   --border: #e8e4ef;
   --border-strong: #d6cfe3;
   --text: #1a1426;
-  --text-muted: #6b6479;
-  --text-faint: #9d95ab;
+  --text-muted: #5c556b;
+  --text-faint: #736c82;
   --brand: #7c3aed;
   --brand-hover: #6d28d9;
   --accent: #fb6f4c;
@@ -94,9 +94,9 @@ h4 {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #7c3aed, #a855f7, #fb6f4c);
-  opacity: 0.9;
+  height: 2px;
+  background: var(--brand);
+  opacity: 0.85;
 }
 .stat-card:hover {
   transform: translateY(-2px);
@@ -314,12 +314,6 @@ select optgroup {
   background-image:
     radial-gradient(60rem 30rem at 70% -10%, rgba(124, 58, 237, 0.12), transparent 60%),
     radial-gradient(40rem 24rem at 0% 0%, rgba(251, 111, 76, 0.10), transparent 55%);
-}
-.brand-gradient-text {
-  background: linear-gradient(120deg, #7c3aed, #a855f7, #fb6f4c);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* Hero product mockup framed like an app window */

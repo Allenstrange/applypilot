@@ -278,7 +278,7 @@ function Timeline({ app }: { app: Application }) {
 
   return (
     <div data-testid={`timeline-${app.id}`}>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
         <Clock className="w-3.5 h-3.5" /> Status timeline
       </div>
       <ol className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-2 space-y-4">
@@ -318,7 +318,7 @@ function NotesEditor({ app }: { app: Application }) {
   const dirty = value !== (app.notes ?? "");
   return (
     <div className="mt-4">
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
         Edit notes
       </div>
       <textarea

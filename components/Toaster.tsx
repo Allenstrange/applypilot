@@ -5,7 +5,10 @@ import { useToastStore } from "@/lib/toast";
 export default function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
   return (
-    <div className="fixed bottom-6 right-6 z-[100] space-y-2">
+    <div
+      className="fixed bottom-6 right-6 z-[100] space-y-2"
+      aria-live="polite"
+    >
       {toasts.map((t) => (
         <div
           key={t.id}

@@ -36,7 +36,7 @@ export default function SharePage() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-500 flex items-center justify-center text-white text-sm">AP</span>
+            <span className="w-8 h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white dark:text-slate-900 text-sm">AP</span>
             ApplyPilot
           </Link>
           <button
@@ -51,7 +51,7 @@ export default function SharePage() {
         <div data-testid="share-resume">
           <ResumePreview profile={data.profile} templateId={data.templateId} />
         </div>
-        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">Shared via ApplyPilot</p>
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6">Shared via ApplyPilot</p>
       </div>
     </div>
   );

@@ -138,7 +138,7 @@ function QuickAction({
       href={href}
       className={`w-full ${
         primary ? "btn-primary" : "btn-ghost"
-      } text-slate-900 py-3 px-4 rounded-lg text-sm font-medium flex items-center gap-2`}
+      } py-3 px-4 rounded-lg text-sm font-medium flex items-center gap-2`}
     >
       {icon}
       {children}

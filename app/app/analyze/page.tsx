@@ -198,8 +198,8 @@ export default function AnalyzePage() {
               )}
             </div>
           </div>
-          <div className="mt-4 p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-            <div className="text-xs text-indigo-600 font-semibold mb-1 dark:text-indigo-400">AI PROVIDER</div>
+          <div className="mt-4 p-4 rounded-lg bg-violet-500/10 border border-violet-500/20">
+            <div className="text-xs text-violet-600 font-semibold mb-1 dark:text-violet-400">AI PROVIDER</div>
             <div className="text-sm">
               {aiReady ? (
                 <span className="text-green-600 dark:text-green-400">✓ {AI_PROVIDERS[providers.activeProvider].name}</span>
@@ -239,7 +239,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
           ) : null}
           {a.isSemantic
             ? a.domainTags.map((t) => (
-                <span key={t} className="status-pill bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">{t}</span>
+                <span key={t} className="status-pill bg-violet-500/20 text-violet-600 dark:text-violet-400">{t}</span>
               ))
             : null}
         </h2>

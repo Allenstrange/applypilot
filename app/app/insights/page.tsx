@@ -37,14 +37,14 @@ export default function InsightsPage() {
       {apps.length === 0 ? (
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400" data-testid="insights-empty">
           No data yet. Add jobs from the{" "}
-          <Link href="/app/match" className="text-indigo-600 underline dark:text-indigo-400">Job Matcher</Link>{" "}
+          <Link href="/app/match" className="text-violet-600 underline dark:text-violet-400">Job Matcher</Link>{" "}
           or save analyses to the tracker to see your funnel.
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <Stat label="Total" value={f.total} color="text-slate-900 dark:text-slate-100" />
-            <Stat label="Active" value={f.active} color="text-indigo-600 dark:text-indigo-400" />
+            <Stat label="Active" value={f.active} color="text-violet-600 dark:text-violet-400" />
             <Stat label="Interviews" value={f.byStatus.interview} color="text-amber-600 dark:text-amber-400" />
             <Stat label="Offers" value={f.byStatus.offer} color="text-green-600 dark:text-green-400" />
           </div>
@@ -103,27 +103,27 @@ export default function InsightsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="card rounded-xl p-6" data-testid="response-times">
               <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Response times</h2>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Average days between stages, from your status history.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Average days between stages, from your status history.</p>
               <div className="grid grid-cols-3 gap-3">
                 <MiniStat label="Avg response" value={f.response.avgResponseDays} testid="stat-avg-response" />
                 <MiniStat label="Applied → Interview" value={f.response.appliedToInterviewDays} testid="stat-applied-interview-days" />
                 <MiniStat label="Interview → Offer" value={f.response.interviewToOfferDays} testid="stat-interview-offer-days" />
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
                 {f.response.sampleSize} application{f.response.sampleSize === 1 ? "" : "s"} with a recorded response
               </p>
             </div>
 
             <div className="card rounded-xl p-6 lg:col-span-2" data-testid="best-cv">
               <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Resume performance</h2>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Which resume gets you the most interviews. Link a CV to each application in the tracker.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Which resume gets you the most interviews. Link a CV to each application in the tracker.</p>
               {f.cvPerf.length === 0 ? (
                 <div className="text-sm text-slate-500 dark:text-slate-400">Apply to a few roles to see which resume performs best.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                      <tr className="text-left text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                         <th className="py-2 pr-4">Resume</th>
                         <th className="py-2 px-2">Applied</th>
                         <th className="py-2 px-2">Interview</th>

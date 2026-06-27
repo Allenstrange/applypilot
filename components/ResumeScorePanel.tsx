@@ -7,7 +7,7 @@ import { scoreResume } from "@/lib/resumeScore";
 const SEV = {
   error: { Icon: AlertCircle, cls: "text-red-600" },
   warning: { Icon: AlertTriangle, cls: "text-amber-600" },
-  tip: { Icon: Lightbulb, cls: "text-indigo-600" },
+  tip: { Icon: Lightbulb, cls: "text-violet-600" },
 } as const;
 
 export default function ResumeScorePanel({ profile }: { profile: Profile }) {
@@ -47,7 +47,7 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
               <span>{c.score}/{c.max}</span>
             </div>
             <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
-              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${(c.score / c.max) * 100}%` }} />
+              <div className="h-full rounded-full bg-violet-500" style={{ width: `${(c.score / c.max) * 100}%` }} />
             </div>
           </div>
         ))}
@@ -67,7 +67,7 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
                 <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${cls}`} />
                 <span className="text-slate-700 dark:text-slate-200">
                   {issue.message}
-                  {issue.where ? <span className="text-slate-400 dark:text-slate-500"> · {issue.where}</span> : null}
+                  {issue.where ? <span className="text-slate-500 dark:text-slate-400"> · {issue.where}</span> : null}
                 </span>
               </li>
             );

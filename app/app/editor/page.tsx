@@ -179,14 +179,14 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           type="button"
           onClick={() => loadSectionVariants(kind)}
           data-testid={`sec-ai-${kind}`}
-          className="text-xs px-2 py-1 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white inline-flex items-center gap-1"
+          className="text-xs px-2 py-1 rounded bg-[var(--brand)] text-white dark:text-slate-900 inline-flex items-center gap-1"
         >
           {secLoading === kind ? "…" : "✨ AI rewrite (3 options)"}
         </button>
         {secVariants?.kind === kind ? (
-          <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`sec-variants-${kind}`}>
+          <div className="mt-2 space-y-1.5 rounded-lg border border-violet-500/30 bg-violet-500/5 p-2" data-testid={`sec-variants-${kind}`}>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Choose a rewrite</span>
               <button type="button" onClick={() => setSecVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
             </div>
             {secVariants.options.map((opt, k) => (
@@ -195,9 +195,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                 type="button"
                 onClick={() => applySec(kind, opt)}
                 data-testid={`sec-variant-${kind}-${k}`}
-                className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+                className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-violet-500/10 border border-slate-200 dark:border-slate-700"
               >
-                <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+                <span className="text-violet-500 font-semibold mr-1">{k + 1}.</span>{opt}
               </button>
             ))}
           </div>
@@ -311,7 +311,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                         type="button"
                         data-testid={`bullet-ai-${i}-${j}`}
                         onClick={() => setOpenMenu(openMenu === `${i}-${j}` ? null : `${i}-${j}`)}
-                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
+                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand)] text-white dark:text-slate-900"
                       >
                         {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>
@@ -323,9 +323,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                         </div>
                       ) : null}
                       {variants && variants.key === `${i}-${j}` ? (
-                        <div className="mt-2 space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-2" data-testid={`bullet-variants-${i}-${j}`}>
+                        <div className="mt-2 space-y-1.5 rounded-lg border border-violet-500/30 bg-violet-500/5 p-2" data-testid={`bullet-variants-${i}-${j}`}>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Choose a rewrite</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Choose a rewrite</span>
                             <button type="button" onClick={() => setVariants(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
                           </div>
                           {variants.options.map((opt, k) => (
@@ -334,9 +334,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                               type="button"
                               onClick={() => applyVariant(i, j, opt)}
                               data-testid={`bullet-variant-${i}-${j}-${k}`}
-                              className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700"
+                              className="block w-full text-left text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-800 hover:bg-violet-500/10 border border-slate-200 dark:border-slate-700"
                             >
-                              <span className="text-indigo-500 font-semibold mr-1">{k + 1}.</span>{opt}
+                              <span className="text-violet-500 font-semibold mr-1">{k + 1}.</span>{opt}
                             </button>
                           ))}
                         </div>
@@ -352,7 +352,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           </div>
         </Section>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-500">
+          <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             {optimizing ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />} One-click ATS optimise
           </button>
           <button type="button" onClick={() => { exportCVPDF(draftCV); toast("✓ CV downloaded"); }} data-testid="download-cv-btn" className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
@@ -629,7 +629,7 @@ function InterviewPrepTab({ analysis, draftCV }: { analysis: Analysis; draftCV: 
                 <div className="text-sm text-slate-600 mb-2 dark:text-slate-300"><span className="text-amber-600 font-medium dark:text-amber-400">How to frame: </span><Highlight text={data.answerFormulas[i]} keywords={data.keywords} /></div>
               ) : null}
               {data.coachTips[i] ? (
-                <div className="text-xs text-slate-500 dark:text-slate-400"><span className="text-indigo-600 font-medium dark:text-indigo-400">Coach tip: </span><Highlight text={data.coachTips[i]} keywords={data.keywords} /></div>
+                <div className="text-xs text-slate-500 dark:text-slate-400"><span className="text-violet-600 font-medium dark:text-violet-400">Coach tip: </span><Highlight text={data.coachTips[i]} keywords={data.keywords} /></div>
               ) : null}
             </motion.div>
           ))}

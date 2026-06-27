@@ -89,7 +89,7 @@ export default function SettingsPage() {
               href={info.keyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline"
             >
               Get an API key ↗
             </a>

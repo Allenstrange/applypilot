@@ -52,7 +52,7 @@ export default function ComparePage() {
         <PageHeader title="⚖ Compare Resumes" subtitle="See two versions side by side with scores and a diff." />
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400" data-testid="compare-empty">
           You need at least one saved resume to compare. Create one from your{" "}
-          <Link href="/app/resumes" className="text-indigo-600 underline dark:text-indigo-400">Resumes</Link> library.
+          <Link href="/app/resumes" className="text-violet-600 underline dark:text-violet-400">Resumes</Link> library.
         </div>
       </div>
     );
@@ -128,7 +128,7 @@ function Comparison({ a, b }: { a: Source; b: Source }) {
                   {aWins ? <Trophy className="w-3.5 h-3.5 text-amber-500" /> : null}
                   <span className={`font-semibold ${aWins ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>{cat.score}</span>
                   <div className="w-24 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div className="h-full rounded-full bg-indigo-500 ml-auto" style={{ width: `${(cat.score / cat.max) * 100}%` }} />
+                    <div className="h-full rounded-full bg-violet-500 ml-auto" style={{ width: `${(cat.score / cat.max) * 100}%` }} />
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 text-center w-28 truncate">{cat.label}</div>
@@ -149,7 +149,7 @@ function Comparison({ a, b }: { a: Source; b: Source }) {
       <div className="card rounded-xl p-6 mb-6" data-testid="skills-diff">
         <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Skills difference</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SkillBucket title={`Only in A (${skills.onlyA.length})`} skills={skills.onlyA} cls="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" />
+          <SkillBucket title={`Only in A (${skills.onlyA.length})`} skills={skills.onlyA} cls="bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20" />
           <SkillBucket title={`In both (${skills.both.length})`} skills={skills.both} cls="bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20" />
           <SkillBucket title={`Only in B (${skills.onlyB.length})`} skills={skills.onlyB} cls="bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20" />
         </div>
@@ -161,7 +161,7 @@ function Comparison({ a, b }: { a: Source; b: Source }) {
         <p className="text-xs mb-4 flex flex-wrap items-center gap-2">
           <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">Removed in B</span>
           <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">Added in B</span>
-          <span className="text-slate-400 dark:text-slate-500">unchanged</span>
+          <span className="text-slate-500 dark:text-slate-400">unchanged</span>
         </p>
         {a.profile.summary || b.profile.summary ? (
           <p className="text-sm leading-relaxed">
@@ -221,7 +221,7 @@ function ScoreColumn({ source, score, winner, side, testid }: { source: Source; 
 function SkillBucket({ title, skills, cls }: { title: string; skills: string[]; cls: string }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">{title}</div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{title}</div>
       <div className="flex flex-wrap gap-1.5">
         {skills.length ? skills.map((s, i) => (
           <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${cls}`}>{s}</span>

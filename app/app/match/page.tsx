@@ -181,8 +181,8 @@ export default function MatchPage() {
         </div>
       ) : null}
       {profileReady && !aiReady ? (
-        <div className="card rounded-xl p-4 mb-6 text-sm bg-indigo-500/10 border border-indigo-500/20">
-          <span className="text-indigo-600 dark:text-indigo-400">ℹ AI provider not configured. </span>
+        <div className="card rounded-xl p-4 mb-6 text-sm bg-violet-500/10 border border-violet-500/20">
+          <span className="text-violet-600 dark:text-violet-400">ℹ AI provider not configured. </span>
           <Link href="/app/settings" className="underline">Set one up</Link> — matching needs AI.
         </div>
       ) : null}
@@ -191,7 +191,7 @@ export default function MatchPage() {
         {jobs.map((j, i) => (
           <div key={j.id} className="card rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Job {i + 1}
               </span>
               <button
@@ -236,7 +236,7 @@ export default function MatchPage() {
           Match &amp; rank
         </button>
         {aiReady ? (
-          <span className="text-xs text-slate-400 dark:text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             via {AI_PROVIDERS[providers.activeProvider].name}
           </span>
         ) : null}
@@ -301,7 +301,7 @@ function ResultCard({ match: m, rank, onTrack, onTailor, tailoring }: { match: J
 
         <div className="flex-1 min-w-[200px]">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500">#{rank}</span>
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">#{rank}</span>
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">{m.title}</h3>
             <span className={`status-pill ${v.cls}`}>{v.label}</span>
           </div>

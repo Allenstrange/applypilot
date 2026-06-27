@@ -58,13 +58,13 @@ function FooterCol({
 }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 dark:text-slate-500">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 dark:text-slate-400">
         {title}
       </div>
       <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.href + l.label}>
-            <Link href={l.href} className="text-sm text-slate-600 hover:text-indigo-600 dark:text-slate-300">
+            <Link href={l.href} className="text-sm text-slate-600 hover:text-[var(--brand)] dark:text-slate-300 dark:hover:text-[var(--brand)] transition-colors">
               {l.label}
             </Link>
           </li>

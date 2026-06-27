@@ -95,6 +95,7 @@ export default function ResumesPage() {
               <div key={r.id} className="card rounded-xl overflow-hidden flex flex-col group">
                 <Link
                   href={`/app/resumes/${r.id}`}
+                  aria-label={`Open ${r.name}`}
                   className="relative block h-44 overflow-hidden bg-slate-50 dark:bg-slate-800/40 border-b border-[var(--border)] flex justify-center"
                 >
                   <div className="pt-4 transition-transform duration-300 group-hover:-translate-y-1">

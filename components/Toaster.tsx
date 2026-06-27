@@ -12,8 +12,6 @@ export default function Toaster() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          role="status"
-          aria-atomic="true"
           className="glass text-sm text-slate-800 px-4 py-3 rounded-lg max-w-sm dark:text-slate-100"
         >
           {t.message}

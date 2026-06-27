@@ -179,7 +179,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           type="button"
           onClick={() => loadSectionVariants(kind)}
           data-testid={`sec-ai-${kind}`}
-          className="text-xs px-2 py-1 rounded bg-[var(--brand)] text-white inline-flex items-center gap-1"
+          className="text-xs px-2 py-1 rounded bg-[var(--brand)] text-white dark:text-slate-900 inline-flex items-center gap-1"
         >
           {secLoading === kind ? "…" : "✨ AI rewrite (3 options)"}
         </button>
@@ -311,7 +311,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                         type="button"
                         data-testid={`bullet-ai-${i}-${j}`}
                         onClick={() => setOpenMenu(openMenu === `${i}-${j}` ? null : `${i}-${j}`)}
-                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand)] text-white"
+                        className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand)] text-white dark:text-slate-900"
                       >
                         {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>

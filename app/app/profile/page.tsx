@@ -10,6 +10,7 @@ import { downloadJSON } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type { Profile, Experience, Education } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
+import LiveCoach from "@/components/LiveCoach";
 
 const newExperience = (): Experience => ({
   company: "",
@@ -149,6 +150,8 @@ export default function ProfilePage() {
         subtitle="Your baseline CV data, used to tailor every application truthfully."
       />
 
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2">
       {/* ---- CV import ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
@@ -398,6 +401,14 @@ export default function ProfilePage() {
       <p className="text-xs text-slate-500 text-right dark:text-slate-400">
         Changes save automatically to this browser.
       </p>
+        </div>
+
+        <aside className="lg:col-span-1 order-first lg:order-none">
+          <div className="lg:sticky lg:top-6">
+            <LiveCoach profile={profile} />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

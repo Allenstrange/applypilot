@@ -151,7 +151,12 @@ export default function ProfilePage() {
       />
 
       <div className="grid lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2">
+        <aside className="lg:col-span-1 lg:col-start-3 lg:row-start-1">
+          <div className="lg:sticky lg:top-6">
+            <LiveCoach profile={profile} />
+          </div>
+        </aside>
+        <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1">
       {/* ---- CV import ---- */}
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
@@ -402,12 +407,6 @@ export default function ProfilePage() {
         Changes save automatically to this browser.
       </p>
         </div>
-
-        <aside className="lg:col-span-1 order-first lg:order-none">
-          <div className="lg:sticky lg:top-6">
-            <LiveCoach profile={profile} />
-          </div>
-        </aside>
       </div>
     </div>
   );

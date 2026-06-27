@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "motion/react";
 import {
   AlertCircle,
   AlertTriangle,
@@ -34,12 +40,17 @@ export default function LiveCoach({ profile }: { profile: Profile }) {
 
   // Animate the number with a motion value so there is no React state churn
   // on every frame (keeps the React Compiler lint rules happy).
+  const reduced = useReducedMotion();
   const count = useMotionValue(0);
   const display = useTransform(count, (v) => Math.round(v));
   useEffect(() => {
+    if (reduced) {
+      count.set(overall);
+      return;
+    }
     const controls = animate(count, overall, { duration: 0.6, ease: "easeOut" });
     return () => controls.stop();
-  }, [overall, count]);
+  }, [overall, count, reduced]);
 
   return (
     <div className="card rounded-xl p-5">
@@ -49,7 +60,9 @@ export default function LiveCoach({ profile }: { profile: Profile }) {
         </div>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-60" />
+            {reduced ? null : (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-60" />
+            )}
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
           </span>
           Live
@@ -77,7 +90,7 @@ export default function LiveCoach({ profile }: { profile: Profile }) {
               strokeDasharray={CIRC}
               initial={false}
               animate={{ strokeDashoffset: CIRC * (1 - overall / 100) }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: reduced ? 0 : 0.6, ease: "easeOut" }}
               transform="rotate(-90 32 32)"
               strokeLinecap="round"
             />

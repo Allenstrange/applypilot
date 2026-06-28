@@ -56,6 +56,8 @@ export default function SettingsPage() {
   const active = providers.activeProvider;
   const config = providers[active];
   const info = AI_PROVIDERS[active];
+  const knownModels = info.modelGroups.flatMap((g) => g.models.map((m) => m.value));
+  const modelIsKnown = knownModels.includes(config.model);
 
   async function testConnection() {
     setTesting(true);
@@ -176,21 +178,37 @@ export default function SettingsPage() {
                 className="w-full px-3 py-2 rounded-lg text-sm"
               />
             ) : (
-              <select
-                value={config.model}
-                onChange={(e) => patchConfig({ model: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg text-sm"
-              >
-                {info.modelGroups.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.models.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <>
+                <select
+                  value={modelIsKnown ? config.model : "__custom"}
+                  onChange={(e) =>
+                    patchConfig({ model: e.target.value === "__custom" ? "" : e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                >
+                  {info.modelGroups.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.models.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                          {m.badge ? ` · ${m.badge}` : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value="__custom">✏️ Custom model…</option>
+                </select>
+                {!modelIsKnown ? (
+                  <input
+                    type="text"
+                    value={config.model}
+                    onChange={(e) => patchConfig({ model: e.target.value })}
+                    placeholder={info.modelPlaceholder ?? "enter a model id"}
+                    autoFocus
+                    className="w-full px-3 py-2 rounded-lg text-sm mt-2"
+                  />
+                ) : null}
+              </>
             )}
           </Field>
         </div>

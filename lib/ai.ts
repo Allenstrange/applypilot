@@ -285,8 +285,20 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     blurb: "Free, very fast inference for open models. Note: this is Groq — not xAI Grok above.",
     keyUrl: "https://console.groq.com/keys",
     free: true,
-    modelGroups: [],
-    modelPlaceholder: "e.g. llama-3.3-70b-versatile or llama-3.1-8b-instant",
+    modelGroups: [
+      {
+        label: "Free · fast open models",
+        models: [
+          { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B — versatile", badge: "recommended" },
+          { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B — instant" },
+          { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
+          { value: "openai/gpt-oss-20b", label: "GPT-OSS 20B" },
+          { value: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 Distill 70B", badge: "reasoning" },
+          { value: "qwen/qwen3-32b", label: "Qwen3 32B" },
+        ],
+      },
+    ],
+    modelPlaceholder: "any Groq model id, e.g. llama-3.1-8b-instant",
     async call(prompt, model, apiKey) {
       return openaiCompatibleCall(
         "https://api.groq.com/openai/v1/chat/completions",
@@ -305,8 +317,20 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     blurb: "One key, hundreds of models — including many free \":free\" variants. Browser-friendly.",
     keyUrl: "https://openrouter.ai/keys",
     free: true,
-    modelGroups: [],
-    modelPlaceholder: "e.g. deepseek/deepseek-r1:free or meta-llama/llama-3.3-70b-instruct:free",
+    modelGroups: [
+      {
+        label: "Free (\":free\" models)",
+        models: [
+          { value: "deepseek/deepseek-chat-v3-0324:free", label: "DeepSeek V3 (free)", badge: "recommended" },
+          { value: "deepseek/deepseek-r1:free", label: "DeepSeek R1 (free)", badge: "reasoning" },
+          { value: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)" },
+          { value: "qwen/qwen-2.5-72b-instruct:free", label: "Qwen 2.5 72B (free)" },
+          { value: "google/gemini-2.0-flash-exp:free", label: "Gemini 2.0 Flash exp (free)" },
+          { value: "mistralai/mistral-small-3.1-24b-instruct:free", label: "Mistral Small 3.1 24B (free)" },
+        ],
+      },
+    ],
+    modelPlaceholder: "any OpenRouter model id, e.g. anthropic/claude-3.5-sonnet",
     async call(prompt, model, apiKey) {
       return openaiCompatibleCall(
         "https://openrouter.ai/api/v1/chat/completions",

@@ -25,6 +25,8 @@ export interface ProviderDef {
   modelGroups: ModelGroup[];
   /** Hint shown when a provider uses a free-text model field (no modelGroups). */
   modelPlaceholder?: string;
+  /** Provider offers a genuine no-cost tier — shown as a "Free" badge. */
+  free?: boolean;
   call: (
     prompt: string,
     model: string,
@@ -196,6 +198,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     icon: "💎",
     blurb: "Latest Gemini 3.x. Fast with a generous free tier.",
     keyUrl: "https://aistudio.google.com/apikey",
+    free: true,
     modelGroups: [
       {
         label: "🚀 Gemini 3.5 (Latest)",
@@ -281,6 +284,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     icon: "⚡",
     blurb: "Free, very fast inference for open models. Note: this is Groq — not xAI Grok above.",
     keyUrl: "https://console.groq.com/keys",
+    free: true,
     modelGroups: [],
     modelPlaceholder: "e.g. llama-3.3-70b-versatile or llama-3.1-8b-instant",
     async call(prompt, model, apiKey) {
@@ -300,6 +304,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
     icon: "🔀",
     blurb: "One key, hundreds of models — including many free \":free\" variants. Browser-friendly.",
     keyUrl: "https://openrouter.ai/keys",
+    free: true,
     modelGroups: [],
     modelPlaceholder: "e.g. deepseek/deepseek-r1:free or meta-llama/llama-3.3-70b-instruct:free",
     async call(prompt, model, apiKey) {

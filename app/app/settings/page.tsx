@@ -94,7 +94,14 @@ export default function SettingsPage() {
                     {p.icon}
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">{p.name}</div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      {p.name}
+                      {p.free ? (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25">
+                          Free
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">{p.description}</div>
                   </div>
                   {isAIConfigured({ ...providers, activeProvider: id }) ? (
@@ -106,6 +113,11 @@ export default function SettingsPage() {
             );
           })}
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">
+          <span className="text-green-600 dark:text-green-400 font-medium">Free</span> tiers are
+          rate-limited and some providers may use submitted text to improve their models — for
+          full privacy, run a local model via <span className="font-medium">Custom Endpoint</span> (Ollama / LM Studio).
+        </p>
       </div>
 
       <div className="card rounded-xl p-6 mb-6">

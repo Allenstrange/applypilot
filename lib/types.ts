@@ -29,7 +29,15 @@ export interface Profile {
   education: Education[];
 }
 
-export type ProviderId = "openai" | "anthropic" | "gemini" | "grok" | "custom";
+export type ProviderId =
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "grok"
+  | "groq"
+  | "openrouter"
+  | "opencode"
+  | "custom";
 
 export interface ProviderConfig {
   apiKey: string;

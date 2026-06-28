@@ -45,6 +45,9 @@ const defaultProviders: ProviderSettings = {
   anthropic: { apiKey: "", model: "claude-sonnet-4-6" },
   gemini: { apiKey: "", model: "gemini-3.5-flash" },
   grok: { apiKey: "", model: "grok-4.3" },
+  groq: { apiKey: "", model: "llama-3.3-70b-versatile" },
+  openrouter: { apiKey: "", model: "deepseek/deepseek-r1:free" },
+  opencode: { apiKey: "", model: "" },
   custom: { endpoint: "", apiKey: "", model: "" },
 };
 

@@ -23,12 +23,58 @@ export interface ProviderDef {
   /** Where to get an API key for this provider. Empty for none. */
   keyUrl: string;
   modelGroups: ModelGroup[];
+  /** Hint shown when a provider uses a free-text model field (no modelGroups). */
+  modelPlaceholder?: string;
   call: (
     prompt: string,
     model: string,
     apiKey: string,
     endpoint?: string,
   ) => Promise<unknown>;
+}
+
+/** Parse a model's text output as JSON, tolerating prose/code-fence wrappers. */
+function parseJsonLoose(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const m = text.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error("No JSON found in model response");
+  }
+}
+
+/**
+ * Shared caller for OpenAI-compatible chat-completions endpoints (OpenRouter,
+ * Groq, opencode zen, …). Avoids forcing response_format since many free/open
+ * models reject it; relies on the prompt + loose JSON parsing instead.
+ */
+async function openaiCompatibleCall(
+  endpoint: string,
+  prompt: string,
+  model: string,
+  apiKey: string,
+  label: string,
+  extraHeaders: Record<string, string> = {},
+): Promise<unknown> {
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + apiKey,
+      ...extraHeaders,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+    }),
+  });
+  if (!resp.ok) throw new Error(`${label} error: ${resp.status}`);
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") throw new Error(`${label}: malformed response`);
+  return parseJsonLoose(content);
 }
 
 export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
@@ -226,6 +272,64 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDef> = {
       if (!resp.ok) throw new Error("Grok error: " + resp.status);
       const data = await resp.json();
       return JSON.parse(data.choices[0].message.content);
+    },
+  },
+
+  groq: {
+    name: "Groq",
+    description: "Free · Llama, GPT-OSS (ultra-fast)",
+    icon: "⚡",
+    blurb: "Free, very fast inference for open models. Note: this is Groq — not xAI Grok above.",
+    keyUrl: "https://console.groq.com/keys",
+    modelGroups: [],
+    modelPlaceholder: "e.g. llama-3.3-70b-versatile or llama-3.1-8b-instant",
+    async call(prompt, model, apiKey) {
+      return openaiCompatibleCall(
+        "https://api.groq.com/openai/v1/chat/completions",
+        prompt,
+        model,
+        apiKey,
+        "Groq",
+      );
+    },
+  },
+
+  openrouter: {
+    name: "OpenRouter",
+    description: "Free & paid · DeepSeek, Llama, Qwen…",
+    icon: "🔀",
+    blurb: "One key, hundreds of models — including many free \":free\" variants. Browser-friendly.",
+    keyUrl: "https://openrouter.ai/keys",
+    modelGroups: [],
+    modelPlaceholder: "e.g. deepseek/deepseek-r1:free or meta-llama/llama-3.3-70b-instruct:free",
+    async call(prompt, model, apiKey) {
+      return openaiCompatibleCall(
+        "https://openrouter.ai/api/v1/chat/completions",
+        prompt,
+        model,
+        apiKey,
+        "OpenRouter",
+        { "X-Title": "ApplyPilot" },
+      );
+    },
+  },
+
+  opencode: {
+    name: "opencode zen",
+    description: "OpenAI-compatible model gateway",
+    icon: "🧩",
+    blurb: "The opencode project's model gateway. Enter any model id it serves.",
+    keyUrl: "https://opencode.ai",
+    modelGroups: [],
+    modelPlaceholder: "a model id served by opencode zen",
+    async call(prompt, model, apiKey) {
+      return openaiCompatibleCall(
+        "https://opencode.ai/zen/v1/chat/completions",
+        prompt,
+        model,
+        apiKey,
+        "opencode zen",
+      );
     },
   },
 

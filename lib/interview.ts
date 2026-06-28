@@ -4,6 +4,7 @@
 
 import type { ProviderSettings, InterviewFeedback } from "./types";
 import { callAI } from "./ai";
+import { normalizeFit } from "./analysis";
 
 export interface InterviewContext {
   role: string;
@@ -77,7 +78,7 @@ Respond with valid JSON only:
     modelAnswer?: string;
   };
   return {
-    score: Math.max(0, Math.min(100, Math.round(Number(r.score) || 0))),
+    score: normalizeFit(r.score),
     strengths: asArray(r.strengths),
     improvements: asArray(r.improvements),
     modelAnswer: String(r.modelAnswer ?? ""),

@@ -4,6 +4,7 @@
 
 import type { Profile, ProviderSettings, JobMatch, MatchVerdict } from "./types";
 import { callAI } from "./ai";
+import { normalizeFit } from "./analysis";
 
 function asArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.map((x) => String(x)).filter(Boolean);
@@ -58,7 +59,7 @@ JSON schema:
     reasons?: unknown;
     gaps?: unknown;
   };
-  const fit = Math.max(0, Math.min(100, Math.round(Number(r.fit) || 0)));
+  const fit = normalizeFit(r.fit);
   return {
     company: String(r.company || "Unknown").trim() || "Unknown",
     title: String(r.title || "Unknown").trim() || "Unknown",

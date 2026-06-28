@@ -14,6 +14,7 @@ import {
   ListChecks,
   MessageSquare,
   PenLine,
+  Bot,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
@@ -44,12 +45,14 @@ import type {
 import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
+import ResumeAssistant from "@/components/ResumeAssistant";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
-type Tab = "cv" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
+type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
 
 const TABS: { id: Tab; label: string; icon: typeof FileText }[] = [
   { id: "cv", label: "CV", icon: FileText },
+  { id: "assistant", label: "Assistant", icon: Bot },
   { id: "coverLetter", label: "Cover Letter", icon: Mail },
   { id: "resumeSummary", label: "Resume Summary", icon: PenLine },
   { id: "interviewPrep", label: "Interview Prep", icon: ListChecks },
@@ -62,6 +65,7 @@ export default function EditorPage() {
   const draftCV = useStore((s) => s.draftCV);
   const saveToTracker = useStore((s) => s.saveCurrentToTracker);
   const [tab, setTab] = useState<Tab>("cv");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (!hydrated) {
     return <PageSkeleton />;
@@ -93,9 +97,19 @@ export default function EditorPage() {
             {analysis.title} at {analysis.company}
           </p>
         </div>
-        <button type="button" onClick={onSave} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-          <Save className="w-4 h-4" /> Save to Tracker
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            data-testid="open-assistant-drawer"
+            className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+          >
+            <Bot className="w-4 h-4" /> Ask AI
+          </button>
+          <button type="button" onClick={onSave} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Save className="w-4 h-4" /> Save to Tracker
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
@@ -125,13 +139,48 @@ export default function EditorPage() {
           transition={{ duration: 0.18 }}
         >
           {tab === "cv" ? <CVTab analysis={analysis} draftCV={draftCV} /> : null}
+          {tab === "assistant" ? <ResumeAssistant variant="tab" /> : null}
           {tab === "coverLetter" ? <CoverLetterTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "resumeSummary" ? <ResumeSummaryTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "interviewPrep" ? <InterviewPrepTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "outreach" ? <OutreachTab analysis={analysis} draftCV={draftCV} /> : null}
         </motion.div>
       </AnimatePresence>
+
+      <AssistantDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
+  );
+}
+
+// ---------------- ASSISTANT DRAWER ----------------
+
+function AssistantDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-sm"
+          />
+          <motion.aside
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "tween", duration: 0.22 }}
+            role="dialog"
+            aria-label="Résumé assistant"
+            className="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl"
+          >
+            <ResumeAssistant variant="drawer" onClose={onClose} />
+          </motion.aside>
+        </>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

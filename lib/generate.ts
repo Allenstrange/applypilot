@@ -10,6 +10,9 @@ import type {
   ResumeSummary,
   InterviewPrep,
   Outreach,
+  AssistantMessage,
+  ResumeEdit,
+  ResumeEditKind,
 } from "./types";
 import { callAI } from "./ai";
 
@@ -34,6 +37,150 @@ function asArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.map((x) => String(x));
   if (typeof v === "string" && v.trim()) return [v];
   return [];
+}
+
+// ============== CONVERSATIONAL RÉSUMÉ ASSISTANT ==============
+// Single-turn, JSON-only (the constraint of lib/ai.ts): the whole chat history
+// is folded into one prompt and the model returns { reply, edits[] }. Each edit
+// is a structured, reviewable change the UI renders as an Apply/Dismiss card.
+
+const VALID_EDIT_KINDS: ReadonlySet<ResumeEditKind> = new Set([
+  "summary",
+  "skills",
+  "title",
+  "bullet",
+  "addBullet",
+]);
+
+/** Drop malformed edits and clamp indices so a bad payload can't corrupt the CV. */
+function normaliseEdits(raw: unknown, draftCV: Profile): ResumeEdit[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ResumeEdit[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const e = item as Record<string, unknown>;
+    const kind = String(e.kind ?? "") as ResumeEditKind;
+    if (!VALID_EDIT_KINDS.has(kind)) continue;
+    const value = typeof e.value === "string" ? e.value.trim() : "";
+    if (!value) continue;
+
+    const edit: ResumeEdit = {
+      id: crypto.randomUUID(),
+      kind,
+      value,
+      rationale: typeof e.rationale === "string" ? e.rationale.trim() : "",
+    };
+
+    if (kind === "bullet" || kind === "addBullet") {
+      const expIndex = Number(e.expIndex);
+      if (!Number.isInteger(expIndex) || expIndex < 0 || expIndex >= draftCV.experience.length) {
+        continue; // can't target a role that doesn't exist
+      }
+      edit.expIndex = expIndex;
+      if (kind === "bullet") {
+        const lines = (draftCV.experience[expIndex].bullets || "").split("\n");
+        const bulletIndex = Number(e.bulletIndex);
+        if (!Number.isInteger(bulletIndex) || bulletIndex < 0 || bulletIndex >= lines.length) {
+          continue;
+        }
+        edit.bulletIndex = bulletIndex;
+        edit.before = lines[bulletIndex];
+      } else {
+        edit.before = "";
+      }
+    } else if (kind === "summary") {
+      edit.before = draftCV.summary;
+    } else if (kind === "skills") {
+      edit.before = draftCV.skills;
+    } else if (kind === "title") {
+      edit.before = draftCV.title;
+    }
+
+    out.push(edit);
+  }
+  return out.slice(0, 8);
+}
+
+/** A compact, index-annotated view of the CV so the model can target edits. */
+function cvForPrompt(p: Profile): string {
+  const exp = p.experience.map((e, i) => ({
+    expIndex: i,
+    role: e.role,
+    company: e.company,
+    bullets: (e.bullets || "").split("\n").map((b, j) => ({ bulletIndex: j, text: b })),
+  }));
+  return JSON.stringify(
+    { title: p.title, summary: p.summary, skills: p.skills, experience: exp },
+    null,
+    2,
+  );
+}
+
+/**
+ * Conversational résumé co-pilot. Given the chat `history` and the latest user
+ * message (last entry of `history`), returns a short `reply` plus zero or more
+ * concrete, reviewable `edits` to the draft CV. `analysis` is optional — when
+ * present, the target job's keywords steer the suggestions.
+ */
+export async function assistantEditResume(
+  history: AssistantMessage[],
+  draftCV: Profile,
+  analysis: Analysis | null,
+  providers: ProviderSettings,
+): Promise<{ reply: string; edits: ResumeEdit[] }> {
+  const transcript = history
+    .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+    .join("\n");
+
+  const jobContext = analysis
+    ? `Target job: ${analysis.title} at ${analysis.company}.
+Job description keywords to prioritise: ${(analysis.jdKeywords || []).join(", ") || "(none)"}
+`
+    : `No specific target job is set — improve the résumé for general strength and ATS-readiness.\n`;
+
+  const prompt = `You are an expert résumé writing assistant embedded in a CV editor. You help the user improve their résumé through conversation. You can both REPLY in plain language and PROPOSE concrete edits to specific fields, which the user reviews and Applies or Dismisses.
+
+${jobContext}
+Current résumé (each experience entry has an expIndex; each bullet has a bulletIndex — you MUST use these exact indices to target edits):
+"""
+${cvForPrompt(draftCV)}
+"""
+
+Conversation so far:
+"""
+${transcript}
+"""
+
+Now respond to the user's latest message.
+
+Rules:
+- Be truthful: never invent employers, dates, degrees or specific metrics. You MAY add placeholder metrics like [X%] or [N users] when quantifying.
+- Keep "reply" short and conversational (1-3 sentences). Summarise what you changed or ask a clarifying question.
+- Propose an edit ONLY when it concretely improves a field. If the user is just chatting or asking a question, return an empty "edits" array and answer in "reply".
+- Each edit targets exactly one field via "kind": "summary" | "skills" | "title" | "bullet" | "addBullet".
+  - For "bullet" and "addBullet" you MUST include "expIndex"; for "bullet" you MUST also include "bulletIndex".
+  - "value" is the full replacement text for that field/bullet (for "skills", a single comma-separated line).
+  - "rationale" is a one-line why (≤12 words).
+- Prefer a few high-impact edits over many trivial ones (max 8).
+- Respond with valid JSON only. No prose, no markdown.
+
+JSON schema:
+{
+  "reply": "short conversational reply",
+  "edits": [
+    { "kind": "summary", "value": "new summary text", "rationale": "why" },
+    { "kind": "bullet", "expIndex": 0, "bulletIndex": 1, "value": "rewritten bullet", "rationale": "why" }
+  ]
+}`;
+
+  const r = (await callAI(prompt, providers)) as { reply?: unknown; edits?: unknown };
+  return {
+    reply:
+      typeof r.reply === "string" && r.reply.trim()
+        ? r.reply.trim()
+        : "Here are a few suggestions.",
+    edits: normaliseEdits(r.edits, draftCV),
+  };
 }
 
 export async function generateCoverLetter(

@@ -219,6 +219,37 @@ export interface InterviewTurn {
   feedback?: InterviewFeedback;
 }
 
+// ---------- Conversational résumé assistant ----------
+
+export type ResumeEditKind =
+  | "summary"
+  | "skills"
+  | "title"
+  | "bullet"
+  | "addBullet";
+
+/** A single, reviewable change the assistant proposes to the draft CV. */
+export interface ResumeEdit {
+  id: string;
+  kind: ResumeEditKind;
+  /** Index into profile.experience — for "bullet" and "addBullet". */
+  expIndex?: number;
+  /** Index into the role's newline-joined bullets — for "bullet". */
+  bulletIndex?: number;
+  /** Current text, captured for the before→after preview and Undo. */
+  before?: string;
+  /** Proposed new text. */
+  value: string;
+  /** One-line "why" shown on the edit card. */
+  rationale: string;
+}
+
+export interface AssistantMessage {
+  role: "user" | "assistant";
+  content: string;
+  edits?: ResumeEdit[];
+}
+
 // ---------- Job matcher ----------
 
 export type MatchVerdict = "strong" | "good" | "stretch" | "weak";

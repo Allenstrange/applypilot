@@ -47,6 +47,7 @@ Strict instructions:
 "You may only identify matches and gaps that are EVIDENT in the candidate's actual profile text. Do not infer skills the candidate did not write down."
 "Return verbatim quotes from the JD (<= 15 words) as evidence for each required competency."
 "For profileEvidence, quote the candidate's actual text verbatim (<= 15 words). Do not paraphrase."
+"overallFit MUST be an integer percentage from 0 to 100 (e.g. 72) — never a decimal fraction like 0.72."
 "Respond with valid JSON only. No prose, no markdown."
 
 Target JSON schema:
@@ -63,6 +64,18 @@ ${JSON.stringify(profile, null, 2)}
 """`;
 
   return (await callAI(prompt, providers)) as SemanticResult;
+}
+
+/**
+ * Coerce a model-returned fit score into a clean 0–100 integer. Models sometimes
+ * return a 0–1 fraction (0.4) instead of a percentage (40), which would render as
+ * "0.4%". Treat anything in (0,1] as a fraction; clamp and round the rest.
+ */
+export function normalizeFit(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  const pct = n <= 1 ? n * 100 : n;
+  return Math.max(0, Math.min(100, Math.round(pct)));
 }
 
 export function performATSScan(profile: Profile): ATSWarning[] {
@@ -150,7 +163,7 @@ export async function analyseJob(
   if (isAIConfigured(providers)) {
     try {
       const r = await analyseJDSemantically(input.jd, profile, providers);
-      overallFit = r.overallFit ?? 0;
+      overallFit = normalizeFit(r.overallFit);
       senioritySignal = r.senioritySignal ?? "";
       domainTags = r.domainTags ?? [];
       matched = r.matched ?? [];

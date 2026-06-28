@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
@@ -17,6 +17,24 @@ export default function SettingsPage() {
   const setActiveProvider = useStore((s) => s.setActiveProvider);
   const updateProviderConfig = useStore((s) => s.updateProviderConfig);
   const [testing, setTesting] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Settings persist instantly (Zustand → localStorage). Flash a brief "Saved"
+  // so the silent auto-save is visible the moment the user edits a field.
+  function flashSaved() {
+    setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 1600);
+  }
+  function pickProvider(id: ProviderId) {
+    setActiveProvider(id);
+    flashSaved();
+  }
+  function patchConfig(patch: Parameters<typeof updateProviderConfig>[1]) {
+    updateProviderConfig(active, patch);
+    flashSaved();
+  }
 
   if (!hydrated) {
     return (
@@ -59,7 +77,7 @@ export default function SettingsPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveProvider(id)}
+                onClick={() => pickProvider(id)}
                 className={`provider-card text-left ${active === id ? "selected" : ""}`}
               >
                 <div className="flex items-center gap-3 mb-2">
@@ -83,7 +101,15 @@ export default function SettingsPage() {
 
       <div className="card rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h2 className="font-semibold text-slate-900 dark:text-slate-100">Configure {info.name}</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            Configure {info.name}
+            <span
+              aria-live="polite"
+              className={`inline-flex items-center gap-1 text-xs font-normal text-green-600 dark:text-green-400 transition-opacity duration-300 ${saved ? "opacity-100" : "opacity-0"}`}
+            >
+              <Check className="w-3.5 h-3.5" /> Saved
+            </span>
+          </h2>
           {info.keyUrl ? (
             <a
               href={info.keyUrl}
@@ -102,9 +128,7 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={config.endpoint ?? ""}
-                onChange={(e) =>
-                  updateProviderConfig(active, { endpoint: e.target.value })
-                }
+                onChange={(e) => patchConfig({ endpoint: e.target.value })}
                 placeholder="http://localhost:11434/v1/chat/completions"
                 className="w-full px-3 py-2 rounded-lg text-sm"
               />
@@ -115,9 +139,7 @@ export default function SettingsPage() {
             <input
               type="password"
               value={config.apiKey}
-              onChange={(e) =>
-                updateProviderConfig(active, { apiKey: e.target.value })
-              }
+              onChange={(e) => patchConfig({ apiKey: e.target.value })}
               placeholder={active === "custom" ? "Leave blank if not required" : "sk-…"}
               className="w-full px-3 py-2 rounded-lg text-sm"
             />
@@ -128,18 +150,14 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={config.model}
-                onChange={(e) =>
-                  updateProviderConfig(active, { model: e.target.value })
-                }
+                onChange={(e) => patchConfig({ model: e.target.value })}
                 placeholder="llama3.1, mistral, etc."
                 className="w-full px-3 py-2 rounded-lg text-sm"
               />
             ) : (
               <select
                 value={config.model}
-                onChange={(e) =>
-                  updateProviderConfig(active, { model: e.target.value })
-                }
+                onChange={(e) => patchConfig({ model: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg text-sm"
               >
                 {info.modelGroups.map((group) => (

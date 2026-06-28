@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Search, ArrowRight, Link2 } from "lucide-react";
@@ -13,6 +13,12 @@ import { toast } from "@/lib/toast";
 import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 import JdKeywords from "@/components/JdKeywords";
+
+const ANALYSE_PHASES = [
+  "Reading the JD…",
+  "Matching to your profile…",
+  "Scoring fit & ATS…",
+];
 
 const SAMPLE_JD = `About the role:
 We are looking for a 1st/2nd Line Support Analyst to join our IT services team in Birmingham. You will provide technical support to internal users across multiple offices, handling incidents, service requests, and problems in line with SLA targets.
@@ -49,6 +55,19 @@ export default function AnalyzePage() {
   });
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [phase, setPhase] = useState(0);
+
+  // Cycle through readable steps during the (10–25s) AI analysis so the user
+  // sees progress instead of a bare spinner. Local keyword matching is instant,
+  // so the phases only run when an AI provider is doing the work.
+  useEffect(() => {
+    if (!busy || !isAIConfigured(providers)) return;
+    const id = setInterval(
+      () => setPhase((p) => Math.min(p + 1, ANALYSE_PHASES.length - 1)),
+      3500,
+    );
+    return () => clearInterval(id);
+  }, [busy, providers]);
 
   const field =
     (key: keyof typeof form) =>
@@ -93,6 +112,7 @@ export default function AnalyzePage() {
       toast("⚠ Please complete your master profile first");
       return;
     }
+    setPhase(0);
     setBusy(true);
     toast(isAIConfigured(providers) ? "⏳ Analysing JD…" : "⏳ Keyword matching…");
     try {
@@ -174,9 +194,9 @@ export default function AnalyzePage() {
               <button type="button" onClick={() => setForm({ company: "", title: "", location: "", url: "", jd: "" })} className="btn-ghost px-4 py-2 rounded-lg text-sm">
                 Clear
               </button>
-              <button type="button" onClick={analyse} disabled={busy} className="btn-primary px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+              <button type="button" onClick={analyse} disabled={busy} className="btn-primary px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2 min-w-[8.5rem] justify-center">
                 {busy ? <span className="spinner" /> : <Search className="w-4 h-4" />}
-                Analyse
+                {busy ? (aiReady ? ANALYSE_PHASES[phase] : "Analysing…") : "Analyse"}
               </button>
             </div>
           </div>
@@ -185,11 +205,11 @@ export default function AnalyzePage() {
         </div>
 
         <div className="card rounded-xl p-6">
-          <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Status</h2>
+          <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Before you analyse</h2>
           <div className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-            <div className="flex gap-2"><span>✅</span><span>Paste the full JD including responsibilities and requirements</span></div>
-            <div className="flex gap-2"><span>✅</span><span>Keep your master profile up to date first</span></div>
-            <div className="flex gap-2"><span>✅</span><span>Review the ATS safety scan before editing</span></div>
+            <div className="flex gap-2"><span className="text-[var(--brand)]" aria-hidden>•</span><span>Paste the full JD including responsibilities and requirements</span></div>
+            <div className="flex gap-2"><span className="text-[var(--brand)]" aria-hidden>•</span><span>Keep your master profile up to date first</span></div>
+            <div className="flex gap-2"><span className="text-[var(--brand)]" aria-hidden>•</span><span>Review the ATS safety scan before editing</span></div>
           </div>
           <div className="mt-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <div className="text-xs text-amber-600 font-semibold mb-1 dark:text-amber-400">PROFILE STATUS</div>

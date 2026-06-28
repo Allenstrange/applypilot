@@ -9,7 +9,16 @@ import type { ProviderId } from "@/lib/types";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 
-const PROVIDER_ORDER: ProviderId[] = ["openai", "anthropic", "gemini", "grok", "custom"];
+const PROVIDER_ORDER: ProviderId[] = [
+  "openai",
+  "anthropic",
+  "gemini",
+  "grok",
+  "groq",
+  "openrouter",
+  "opencode",
+  "custom",
+];
 
 export default function SettingsPage() {
   const hydrated = useHydrated();
@@ -146,12 +155,12 @@ export default function SettingsPage() {
           </Field>
 
           <Field label="Model">
-            {active === "custom" ? (
+            {info.modelGroups.length === 0 ? (
               <input
                 type="text"
                 value={config.model}
                 onChange={(e) => patchConfig({ model: e.target.value })}
-                placeholder="llama3.1, mistral, etc."
+                placeholder={info.modelPlaceholder ?? "llama3.1, mistral, etc."}
                 className="w-full px-3 py-2 rounded-lg text-sm"
               />
             ) : (

@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { Sparkles, Send, Check, Undo2, X, Settings2, ArrowRight } from "lucide-react";
+import { Sparkles, Send, Check, Undo2, X, Settings2, ArrowRight, Paperclip } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { isAIConfigured } from "@/lib/ai";
+import { parseCVFile } from "@/lib/cvParser";
 import { assistantEditResume } from "@/lib/generate";
 import { applyEdit, previewEdit, editTarget } from "@/lib/resumeEdits";
 import { scoreResume } from "@/lib/resumeScore";
@@ -35,12 +36,17 @@ export default function ResumeAssistant({
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [parsing, setParsing] = useState(false);
   // editId -> snapshot of the draft taken just before the edit was applied.
   const [snapshots, setSnapshots] = useState<Record<string, Profile>>({});
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  // Snapshot + message index of the most recent file attach, for in-chat Undo.
+  const [attach, setAttach] = useState<{ snapshot: Profile; index: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const configured = isAIConfigured(providers);
+  const working = busy || parsing;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: reduce ? "auto" : "smooth" });
@@ -48,9 +54,68 @@ export default function ResumeAssistant({
 
   if (!draftCV) return null;
 
+  async function handleAttach(file: File | undefined) {
+    if (!file || working) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast("⚠ File too large (max 10MB)");
+      return;
+    }
+    const prev = useStore.getState().draftCV;
+    const ai = isAIConfigured(providers);
+    setParsing(true);
+    toast(ai ? "⏳ AI is reading your résumé…" : `⏳ Reading ${file.name}…`);
+    try {
+      const { profile: parsed, source } = await parseCVFile(file, providers, ai);
+      // No AI key → non-JSON files come back as a blank shell. Don't clobber an
+      // existing draft; nudge the user to connect a provider instead.
+      const isEmptyShell =
+        source === "local" && !parsed.name?.trim() && parsed.experience.length === 0;
+      if (isEmptyShell) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            content: `I couldn't read ${file.name} without an AI provider. Connect one in Settings and I'll extract it fully — or upload a .json/.txt résumé.`,
+          },
+        ]);
+        toast("ℹ Connect an AI key for PDF/Word extraction");
+        return;
+      }
+      const roles = parsed.experience.length;
+      const bullets = parsed.experience.reduce(
+        (n, e) => n + (e.bullets || "").split("\n").filter((b) => b.trim()).length,
+        0,
+      );
+      setSnapshots({});
+      setDismissed(new Set());
+      setDraftCV(parsed);
+      setMessages((m) => {
+        if (prev) setAttach({ snapshot: prev, index: m.length });
+        return [
+          ...m,
+          {
+            role: "assistant",
+            content: `Loaded ${file.name} — ${roles} role${roles === 1 ? "" : "s"}, ${bullets} bullet${bullets === 1 ? "" : "s"} detected. Ask me to tailor or improve it.`,
+          },
+        ];
+      });
+      toast("✓ Résumé loaded into the editor");
+    } catch (err) {
+      toast("✕ " + (err as Error).message);
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function undoAttach() {
+    if (attach) setDraftCV(attach.snapshot);
+    setAttach(null);
+    toast("↩ Reverted to your previous draft");
+  }
+
   async function send(text: string) {
     const content = text.trim();
-    if (!content || busy) return;
+    if (!content || working) return;
     if (!configured) {
       toast("⚠ AI provider not configured");
       return;
@@ -133,13 +198,23 @@ export default function ResumeAssistant({
                   key={q}
                   type="button"
                   onClick={() => send(q)}
-                  disabled={busy}
+                  disabled={working}
                   className="text-xs px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] text-slate-600 dark:text-slate-300 hover:border-[var(--brand)]/50 hover:text-[var(--brand)] transition-colors disabled:opacity-50"
                 >
                   {q}
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={working}
+              data-testid="assistant-attach-empty"
+              className="mt-4 inline-flex items-center gap-2 text-xs px-3.5 py-2 rounded-full border border-dashed border-[var(--border-strong)] text-slate-600 dark:text-slate-300 hover:border-[var(--brand)]/60 hover:text-[var(--brand)] transition-colors disabled:opacity-50"
+            >
+              {parsing ? <span className="spinner" /> : <Paperclip className="w-3.5 h-3.5" />}
+              Attach a résumé (PDF, Word, .txt)
+            </button>
           </div>
         ) : (
           <div className="space-y-4 max-w-2xl mx-auto">
@@ -155,6 +230,16 @@ export default function ResumeAssistant({
                   <div className="flex justify-start">
                     <div className="max-w-[90%] rounded-2xl rounded-bl-sm bg-[var(--surface-2)] border border-[var(--border)] px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200">
                       {m.content}
+                      {attach && attach.index === i ? (
+                        <button
+                          type="button"
+                          onClick={undoAttach}
+                          data-testid="assistant-attach-undo"
+                          className="mt-2 inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                        >
+                          <Undo2 className="w-3 h-3" /> Undo · restore previous draft
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                   {(m.edits ?? [])
@@ -200,7 +285,7 @@ export default function ResumeAssistant({
                 key={q}
                 type="button"
                 onClick={() => send(q)}
-                disabled={busy}
+                disabled={working}
                 className="text-[11px] px-2 py-1 rounded-full border border-[var(--border)] text-slate-500 dark:text-slate-400 hover:border-[var(--brand)]/50 hover:text-[var(--brand)] transition-colors disabled:opacity-50"
               >
                 {q}
@@ -208,7 +293,28 @@ export default function ResumeAssistant({
             ))}
           </div>
         ) : null}
+        <input
+          ref={fileRef}
+          type="file"
+          className="hidden"
+          accept=".docx,.pdf,.json,.txt"
+          onChange={(e) => {
+            handleAttach(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
         <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={working}
+            aria-label="Attach a résumé file"
+            title="Attach a résumé (PDF, Word, .txt, .json)"
+            data-testid="assistant-attach"
+            className="btn-ghost p-2.5 rounded-xl disabled:opacity-40"
+          >
+            {parsing ? <span className="spinner" /> : <Paperclip className="w-4 h-4" />}
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -227,7 +333,7 @@ export default function ResumeAssistant({
           <button
             type="button"
             onClick={() => send(input)}
-            disabled={busy || !input.trim()}
+            disabled={working || !input.trim()}
             aria-label="Send"
             data-testid="assistant-send"
             className="btn-primary p-2.5 rounded-xl disabled:opacity-40"

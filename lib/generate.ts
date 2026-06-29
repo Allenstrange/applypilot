@@ -397,3 +397,40 @@ JSON schema:
     })),
   };
 }
+
+/**
+ * Generate ONE new résumé bullet for a specific role that naturally demonstrates
+ * a target JD keyword. Powers the guided "Keyword Targeting" queue. Returns the
+ * bullet text (no leading bullet character).
+ */
+export async function generateKeywordBullet(
+  profile: Profile,
+  expIndex: number,
+  keyword: string,
+  analysis: Analysis,
+  providers: ProviderSettings,
+): Promise<string> {
+  const role = profile.experience[expIndex];
+  const roleCtx = {
+    role: role?.role ?? "",
+    company: role?.company ?? "",
+    existingBullets: (role?.bullets ?? "").split("\n").map((b) => b.trim()).filter(Boolean),
+  };
+  const prompt = `You are an expert résumé writer. Write ONE new bullet point for the role below that naturally demonstrates the skill/keyword "${keyword}", tailored to the target job.
+
+Target job: ${analysis.title} at ${analysis.company}.
+
+Role:
+"""
+${JSON.stringify(roleCtx, null, 2)}
+"""
+
+Rules:
+- Truthful and realistic for THIS role — never fabricate employers, dates, or specific hard numbers. You MAY include a placeholder metric like [X%] or [N people] when quantifying.
+- Begin with a strong action verb; keep it to one line (~20-30 words); no leading bullet character.
+- The bullet MUST genuinely incorporate "${keyword}" (the exact term or an unmistakable form of it).
+- Do not duplicate an existing bullet.
+- Respond with valid JSON only: {"bullet": "the new bullet text"}`;
+  const r = (await callAI(prompt, providers)) as { bullet?: unknown };
+  return typeof r.bullet === "string" ? r.bullet.trim().replace(/^\s*[-•]\s*/, "") : "";
+}

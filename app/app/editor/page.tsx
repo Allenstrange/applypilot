@@ -46,6 +46,8 @@ import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
 import ResumeScorePanel from "@/components/ResumeScorePanel";
 import ResumeAssistant from "@/components/ResumeAssistant";
+import KeywordCoach from "@/components/KeywordCoach";
+import ResumeInsights from "@/components/ResumeInsights";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
 type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
@@ -469,6 +471,8 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
             </div>
           ) : null}
         </div>
+        <KeywordCoach />
+        <ResumeInsights profile={draftCV} />
         <div className="mb-3" data-testid="editor-resume-score">
           <ResumeScorePanel profile={draftCV} />
         </div>

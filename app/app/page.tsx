@@ -1,17 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, ClipboardList, Settings, Target, Mic, Sparkles, ArrowRight } from "lucide-react";
+import {
+  Search,
+  User,
+  ClipboardList,
+  Settings,
+  Target,
+  Mic,
+  Sparkles,
+  ArrowRight,
+  FileText,
+  Upload,
+  Plus,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated, useNow } from "@/lib/useHydrated";
+import { scoreResume } from "@/lib/resumeScore";
+import { getTemplate } from "@/lib/templates";
 import PageHeader from "@/components/PageHeader";
+import TemplateThumbnail from "@/components/TemplateThumbnail";
 
 export default function DashboardPage() {
   const hydrated = useHydrated();
   const now = useNow();
   const applications = useStore((s) => s.applications);
+  const resumes = useStore((s) => s.resumes);
 
   const apps = hydrated ? applications : [];
+  const cvs = hydrated ? resumes : [];
   const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
   const stats = {
     total: apps.length,
@@ -27,6 +44,83 @@ export default function DashboardPage() {
         subtitle="Your AI-powered job application command centre."
       />
 
+      {/* CV-first shelf: your CVs are the unit of work, so they lead the page. */}
+      <div className="card rounded-xl p-6 mb-6" data-testid="cv-shelf">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[var(--brand)]" /> My CVs
+          </h2>
+          {cvs.length > 0 ? (
+            <Link
+              href="/app/resumes"
+              className="text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+            >
+              All CVs ({cvs.length}) <ArrowRight className="w-3 h-3" />
+            </Link>
+          ) : null}
+        </div>
+
+        {cvs.length === 0 ? (
+          <div className="flex flex-col sm:flex-row items-center gap-4 py-2">
+            <div className="w-12 h-12 rounded-lg shrink-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+              <Upload className="w-6 h-6 text-[var(--brand)]" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <div className="font-medium text-slate-900 dark:text-slate-100">
+                Start with your CV
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Upload an existing CV or build one — everything else (tailoring,
+                scoring, tracking) works from it.
+              </p>
+            </div>
+            <Link
+              href="/app/resumes"
+              data-testid="dash-add-cv"
+              className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Add your first CV
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {cvs.slice(0, 3).map((r) => {
+              const score = scoreResume(r.profile).overall;
+              const tpl = getTemplate(r.templateId);
+              const scoreColor =
+                score >= 80 ? "text-green-600" : score >= 55 ? "text-amber-600" : "text-red-600";
+              return (
+                <Link
+                  key={r.id}
+                  href={`/app/resumes/${r.id}`}
+                  className="group rounded-lg border border-[var(--border)] hover:border-[var(--brand)] overflow-hidden transition-colors"
+                >
+                  <div className="relative h-28 overflow-hidden bg-slate-50 dark:bg-slate-800/40 border-b border-[var(--border)] flex justify-center">
+                    <div className="pt-3 transition-transform duration-300 group-hover:-translate-y-1">
+                      <TemplateThumbnail profile={r.profile} templateId={r.templateId} width={170} />
+                    </div>
+                    <span
+                      title="Resume score"
+                      className={`absolute top-2 right-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--surface)] border border-[var(--border)] ${scoreColor}`}
+                    >
+                      {score}
+                    </span>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      {r.name}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {tpl.name} · {new Date(r.updatedAt).toLocaleDateString("en-GB")}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" />
         <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" />
@@ -38,7 +132,10 @@ export default function DashboardPage() {
         <div className="card rounded-xl p-6">
           <h2 className="font-semibold text-slate-900 mb-4 dark:text-slate-100">Quick Actions</h2>
           <div className="space-y-2">
-            <QuickAction href="/app/analyze" primary icon={<Search className="w-4 h-4" />}>
+            <QuickAction href="/app/resumes" primary icon={<FileText className="w-4 h-4" />}>
+              Open My CVs
+            </QuickAction>
+            <QuickAction href="/app/analyze" icon={<Search className="w-4 h-4" />}>
               Analyse a New Job
             </QuickAction>
             <QuickAction href="/app/match" icon={<Target className="w-4 h-4" />}>
@@ -47,11 +144,11 @@ export default function DashboardPage() {
             <QuickAction href="/app/interview" icon={<Mic className="w-4 h-4" />}>
               Practise Mock Interview
             </QuickAction>
-            <QuickAction href="/app/profile" icon={<User className="w-4 h-4" />}>
-              Edit Master Profile
-            </QuickAction>
             <QuickAction href="/app/tracker" icon={<ClipboardList className="w-4 h-4" />}>
               View All Applications
+            </QuickAction>
+            <QuickAction href="/app/profile" icon={<User className="w-4 h-4" />}>
+              Edit Master Profile
             </QuickAction>
             <QuickAction href="/app/settings" icon={<Settings className="w-4 h-4" />}>
               Configure AI Provider

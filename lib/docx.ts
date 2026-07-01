@@ -23,13 +23,17 @@ export function exportResumeDOCX(
   const contact1 = [profile.title, profile.location].filter(Boolean).map(esc).join("  |  ");
   const contact2 = [profile.email, profile.phone, profile.linkedin].filter(Boolean).map(esc).join("  |  ");
 
-  const heading = (label: string) =>
-    `<h2 style="color:${accent};font-size:13px;text-transform:uppercase;letter-spacing:1px;border-bottom:${tpl.header === "plain" ? 1 : 2}px solid ${accent};padding-bottom:3px;margin:16px 0 6px;">${esc(label)}</h2>`;
+  // Word can't reproduce the fancy layouts reliably, so the .doc export stays a
+  // clean single column; only the header treatment follows the template family.
+  const banded = tpl.layout === "sidebar";
+  const heavyRule = tpl.layout === "headline";
 
-  const header =
-    tpl.header === "band"
-      ? `<div style="background:${accent};color:#fff;padding:18px 22px;margin-bottom:16px;"><div style="font-size:24px;font-weight:bold;">${esc(profile.name || "Your Name")}</div>${contact1 ? `<div style="font-size:11px;">${contact1}</div>` : ""}${contact2 ? `<div style="font-size:11px;">${contact2}</div>` : ""}</div>`
-      : `<div style="margin-bottom:6px;"><div style="font-size:24px;font-weight:bold;color:#111;">${esc(profile.name || "Your Name")}</div>${contact1 ? `<div style="font-size:11px;color:#555;">${contact1}</div>` : ""}${contact2 ? `<div style="font-size:11px;color:#555;">${contact2}</div>` : ""}${tpl.header === "rule" ? `<hr style="border:0;border-top:1px solid ${accent};margin-top:8px;"/>` : ""}</div>`;
+  const heading = (label: string) =>
+    `<h2 style="color:${accent};font-size:13px;text-transform:uppercase;letter-spacing:1px;border-bottom:${heavyRule ? 2 : 1}px solid ${accent};padding-bottom:3px;margin:16px 0 6px;">${esc(label)}</h2>`;
+
+  const header = banded
+    ? `<div style="background:${accent};color:#fff;padding:18px 22px;margin-bottom:16px;"><div style="font-size:24px;font-weight:bold;">${esc(profile.name || "Your Name")}</div>${contact1 ? `<div style="font-size:11px;">${contact1}</div>` : ""}${contact2 ? `<div style="font-size:11px;">${contact2}</div>` : ""}</div>`
+    : `<div style="margin-bottom:6px;"><div style="font-size:24px;font-weight:bold;color:#111;">${esc(profile.name || "Your Name")}</div>${contact1 ? `<div style="font-size:11px;color:#555;">${contact1}</div>` : ""}${contact2 ? `<div style="font-size:11px;color:#555;">${contact2}</div>` : ""}<hr style="border:0;border-top:1px solid ${accent};margin-top:8px;"/></div>`;
 
   const renderers: Record<SectionKey, () => string> = {
     summary: () => (profile.summary ? heading("Professional Summary") + `<p>${esc(profile.summary)}</p>` : ""),

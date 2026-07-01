@@ -3,6 +3,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { migrateTemplateId } from "./templates";
 import type {
   Profile,
   Application,
@@ -262,12 +263,17 @@ export const useStore = create<AppState>()(
       name: "applypilot_v4",
       storage: createJSONStorage(() => localStorage),
       // Deep-merge persisted state so newly added providers (e.g. Grok) appear
-      // for returning users without wiping their saved keys.
+      // for returning users without wiping their saved keys. Saved resumes also
+      // migrate pre-redesign template ids to the closest current design.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
         return {
           ...current,
           ...p,
+          resumes: (p.resumes ?? current.resumes).map((r) => ({
+            ...r,
+            templateId: migrateTemplateId(r.templateId),
+          })),
           providers: {
             ...current.providers,
             ...(p.providers ?? {}),

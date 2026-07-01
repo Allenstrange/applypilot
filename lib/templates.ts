@@ -19,14 +19,23 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   certs: "Certifications",
 };
 
+/** Distinct page layout engines — each renders differently on screen and PDF. */
+export type TemplateLayout =
+  | "classicClear" // centred serif header, thin-ruled headings, dates right
+  | "sidebar" // dark left sidebar (contact + profile) with banner-bar main sections
+  | "banded" // centred grey banded headings with a left date rail
+  | "labelLeft" // section labels in a left column, content right
+  | "headline" // maximal bold uppercase ATS style, heavy rules
+  | "slate"; // clean sans, slate headings over hairline rules
+
 export interface TemplateDef {
   id: TemplateId;
   name: string;
   description: string;
-  /** Accent colour used for headings / header band / sidebar. */
+  /** Accent colour used for headings / sidebar. */
   accent: string;
-  /** Header treatment in the PDF/preview. */
-  header: "plain" | "band" | "rule";
+  /** Which layout engine renders this template. */
+  layout: TemplateLayout;
   /** Body font family. */
   font: "serif" | "sans" | "mono";
   /** Gallery grouping. */
@@ -35,78 +44,78 @@ export interface TemplateDef {
 
 export const TEMPLATES: TemplateDef[] = [
   {
-    id: "classic",
-    name: "Classic",
-    description: "Timeless single column with serif headings. ATS-safe.",
-    accent: "#111827",
-    header: "rule",
+    id: "classic-clear",
+    name: "Classic Clear",
+    description: "Centred serif header, ruled sections, two-column skills. Timeless and ATS-safe.",
+    accent: "#111111",
+    layout: "classicClear",
     font: "serif",
     category: "simple",
   },
   {
-    id: "minimal",
-    name: "Minimal",
-    description: "Ultra-clean, no colour. Maximum ATS safety.",
-    accent: "#0a0a0a",
-    header: "plain",
+    id: "slate",
+    name: "Slate",
+    description: "Clean sans with slate headings over hairline rules. Quiet and professional.",
+    accent: "#2d3e50",
+    layout: "slate",
     font: "sans",
     category: "simple",
   },
   {
-    id: "compact",
-    name: "Compact",
-    description: "Dense layout that fits more on one page.",
-    accent: "#0f766e",
-    header: "plain",
+    id: "headline",
+    name: "Headline",
+    description: "Huge bold name, heavy rules, pure black. Maximum-impact ATS classic.",
+    accent: "#000000",
+    layout: "headline",
     font: "sans",
     category: "simple",
   },
   {
-    id: "modern",
-    name: "Modern",
-    description: "Violet accent header band and section rules.",
-    accent: "#7c3aed",
-    header: "band",
+    id: "atlantic-blue",
+    name: "Atlantic Blue",
+    description: "Navy sidebar with your contact and profile; banner-bar sections on the right.",
+    accent: "#253d52",
+    layout: "sidebar",
     font: "sans",
     category: "modern",
   },
   {
-    id: "executive",
-    name: "Executive",
-    description: "Serif body with a navy header band. Senior roles.",
-    accent: "#1f3a5f",
-    header: "band",
-    font: "serif",
-    category: "modern",
-  },
-  {
-    id: "cobalt",
-    name: "Cobalt",
-    description: "Crisp blue header band, corporate and confident.",
-    accent: "#1d4ed8",
-    header: "band",
+    id: "mercury-flow",
+    name: "Mercury Flow",
+    description: "Banded section headers with a left date rail. Structured and scannable.",
+    accent: "#3f4a55",
+    layout: "banded",
     font: "sans",
     category: "modern",
   },
   {
-    id: "bold",
-    name: "Bold",
-    description: "Coral header band that stands out in a stack.",
-    accent: "#fb6f4c",
-    header: "band",
-    font: "sans",
-    category: "creative",
-  },
-  {
-    id: "ruby",
-    name: "Ruby",
-    description: "Deep ruby band with a confident, editorial feel.",
-    accent: "#be123c",
-    header: "band",
+    id: "ledger",
+    name: "Ledger",
+    description: "Editorial serif with section labels in the margin. Distinctive yet formal.",
+    accent: "#8a8378",
+    layout: "labelLeft",
     font: "serif",
     category: "creative",
   },
 ];
+
+/** Map template ids from earlier releases to the closest new design. */
+const LEGACY_TEMPLATE_MAP: Record<string, TemplateId> = {
+  classic: "classic-clear",
+  minimal: "slate",
+  compact: "slate",
+  modern: "mercury-flow",
+  executive: "ledger",
+  cobalt: "atlantic-blue",
+  bold: "headline",
+  ruby: "ledger",
+};
+
+/** Normalise any persisted template id (including pre-redesign ones). */
+export function migrateTemplateId(id: string | undefined | null): TemplateId {
+  if (id && TEMPLATES.some((t) => t.id === id)) return id as TemplateId;
+  return LEGACY_TEMPLATE_MAP[id ?? ""] ?? "classic-clear";
+}
 
 export const CATEGORIES: { id: TemplateCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -129,8 +138,9 @@ export const ACCENT_SWATCHES = [
   "#0f172a", // slate/ink
 ];
 
-export function getTemplate(id: TemplateId): TemplateDef {
-  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+export function getTemplate(id: TemplateId | string): TemplateDef {
+  const resolved = migrateTemplateId(id);
+  return TEMPLATES.find((t) => t.id === resolved) ?? TEMPLATES[0];
 }
 
 // ---------- Customization resolution ----------
@@ -152,13 +162,13 @@ export interface ResolvedTemplate extends TemplateDef {
 }
 
 /** Merge a template's defaults with per-resume customization overrides. */
-export function resolveTemplate(id: TemplateId, o?: StyleOverrides): ResolvedTemplate {
+export function resolveTemplate(id: TemplateId | string, o?: StyleOverrides): ResolvedTemplate {
   const base = getTemplate(id);
   return {
     ...base,
     accent: o?.accent ?? base.accent,
     font: o?.font ?? base.font,
-    density: o?.density ?? (base.id === "compact" ? "compact" : "normal"),
+    density: o?.density ?? "normal",
     headingUppercase: o?.headingUppercase ?? true,
     headingUnderline: o?.headingUnderline ?? true,
   };

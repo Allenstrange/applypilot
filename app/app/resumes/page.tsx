@@ -30,7 +30,7 @@ export default function ResumesPage() {
   function createFromProfile() {
     const copy = JSON.parse(JSON.stringify(profile));
     const name = profile.name ? `${profile.name.split(" ")[0]}'s Resume` : "My Resume";
-    const id = addResume(name, "classic", copy);
+    const id = addResume(name, "classic-clear", copy);
     router.push(`/app/resumes/${id}`);
   }
 
@@ -50,7 +50,7 @@ export default function ResumesPage() {
       const name = parsed.name?.trim()
         ? `${parsed.name.split(" ")[0]}'s CV`
         : base || "Imported CV";
-      const id = addResume(name, "classic", parsed);
+      const id = addResume(name, "classic-clear", parsed);
       toast(
         source === "local"
           ? "ℹ Saved a blank resume — add an AI key in Settings for full extraction"

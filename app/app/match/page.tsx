@@ -124,7 +124,7 @@ export default function MatchPage() {
     try {
       const name = `${m.title} – ${m.company}`;
       const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
-      const resumeId = addResume(name, "classic", tailored);
+      const resumeId = addResume(name, "classic-clear", tailored);
       exportCVPDF(tailored);
       const existing = applications.find((a) => a.company === m.company && a.title === m.title);
       if (existing) {
@@ -159,7 +159,7 @@ export default function MatchPage() {
     for (const m of results) {
       try {
         const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
-        addResume(`${m.title} – ${m.company}`, "classic", tailored);
+        addResume(`${m.title} – ${m.company}`, "classic-clear", tailored);
         ok += 1;
       } catch { /* skip individual failures */ }
     }

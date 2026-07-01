@@ -3,6 +3,7 @@
 // no server/storage is needed. The /share page decodes and renders it.
 
 import type { Profile, TemplateId } from "./types";
+import { migrateTemplateId } from "./templates";
 
 function toB64Url(json: string): string {
   const b = btoa(unescape(encodeURIComponent(json)));
@@ -21,9 +22,10 @@ export function encodeResume(profile: Profile, templateId: TemplateId): string {
 
 export function decodeResume(hash: string): { profile: Profile; templateId: TemplateId } | null {
   try {
-    const o = JSON.parse(fromB64Url(hash)) as { p?: Profile; t?: TemplateId };
+    const o = JSON.parse(fromB64Url(hash)) as { p?: Profile; t?: string };
     if (!o || !o.p) return null;
-    return { profile: o.p, templateId: (o.t ?? "classic") as TemplateId };
+    // Old share links may carry pre-redesign template ids — migrate them.
+    return { profile: o.p, templateId: migrateTemplateId(o.t) };
   } catch {
     return null;
   }

@@ -160,14 +160,12 @@ export interface Application {
 // ---------- Resume library ----------
 
 export type TemplateId =
-  | "classic"
-  | "modern"
-  | "compact"
-  | "executive"
-  | "minimal"
-  | "bold"
-  | "cobalt"
-  | "ruby";
+  | "classic-clear"
+  | "atlantic-blue"
+  | "mercury-flow"
+  | "ledger"
+  | "headline"
+  | "slate";
 
 export type SectionKey = "summary" | "skills" | "experience" | "education" | "certs";
 

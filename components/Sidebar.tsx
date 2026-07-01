@@ -48,10 +48,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Build",
     items: [
-      { href: "/app/profile", label: "Master Profile", icon: User },
-      { href: "/app/resumes", label: "Resumes", icon: FileText },
+      { href: "/app/resumes", label: "My CVs", icon: FileText },
       { href: "/app/templates", label: "Templates", icon: LayoutTemplate },
-      { href: "/app/compare", label: "Compare Resumes", icon: GitCompare },
+      { href: "/app/compare", label: "Compare CVs", icon: GitCompare },
+      { href: "/app/profile", label: "Master Profile", icon: User },
     ],
   },
   {

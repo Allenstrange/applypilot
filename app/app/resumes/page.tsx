@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FilePlus2, Copy, Trash2, GitCompare, Plus, LayoutTemplate, Upload } from "lucide-react";
+import { FilePlus2, Copy, Trash2, GitCompare, Plus, LayoutTemplate, Upload, Target } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";
@@ -109,7 +109,7 @@ export default function ResumesPage() {
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">How do you want to start?</h2>
             <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">Build a tailored resume in whichever way suits you.</p>
           </div>
-          <div className="grid gap-5 sm:grid-cols-3 max-w-3xl mx-auto">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 max-w-4xl mx-auto">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -146,6 +146,16 @@ export default function ResumesPage() {
               </div>
               <div className="font-semibold text-slate-900 dark:text-slate-100">Browse templates</div>
               <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Pick a design, then make it yours.</p>
+            </Link>
+            <Link
+              href="/app/analyze"
+              className="group rounded-xl border border-[var(--border)] hover:border-[var(--brand)] p-6 text-center transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+                <Target className="w-6 h-6 text-[var(--brand)]" />
+              </div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">Tailor to a job</div>
+              <p className="text-xs text-slate-500 mt-1.5 dark:text-slate-400">Paste a job description and tailor a CV to it.</p>
             </Link>
           </div>
         </div>
@@ -186,6 +196,14 @@ export default function ResumesPage() {
                   <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
                   <Link href={`/app/resumes/${r.id}`} className="text-violet-600 text-xs font-medium hover:text-violet-700 dark:text-violet-400">
                     Edit
+                  </Link>
+                  <Link
+                    href={`/app/analyze?base=${r.id}`}
+                    data-testid={`tailor-cv-${r.id}`}
+                    title="Analyse a job and tailor this CV to it"
+                    className="text-slate-500 text-xs hover:text-slate-700 flex items-center gap-1 dark:text-slate-400 dark:hover:text-slate-200"
+                  >
+                    <Target className="w-3.5 h-3.5" /> Tailor
                   </Link>
                   <button
                     type="button"

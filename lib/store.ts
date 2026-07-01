@@ -80,7 +80,8 @@ interface AppState {
   duplicateResume: (id: string) => string | null;
 
   // ----- analysis / editor -----
-  setAnalysis: (analysis: Analysis) => void;
+  /** Set the current analysis; `base` picks which CV seeds the draft (defaults to the master profile). */
+  setAnalysis: (analysis: Analysis, base?: Profile) => void;
   setDraftCV: (profile: Profile) => void;
   updateDraftCV: (patch: Partial<Profile>) => void;
   setGeneration: <K extends GenerationMode>(
@@ -156,11 +157,12 @@ export const useStore = create<AppState>()(
         return newId;
       },
 
-      setAnalysis: (analysis) =>
+      setAnalysis: (analysis, base) =>
         set((s) => ({
           currentAnalysis: analysis,
-          // Start a fresh CV draft and clear stale generations for the new job.
-          draftCV: JSON.parse(JSON.stringify(s.profile)) as Profile,
+          // Start a fresh CV draft (from the chosen base CV, or the master
+          // profile) and clear stale generations for the new job.
+          draftCV: JSON.parse(JSON.stringify(base ?? s.profile)) as Profile,
           generations: {},
         })),
       setDraftCV: (profile) => set({ draftCV: profile }),

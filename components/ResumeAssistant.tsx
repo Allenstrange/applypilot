@@ -9,6 +9,7 @@ import { isAIConfigured } from "@/lib/ai";
 import { parseCVFile } from "@/lib/cvParser";
 import { assistantEditResume } from "@/lib/generate";
 import { applyEdit, previewEdit, editTarget } from "@/lib/resumeEdits";
+import { diffWords } from "@/lib/textDiff";
 import { scoreResume } from "@/lib/resumeScore";
 import { toast } from "@/lib/toast";
 import type { AssistantMessage, Profile, ResumeEdit } from "@/lib/types";
@@ -349,6 +350,35 @@ export default function ResumeAssistant({
   );
 }
 
+/**
+ * Rezi-style inline change preview: red strikethrough for removed words, green
+ * for added ones. Uses semantic <del>/<ins> so the change also reads correctly
+ * to assistive tech, not just by colour.
+ */
+function DiffText({ before, after }: { before: string; after: string }) {
+  const segs = diffWords(before, after);
+  return (
+    <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed" data-testid="edit-diff">
+      {segs.map((s, i) =>
+        s.type === "same" ? (
+          <span key={i}>{s.text}</span>
+        ) : s.type === "del" ? (
+          <del key={i} className="text-red-500/80 dark:text-red-400/80 decoration-red-400/60">
+            {s.text}
+          </del>
+        ) : (
+          <ins
+            key={i}
+            className="no-underline font-medium text-green-700 dark:text-green-400 bg-green-500/10 rounded-[3px] px-0.5"
+          >
+            {s.text}
+          </ins>
+        ),
+      )}
+    </p>
+  );
+}
+
 function EditCard({
   edit,
   profile,
@@ -383,12 +413,7 @@ function EditCard({
           <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate ml-2">{edit.rationale}</span>
         ) : null}
       </div>
-      {before ? (
-        <p className="text-xs text-slate-400 dark:text-slate-500 line-through decoration-slate-300/60 mb-1">
-          {before}
-        </p>
-      ) : null}
-      <p className="text-xs text-slate-800 dark:text-slate-100">{after}</p>
+      <DiffText before={before} after={after} />
       <div className="flex items-center gap-2 mt-2.5">
         {applied ? (
           <>

@@ -42,6 +42,7 @@ Requirements:
 export default function AnalyzePage() {
   const hydrated = useHydrated();
   const profile = useStore((s) => s.profile);
+  const resumes = useStore((s) => s.resumes);
   const providers = useStore((s) => s.providers);
   const currentAnalysis = useStore((s) => s.currentAnalysis);
   const setAnalysis = useStore((s) => s.setAnalysis);
@@ -56,6 +57,17 @@ export default function AnalyzePage() {
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [phase, setPhase] = useState(0);
+  // Which CV gets tailored to this job: "" = master profile, else a resume id.
+  const [baseId, setBaseId] = useState("");
+
+  // Preselect the base CV when arriving from a CV card ("Tailor to a job").
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("base");
+    if (id && useStore.getState().resumes.some((r) => r.id === id)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, an external system
+      setBaseId(id);
+    }
+  }, []);
 
   // Cycle through readable steps during the (10–25s) AI analysis so the user
   // sees progress instead of a bare spinner. Local keyword matching is instant,
@@ -103,21 +115,28 @@ export default function AnalyzePage() {
     }
   }
 
+  const baseResume = baseId ? resumes.find((r) => r.id === baseId) : undefined;
+  const baseProfile = baseResume?.profile ?? profile;
+
   async function analyse() {
     if (!form.company || !form.title || !form.jd) {
       toast("⚠ Please fill in company, title and JD");
       return;
     }
-    if (!profile.name || !profile.skills) {
-      toast("⚠ Please complete your master profile first");
+    if (!baseProfile.name || !baseProfile.skills) {
+      toast(
+        baseResume
+          ? "⚠ That CV is missing a name or skills — edit it first"
+          : "⚠ Please complete your master profile first",
+      );
       return;
     }
     setPhase(0);
     setBusy(true);
     toast(isAIConfigured(providers) ? "⏳ Analysing JD…" : "⏳ Keyword matching…");
     try {
-      const analysis = await analyseJob(form, profile, providers);
-      setAnalysis(analysis);
+      const analysis = await analyseJob(form, baseProfile, providers);
+      setAnalysis(analysis, baseResume?.profile);
       toast("✓ Analysis complete");
     } catch (err) {
       toast("✕ Analysis failed: " + (err as Error).message);
@@ -171,6 +190,22 @@ export default function AnalyzePage() {
             </Labeled>
             <Labeled label="Source URL (optional)">
               <input className="w-full px-3 py-2 rounded-lg text-sm" placeholder="https://…" value={form.url} onChange={field("url")} />
+            </Labeled>
+            <Labeled label="Tailor which CV?">
+              <select
+                value={baseId}
+                onChange={(e) => setBaseId(e.target.value)}
+                data-testid="base-cv-select"
+                aria-label="Which CV to tailor for this job"
+                className="w-full px-3 py-2 rounded-lg text-sm"
+              >
+                <option value="">Master Profile</option>
+                {(hydrated ? resumes : []).map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
             </Labeled>
           </div>
           <Labeled label="Job Description *">

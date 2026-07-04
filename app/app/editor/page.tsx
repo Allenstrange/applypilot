@@ -15,6 +15,9 @@ import {
   MessageSquare,
   PenLine,
   Bot,
+  FolderPlus,
+  ArrowRight,
+  Target,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
@@ -48,6 +51,7 @@ import ResumeScorePanel from "@/components/ResumeScorePanel";
 import ResumeAssistant from "@/components/ResumeAssistant";
 import KeywordCoach from "@/components/KeywordCoach";
 import ResumeInsights from "@/components/ResumeInsights";
+import PipelineStepper from "@/components/PipelineStepper";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
 type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
@@ -65,52 +69,93 @@ export default function EditorPage() {
   const hydrated = useHydrated();
   const analysis = useStore((s) => s.currentAnalysis);
   const draftCV = useStore((s) => s.draftCV);
+  const draftBaseResumeId = useStore((s) => s.draftBaseResumeId);
+  const resumes = useStore((s) => s.resumes);
   const saveToTracker = useStore((s) => s.saveCurrentToTracker);
+  const saveDraftToLibrary = useStore((s) => s.saveDraftToLibrary);
   const [tab, setTab] = useState<Tab>("cv");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [saveMenu, setSaveMenu] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   if (!hydrated) {
     return <PageSkeleton />;
   }
 
   if (!analysis || !draftCV) {
-    return (
-      <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-        <PenLine className="w-10 h-10 mx-auto mb-3" />
-        <div>No job selected for editing.</div>
-        <Link href="/app/analyze" className="btn-primary px-4 py-2 rounded-lg text-sm mt-4 inline-block">
-          Analyse a Job First
-        </Link>
-      </div>
-    );
+    return <EditorEmptyState resumes={resumes} />;
   }
 
-  function onSave() {
+  const baseResume = draftBaseResumeId ? resumes.find((r) => r.id === draftBaseResumeId) : undefined;
+
+  function onSaveTracker() {
     const r = saveToTracker();
     toast(r === "saved" ? "✓ Saved to tracker" : r === "exists" ? "ℹ Already in tracker" : "⚠ Nothing to save");
   }
 
+  function saveLibrary(mode: "new" | "update") {
+    const id = saveDraftToLibrary(mode);
+    setSaveMenu(false);
+    if (id) {
+      setSavedId(id);
+      toast(mode === "update" ? "✓ Updated in My CVs" : "✓ Saved to My CVs");
+    }
+  }
+
   return (
     <div className="p-8">
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {analysis.title} at {analysis.company}
+            {baseResume ? <span className="text-slate-400"> · from {baseResume.name}</span> : null}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <PipelineStepper current="tailor" className="pt-1" />
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mb-6 flex-wrap">
+        {savedId ? (
+          <Link
+            href={`/app/resumes/${savedId}`}
+            data-testid="view-saved-cv"
+            className="text-xs font-medium text-[var(--brand)] hover:underline inline-flex items-center gap-1 mr-1"
+          >
+            View in My CVs <ArrowRight className="w-3 h-3" />
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          data-testid="open-assistant-drawer"
+          className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <Bot className="w-4 h-4" /> Ask AI
+        </button>
+        <button type="button" onClick={onSaveTracker} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          <Save className="w-4 h-4" /> Save to Tracker
+        </button>
+        <div className="relative">
           <button
             type="button"
-            onClick={() => setDrawerOpen(true)}
-            data-testid="open-assistant-drawer"
+            onClick={() => (baseResume ? setSaveMenu((v) => !v) : saveLibrary("new"))}
+            data-testid="save-to-cvs"
             className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"
           >
-            <Bot className="w-4 h-4" /> Ask AI
+            <FolderPlus className="w-4 h-4" /> Save to My CVs
+            {baseResume ? <ChevronMark open={saveMenu} /> : null}
           </button>
-          <button type="button" onClick={onSave} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-            <Save className="w-4 h-4" /> Save to Tracker
-          </button>
+          {saveMenu && baseResume ? (
+            <div className="absolute right-0 top-11 z-20 glass rounded-lg p-1 text-sm min-w-56 shadow-xl">
+              <button type="button" onClick={() => saveLibrary("update")} className="block w-full text-left px-3 py-2 rounded hover:bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] text-slate-700 dark:text-slate-200">
+                Update <span className="font-medium">{baseResume.name}</span>
+              </button>
+              <button type="button" onClick={() => saveLibrary("new")} className="block w-full text-left px-3 py-2 rounded hover:bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] text-slate-700 dark:text-slate-200">
+                Save as a new CV
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -150,6 +195,72 @@ export default function EditorPage() {
       </AnimatePresence>
 
       <AssistantDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </div>
+  );
+}
+
+function ChevronMark({ open }: { open: boolean }) {
+  return (
+    <span className={`transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
+      ▾
+    </span>
+  );
+}
+
+// A real router instead of a dead-end: pick a CV to tailor, or analyse a job.
+function EditorEmptyState({ resumes }: { resumes: { id: string; name: string; templateId: string }[] }) {
+  return (
+    <div className="p-8">
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Tailor a CV to a specific job, then save it back to My CVs.
+          </p>
+        </div>
+        <PipelineStepper current="tailor" className="pt-1" />
+      </div>
+
+      <div className="card rounded-2xl p-10 max-w-2xl mx-auto text-center">
+        <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+          <PenLine className="w-6 h-6 text-[var(--brand)]" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Pick a job to tailor for</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
+          The Editing Room needs a job to tailor against. Analyse one to begin — the CV you choose there becomes your working draft.
+        </p>
+        <Link
+          href="/app/analyze"
+          data-testid="editor-empty-analyse"
+          className="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+        >
+          <Target className="w-4 h-4" /> Analyse a job
+        </Link>
+
+        {resumes.length ? (
+          <div className="mt-8 text-left">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              …or tailor one of your CVs
+            </div>
+            <div className="space-y-1.5">
+              {resumes.slice(0, 4).map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/app/analyze?base=${r.id}`}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] hover:border-[var(--brand)]/50 text-sm text-slate-700 dark:text-slate-200 transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2 truncate">
+                    <FileText className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" /> {r.name}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--brand)] shrink-0">
+                    Tailor <ArrowRight className="w-3 h-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

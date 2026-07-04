@@ -13,6 +13,7 @@ import {
   FileText,
   Upload,
   Plus,
+  PenLine,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated, useNow } from "@/lib/useHydrated";
@@ -26,9 +27,12 @@ export default function DashboardPage() {
   const now = useNow();
   const applications = useStore((s) => s.applications);
   const resumes = useStore((s) => s.resumes);
+  const analysis = useStore((s) => s.currentAnalysis);
+  const draftCV = useStore((s) => s.draftCV);
 
   const apps = hydrated ? applications : [];
   const cvs = hydrated ? resumes : [];
+  const resume = hydrated && analysis && draftCV ? analysis : null;
   const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
   const stats = {
     total: apps.length,
@@ -43,6 +47,30 @@ export default function DashboardPage() {
         title="Welcome back 👋"
         subtitle="Your AI-powered job application command centre."
       />
+
+      {/* Resume the last tailoring session in one click. */}
+      {resume ? (
+        <Link
+          href="/app/editor"
+          data-testid="continue-card"
+          className="group flex items-center gap-4 card rounded-xl p-5 mb-6 border-[var(--brand)]/40 hover:border-[var(--brand)] transition-colors"
+        >
+          <div className="w-11 h-11 rounded-lg shrink-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_14%,transparent)]">
+            <PenLine className="w-5 h-5 text-[var(--brand)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--brand)]">
+              Continue where you left off
+            </div>
+            <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+              Tailoring {resume.title} at {resume.company}
+            </div>
+          </div>
+          <span className="btn-primary px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 shrink-0">
+            Resume <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+      ) : null}
 
       {/* CV-first shelf: your CVs are the unit of work, so they lead the page. */}
       <div className="card rounded-xl p-6 mb-6" data-testid="cv-shelf">

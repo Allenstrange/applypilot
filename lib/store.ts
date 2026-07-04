@@ -57,6 +57,8 @@ interface AppState {
   applications: Application[];
   currentAnalysis: Analysis | null;
   draftCV: Profile | null;
+  /** The library CV the current draft was seeded from (null = master profile). */
+  draftBaseResumeId: string | null;
   generations: Generations;
   resumes: ResumeDoc[];
   providers: ProviderSettings;
@@ -73,7 +75,7 @@ interface AppState {
     patch: Partial<
       Pick<
         ResumeDoc,
-        "name" | "templateId" | "profile" | "accent" | "font" | "density" | "headingUppercase" | "headingUnderline" | "sectionOrder"
+        "name" | "templateId" | "profile" | "accent" | "font" | "density" | "headingUppercase" | "headingUnderline" | "sectionOrder" | "targetJob"
       >
     >,
   ) => void;
@@ -81,14 +83,20 @@ interface AppState {
   duplicateResume: (id: string) => string | null;
 
   // ----- analysis / editor -----
-  /** Set the current analysis; `base` picks which CV seeds the draft (defaults to the master profile). */
-  setAnalysis: (analysis: Analysis, base?: Profile) => void;
+  /** Set the current analysis; `base`/`baseId` pick which CV seeds the draft (defaults to the master profile). */
+  setAnalysis: (analysis: Analysis, base?: Profile, baseId?: string) => void;
   setDraftCV: (profile: Profile) => void;
   updateDraftCV: (patch: Partial<Profile>) => void;
   setGeneration: <K extends GenerationMode>(
     mode: K,
     payload: NonNullable<Generations[K]>,
   ) => void;
+  /**
+   * Save the tailored draft into the CV library. `mode:"update"` overwrites the
+   * base CV it came from; `mode:"new"` (default) creates a fresh CV. Returns the
+   * saved resume id, or null if there is no draft.
+   */
+  saveDraftToLibrary: (mode?: "new" | "update") => string | null;
 
   // ----- tracker -----
   addApplication: (app: Application) => void;
@@ -114,6 +122,7 @@ export const useStore = create<AppState>()(
       applications: [],
       currentAnalysis: null,
       draftCV: null,
+      draftBaseResumeId: null,
       generations: {},
       resumes: [],
       providers: defaultProviders,
@@ -158,12 +167,13 @@ export const useStore = create<AppState>()(
         return newId;
       },
 
-      setAnalysis: (analysis, base) =>
+      setAnalysis: (analysis, base, baseId) =>
         set((s) => ({
           currentAnalysis: analysis,
           // Start a fresh CV draft (from the chosen base CV, or the master
           // profile) and clear stale generations for the new job.
           draftCV: JSON.parse(JSON.stringify(base ?? s.profile)) as Profile,
+          draftBaseResumeId: baseId ?? null,
           generations: {},
         })),
       setDraftCV: (profile) => set({ draftCV: profile }),
@@ -171,6 +181,50 @@ export const useStore = create<AppState>()(
         set((s) => ({ draftCV: s.draftCV ? { ...s.draftCV, ...patch } : s.draftCV })),
       setGeneration: (mode, payload) =>
         set((s) => ({ generations: { ...s.generations, [mode]: payload } })),
+      saveDraftToLibrary: (mode = "new") => {
+        const s = get();
+        if (!s.draftCV) return null;
+        const profile = JSON.parse(JSON.stringify(s.draftCV)) as Profile;
+        const a = s.currentAnalysis;
+        const targetJob = a ? { title: a.title, company: a.company } : undefined;
+
+        if (mode === "update" && s.draftBaseResumeId) {
+          const base = s.resumes.find((r) => r.id === s.draftBaseResumeId);
+          if (base) {
+            get().updateResume(base.id, { profile, targetJob });
+            return base.id;
+          }
+        }
+        const now = new Date().toISOString();
+        const id = crypto.randomUUID();
+        const name = a ? `${a.title} — ${a.company}` : profile.name ? `${profile.name}'s CV` : "Tailored CV";
+        const base = s.draftBaseResumeId
+          ? s.resumes.find((r) => r.id === s.draftBaseResumeId)
+          : undefined;
+        set((st) => ({
+          resumes: [
+            {
+              id,
+              name,
+              templateId: base?.templateId ?? "classic-clear",
+              accent: base?.accent,
+              font: base?.font,
+              density: base?.density,
+              headingUppercase: base?.headingUppercase,
+              headingUnderline: base?.headingUnderline,
+              sectionOrder: base?.sectionOrder,
+              targetJob,
+              profile,
+              createdAt: now,
+              updatedAt: now,
+            },
+            ...st.resumes,
+          ],
+          // The new CV becomes the draft's base so further edits can update it.
+          draftBaseResumeId: id,
+        }));
+        return id;
+      },
 
       addApplication: (app) =>
         set((s) => ({ applications: [withInitialHistory(app), ...s.applications] })),
@@ -242,6 +296,7 @@ export const useStore = create<AppState>()(
         set({
           currentAnalysis: app.snapshot.analysis,
           draftCV: app.snapshot.draftCV,
+          draftBaseResumeId: app.resumeId ?? null,
           generations: app.snapshot.generations,
         });
         return true;

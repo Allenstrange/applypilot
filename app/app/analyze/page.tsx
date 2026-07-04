@@ -13,6 +13,7 @@ import { toast } from "@/lib/toast";
 import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 import JdKeywords from "@/components/JdKeywords";
+import PipelineStepper from "@/components/PipelineStepper";
 
 const ANALYSE_PHASES = [
   "Reading the JD…",
@@ -136,7 +137,7 @@ export default function AnalyzePage() {
     toast(isAIConfigured(providers) ? "⏳ Analysing JD…" : "⏳ Keyword matching…");
     try {
       const analysis = await analyseJob(form, baseProfile, providers);
-      setAnalysis(analysis, baseResume?.profile);
+      setAnalysis(analysis, baseResume?.profile, baseResume?.id);
       toast("✓ Analysis complete");
     } catch (err) {
       toast("✕ Analysis failed: " + (err as Error).message);
@@ -152,10 +153,13 @@ export default function AnalyzePage() {
 
   return (
     <div className="p-8">
-      <PageHeader
-        title="🔍 Job Analysis"
-        subtitle="Paste a job description to diagnose gaps and ATS issues before you start editing."
-      />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-2">
+        <PageHeader
+          title="🔍 Job Analysis"
+          subtitle="Paste a job description to diagnose gaps and ATS issues before you start editing."
+        />
+        <PipelineStepper current="job" className="pt-1" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card rounded-xl p-6">

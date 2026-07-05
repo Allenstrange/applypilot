@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -36,8 +36,19 @@ export default function TrackerPage() {
   const [view, setView] = useState<"table" | "board">("table");
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ApplicationStatus | "all">("all");
 
-  const apps = hydrated ? applications : [];
+  // Arriving from a dashboard stat card (?status=interview) pre-applies the filter.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("status");
+    if (s && (STATUSES as string[]).includes(s)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL
+      setFilter(s as ApplicationStatus);
+    }
+  }, []);
+
+  const allApps = hydrated ? applications : [];
+  const apps = filter === "all" ? allApps : allApps.filter((a) => a.status === filter);
 
   function exportCSV() {
     if (apps.length === 0) {
@@ -176,8 +187,46 @@ export default function TrackerPage() {
         </div>
       </div>
 
+      {allApps.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5 mb-4" data-testid="tracker-filters">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            data-testid="filter-all"
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filter === "all"
+                ? "bg-[var(--brand)] border-[var(--brand)] text-white dark:text-slate-900"
+                : "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+            }`}
+          >
+            All ({allApps.length})
+          </button>
+          {STATUSES.map((st) => {
+            const n = allApps.filter((a) => a.status === st).length;
+            const active = filter === st;
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setFilter(active ? "all" : st)}
+                data-testid={`filter-${st}`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                  active
+                    ? "bg-[var(--brand)] border-[var(--brand)] text-white dark:text-slate-900"
+                    : "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-40"
+                }`}
+                disabled={n === 0 && !active}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ background: active ? "currentColor" : STATUS_COLOR[st] }} />
+                {st} ({n})
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="card rounded-xl overflow-hidden">
-        {apps.length === 0 ? (
+        {allApps.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-slate-500 dark:text-slate-400">
               No applications tracked yet. Analyse a job, tailor a CV, then save it here.
@@ -189,6 +238,13 @@ export default function TrackerPage() {
             >
               Analyse a job <ChevronRight className="w-4 h-4" />
             </Link>
+          </div>
+        ) : apps.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400" data-testid="tracker-filter-empty">
+            No {filter} applications.{" "}
+            <button type="button" onClick={() => setFilter("all")} className="text-[var(--brand)] hover:underline">
+              Show all
+            </button>
           </div>
         ) : view === "board" ? (
           renderKanban()

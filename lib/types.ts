@@ -197,6 +197,8 @@ export interface ScoreIssue {
   severity: "error" | "warning" | "tip";
   message: string;
   where?: string;
+  /** The score category this issue counts against (matches ScoreCategory.label). */
+  category?: string;
 }
 
 export interface ScoreCategory {

@@ -150,10 +150,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" />
-        <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" />
-        <StatCard label="Offers" value={stats.offers} hint={stats.offers ? "🎉 nice work" : "keep going"} className="text-green-600 dark:text-green-400" />
-        <StatCard label="This Week" value={stats.week} hint="added this week" className="text-[var(--brand)]" />
+        <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" href="/app/tracker" />
+        <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" href="/app/tracker?status=interview" />
+        <StatCard label="Offers" value={stats.offers} hint={stats.offers ? "🎉 nice work" : "keep going"} className="text-green-600 dark:text-green-400" href="/app/tracker?status=offer" />
+        <StatCard label="This Week" value={stats.week} hint="added this week" className="text-[var(--brand)]" href="/app/tracker" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -232,18 +232,27 @@ function StatCard({
   value,
   hint,
   className,
+  href,
 }: {
   label: string;
   value: number;
   hint?: string;
   className?: string;
+  href: string;
 }) {
   return (
-    <div className="card stat-card rounded-xl p-5">
-      <div className="text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">{label}</div>
+    <Link
+      href={href}
+      data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      className="group card stat-card rounded-xl p-5 block transition-colors hover:border-[var(--brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+    >
+      <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">
+        {label}
+        <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--brand)]" />
+      </div>
       <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
       {hint ? <div className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{hint}</div> : null}
-    </div>
+    </Link>
   );
 }
 

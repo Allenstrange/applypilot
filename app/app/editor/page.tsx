@@ -312,6 +312,33 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   // A loud "+N%" that flashes by the score whenever a fix moves the match rate.
   const [scoreFlash, setScoreFlash] = useState<number | null>(null);
   const prevScoreRef = useRef<number | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Click a missing keyword to drop it straight into Skills — the match rate
+  // and delta flash react immediately, closing the see-it → fix-it loop.
+  function addKeywordToSkills(k: string) {
+    const skills = draftCV.skills.trim();
+    updateDraftCV({ skills: skills ? `${skills.replace(/,\s*$/, "")}, ${k}` : k });
+    toast(`✓ Added “${k}” to Skills`);
+  }
+
+  // Click a matched keyword to see where it lives: scroll the preview to the
+  // first highlighted occurrence and pulse it.
+  function jumpToKeyword(k: string) {
+    const marks = previewRef.current?.querySelectorAll("mark");
+    if (!marks) return;
+    const target = Array.from(marks).find(
+      (m) => (m.textContent ?? "").toLowerCase() === k.toLowerCase(),
+    );
+    if (!target) {
+      toast("ℹ Couldn’t locate it in the preview");
+      return;
+    }
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.style.transition = "box-shadow 0.25s ease";
+    target.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--brand) 65%, transparent)";
+    setTimeout(() => { target.style.boxShadow = ""; }, 1500);
+  }
 
   async function loadSectionVariants(kind: "summary" | "skills") {
     if (!isAIConfigured(providers)) {
@@ -583,17 +610,20 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {missing.length ? (
                 <>
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
-                    Missing keywords ({missing.length})
+                    Missing keywords ({missing.length}) · click to add to Skills
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {missing.map((k) => (
-                      <span
+                      <button
                         key={k}
-                        title="Not yet in your CV — weave it in if you have the experience"
-                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30"
+                        type="button"
+                        onClick={() => addKeywordToSkills(k)}
+                        title={`Add “${k}” to your Skills section`}
+                        data-testid={`add-kw-${k}`}
+                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30 transition-colors hover:bg-red-500/20 hover:border-red-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
                       >
                         + {k}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </>
@@ -603,12 +633,16 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {matched.length ? (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {matched.map((k) => (
-                    <span
+                    <button
                       key={k}
-                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25"
+                      type="button"
+                      onClick={() => jumpToKeyword(k)}
+                      title={`Show “${k}” in the preview`}
+                      data-testid={`show-kw-${k}`}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25 transition-colors hover:bg-green-500/25 hover:border-green-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
                     >
                       {k}
-                    </span>
+                    </button>
                   ))}
                 </div>
               ) : null}
@@ -620,7 +654,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
         <div className="mb-3" data-testid="editor-resume-score">
           <ResumeScorePanel profile={draftCV} />
         </div>
-        <div className="rounded-xl overflow-hidden">
+        <div ref={previewRef} className="rounded-xl overflow-hidden">
           <CVPreview profile={draftCV} keywords={analysis.jdKeywords} />
         </div>
       </div>

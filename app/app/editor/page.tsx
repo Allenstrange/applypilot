@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -106,7 +106,7 @@ export default function EditorPage() {
     <div className="p-8">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {analysis.title} at {analysis.company}
             {baseResume ? <span className="text-slate-400"> · from {baseResume.name}</span> : null}
@@ -213,7 +213,7 @@ function EditorEmptyState({ resumes }: { resumes: { id: string; name: string; te
     <div className="p-8">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Tailor a CV to a specific job, then save it back to My CVs.
           </p>
@@ -227,7 +227,7 @@ function EditorEmptyState({ resumes }: { resumes: { id: string; name: string; te
         </div>
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Pick a job to tailor for</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
-          The Editing Room needs a job to tailor against. Analyse one to begin — the CV you choose there becomes your working draft.
+          Tailoring works against a specific job. Analyse one to begin — the CV you choose there becomes your working draft.
         </p>
         <Link
           href="/app/analyze"
@@ -309,6 +309,9 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   const [variantsLoading, setVariantsLoading] = useState<string | null>(null);
   const [secVariants, setSecVariants] = useState<{ kind: "summary" | "skills"; options: string[] } | null>(null);
   const [secLoading, setSecLoading] = useState<string | null>(null);
+  // A loud "+N%" that flashes by the score whenever a fix moves the match rate.
+  const [scoreFlash, setScoreFlash] = useState<number | null>(null);
+  const prevScoreRef = useRef<number | null>(null);
 
   async function loadSectionVariants(kind: "summary" | "skills") {
     if (!isAIConfigured(providers)) {
@@ -442,6 +445,18 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     : 0;
   const scoreColor = score > 70 ? "#4ade80" : score > 40 ? "#fbbf24" : "#f87171";
 
+  // Flash the delta whenever a fix (an edit or the one-click optimise) moves the score.
+  useEffect(() => {
+    if (prevScoreRef.current !== null && score !== prevScoreRef.current) {
+      const d = score - prevScoreRef.current;
+      setScoreFlash(d);
+      const t = setTimeout(() => setScoreFlash(null), 2400);
+      prevScoreRef.current = score;
+      return () => clearTimeout(t);
+    }
+    prevScoreRef.current = score;
+  }, [score]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Editor */}
@@ -538,6 +553,24 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           <div className="text-xs text-slate-500 uppercase mb-1 dark:text-slate-400">Live Match Rate</div>
           <div className="flex items-center gap-3">
             <div className="text-2xl font-bold" style={{ color: scoreColor }}>{score}%</div>
+            <AnimatePresence>
+              {scoreFlash !== null && scoreFlash !== 0 ? (
+                <motion.span
+                  key={scoreFlash}
+                  initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  data-testid="score-delta"
+                  className={`text-sm font-bold px-1.5 py-0.5 rounded-full ${
+                    scoreFlash > 0
+                      ? "text-green-600 bg-green-500/15 dark:text-green-400"
+                      : "text-red-500 bg-red-500/15 dark:text-red-400"
+                  }`}
+                >
+                  {scoreFlash > 0 ? `▲ +${scoreFlash}%` : `▼ ${scoreFlash}%`}
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>

@@ -7,8 +7,6 @@ import {
   LayoutDashboard,
   User,
   FileText,
-  GitCompare,
-  LayoutTemplate,
   Search,
   Target,
   PenLine,
@@ -17,6 +15,7 @@ import {
   BarChart3,
   Settings,
   ArrowLeft,
+  ArrowRight,
   Menu,
   X,
   Compass,
@@ -26,6 +25,8 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import Brandmark from "@/components/Brandmark";
+import { useStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 
 const COLLAPSE_KEY = "applypilot_sidebar_collapsed";
 
@@ -49,8 +50,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Build",
     items: [
       { href: "/app/resumes", label: "My CVs", icon: FileText },
-      { href: "/app/templates", label: "Templates", icon: LayoutTemplate },
-      { href: "/app/compare", label: "Compare CVs", icon: GitCompare },
       { href: "/app/profile", label: "Master Profile", icon: User },
     ],
   },
@@ -59,7 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/app/analyze", label: "Job Analysis", icon: Search },
       { href: "/app/match", label: "Job Matcher", icon: Target },
-      { href: "/app/editor", label: "Editing Room", icon: PenLine },
+      { href: "/app/editor", label: "Tailor", icon: PenLine },
       { href: "/app/interview", label: "Mock Interview", icon: Mic },
     ],
   },
@@ -148,6 +147,55 @@ function NavLinks({
         </div>
       ))}
     </nav>
+  );
+}
+
+// A persistent reminder of the job you're mid-way through tailoring for, so the
+// work is one click away from anywhere in the app.
+function TailoringChip({
+  collapsed = false,
+  onNavigate,
+}: {
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}) {
+  const hydrated = useHydrated();
+  const analysis = useStore((s) => s.currentAnalysis);
+  const draftCV = useStore((s) => s.draftCV);
+  if (!hydrated || !analysis || !draftCV) return null;
+
+  if (collapsed) {
+    return (
+      <Link
+        href="/app/editor"
+        onClick={onNavigate}
+        data-testid="tailoring-chip"
+        title={`Tailoring ${analysis.title}`}
+        className="mt-3 mx-auto flex items-center justify-center w-9 h-9 rounded-lg bg-[color-mix(in_srgb,var(--brand)_14%,transparent)] text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_22%,transparent)] transition-colors"
+      >
+        <PenLine className="w-4 h-4" />
+        <span className="sr-only">Continue tailoring {analysis.title}</span>
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href="/app/editor"
+      onClick={onNavigate}
+      data-testid="tailoring-chip"
+      className="mt-3 group flex items-center gap-2 rounded-lg border border-[var(--brand)]/40 bg-[color-mix(in_srgb,var(--brand)_8%,transparent)] px-3 py-2 hover:border-[var(--brand)] transition-colors"
+    >
+      <PenLine className="w-4 h-4 text-[var(--brand)] shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">
+          Tailoring
+        </div>
+        <div className="text-xs font-medium text-[var(--text)] truncate">
+          {analysis.title}
+        </div>
+      </div>
+      <ArrowRight className="w-3.5 h-3.5 text-[var(--brand)] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </Link>
   );
 }
 
@@ -250,6 +298,7 @@ export default function Sidebar() {
               </button>
             </div>
             <NavLinks onNavigate={() => setOpen(false)} />
+            <TailoringChip onNavigate={() => setOpen(false)} />
             <SidebarFooter />
           </aside>
         </div>
@@ -283,6 +332,7 @@ export default function Sidebar() {
           </button>
         </div>
         <NavLinks collapsed={collapsed} />
+        <TailoringChip collapsed={collapsed} />
         <SidebarFooter collapsed={collapsed} />
       </aside>
     </>

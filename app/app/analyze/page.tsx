@@ -70,6 +70,17 @@ export default function AnalyzePage() {
     }
   }, []);
 
+  // Pick up a job handed over by the Job Matcher, then clear it so a refresh
+  // starts fresh. This keeps tailoring on one path: Matcher → Analyze → Editor.
+  useEffect(() => {
+    const pending = useStore.getState().pendingJob;
+    if (!pending) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff from another page
+    setForm((f) => ({ ...f, company: pending.company, title: pending.title, jd: pending.jd }));
+    useStore.getState().setPendingJob(null);
+    toast("✓ Loaded from Job Matcher — review and analyse");
+  }, []);
+
   // Cycle through readable steps during the (10–25s) AI analysis so the user
   // sees progress instead of a bare spinner. Local keyword matching is instant,
   // so the phases only run when an AI provider is doing the work.
@@ -306,7 +317,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
             : null}
         </h2>
         <Link href="/app/editor" className="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2">
-          Enter Editing Room <ArrowRight className="w-4 h-4" />
+          Tailor this CV <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 

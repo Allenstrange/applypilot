@@ -59,6 +59,8 @@ interface AppState {
   draftCV: Profile | null;
   /** The library CV the current draft was seeded from (null = master profile). */
   draftBaseResumeId: string | null;
+  /** A job handed off from the Matcher, waiting for the Analyze page to pick up. */
+  pendingJob: { company: string; title: string; jd: string } | null;
   generations: Generations;
   resumes: ResumeDoc[];
   providers: ProviderSettings;
@@ -83,6 +85,8 @@ interface AppState {
   duplicateResume: (id: string) => string | null;
 
   // ----- analysis / editor -----
+  /** Hand a job to the Analyze page (e.g. from the Matcher). */
+  setPendingJob: (job: { company: string; title: string; jd: string } | null) => void;
   /** Set the current analysis; `base`/`baseId` pick which CV seeds the draft (defaults to the master profile). */
   setAnalysis: (analysis: Analysis, base?: Profile, baseId?: string) => void;
   setDraftCV: (profile: Profile) => void;
@@ -123,6 +127,7 @@ export const useStore = create<AppState>()(
       currentAnalysis: null,
       draftCV: null,
       draftBaseResumeId: null,
+      pendingJob: null,
       generations: {},
       resumes: [],
       providers: defaultProviders,
@@ -167,6 +172,7 @@ export const useStore = create<AppState>()(
         return newId;
       },
 
+      setPendingJob: (job) => set({ pendingJob: job }),
       setAnalysis: (analysis, base, baseId) =>
         set((s) => ({
           currentAnalysis: analysis,

@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Lightbulb } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, AlertTriangle, Lightbulb, X } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { scoreResume } from "@/lib/resumeScore";
 
@@ -13,6 +14,9 @@ const SEV = {
 export default function ResumeScorePanel({ profile }: { profile: Profile }) {
   const { overall, categories, issues } = scoreResume(profile);
   const color = overall >= 80 ? "#16a34a" : overall >= 55 ? "#d97706" : "#dc2626";
+  // Click a category bar to see only its fixes; click again (or ✕) to clear.
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const shown = activeCat ? issues.filter((i) => i.category === activeCat) : issues;
 
   return (
     <div className="card rounded-xl p-5">
@@ -39,28 +43,65 @@ export default function ResumeScorePanel({ profile }: { profile: Profile }) {
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
-        {categories.map((c) => (
-          <div key={c.label}>
-            <div className="flex justify-between text-xs text-slate-500 mb-0.5 dark:text-slate-400">
-              <span>{c.label}</span>
-              <span>{c.score}/{c.max}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
-              <div className="h-full rounded-full bg-violet-500" style={{ width: `${(c.score / c.max) * 100}%` }} />
-            </div>
-          </div>
-        ))}
+      <div className="space-y-1 mb-4">
+        {categories.map((c) => {
+          const catIssues = issues.filter((i) => i.category === c.label).length;
+          const active = activeCat === c.label;
+          return (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => setActiveCat(active ? null : catIssues ? c.label : null)}
+              disabled={!catIssues && !active}
+              data-testid={`score-cat-${c.label.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+              title={catIssues ? `Show the ${catIssues} fix${catIssues === 1 ? "" : "es"} for ${c.label}` : "Nothing to fix here"}
+              className={`block w-full text-left rounded-lg px-2 py-1.5 -mx-2 transition-colors ${
+                active
+                  ? "bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]"
+                  : catIssues
+                    ? "hover:bg-[var(--surface-2)] cursor-pointer"
+                    : "cursor-default"
+              }`}
+            >
+              <div className="flex justify-between text-xs mb-0.5">
+                <span className={active ? "font-semibold text-[var(--brand)]" : "text-slate-500 dark:text-slate-400"}>
+                  {c.label}
+                  {catIssues ? (
+                    <span className={`ml-1.5 tabular-nums ${active ? "text-[var(--brand)]" : "text-amber-600 dark:text-amber-400"}`}>
+                      {catIssues} fix{catIssues === 1 ? "" : "es"}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 tabular-nums">{c.score}/{c.max}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
+                <div className="h-full rounded-full bg-violet-500" style={{ width: `${(c.score / c.max) * 100}%` }} />
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 dark:text-slate-500">
-        Suggestions ({issues.length})
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          {activeCat ? `${activeCat} (${shown.length})` : `Suggestions (${issues.length})`}
+        </span>
+        {activeCat ? (
+          <button
+            type="button"
+            onClick={() => setActiveCat(null)}
+            data-testid="score-filter-clear"
+            className="text-[11px] text-[var(--brand)] hover:underline inline-flex items-center gap-0.5"
+          >
+            <X className="w-3 h-3" /> Show all
+          </button>
+        ) : null}
       </div>
-      {issues.length === 0 ? (
+      {shown.length === 0 ? (
         <div className="text-sm text-green-600 dark:text-green-400">Nothing to fix — looks great!</div>
       ) : (
         <ul className="space-y-2 max-h-72 overflow-y-auto scrollbar pr-1">
-          {issues.map((issue, i) => {
+          {shown.map((issue, i) => {
             const { Icon, cls } = SEV[issue.severity];
             return (
               <li key={i} className="flex items-start gap-2 text-sm">

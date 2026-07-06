@@ -1,14 +1,15 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Download, Trash2, FolderOpen, Clock, ChevronDown, ChevronRight, LayoutGrid, Table2 } from "lucide-react";
+import { Download, Trash2, PenLine, FileText, Mic, Clock, ChevronDown, ChevronRight, LayoutGrid, Table2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { downloadText } from "@/lib/download";
 import { toast } from "@/lib/toast";
-import type { Application, ApplicationStatus } from "@/lib/types";
+import type { Application, ApplicationStatus, Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 
 const STATUSES: ApplicationStatus[] = ["planned", "applied", "interview", "offer", "rejected"];
@@ -28,14 +29,26 @@ export default function TrackerPage() {
   const setStatus = useStore((s) => s.setApplicationStatus);
   const removeApp = useStore((s) => s.removeApplication);
   const loadApp = useStore((s) => s.loadApplication);
+  const setAnalysis = useStore((s) => s.setAnalysis);
   const resumes = useStore((s) => s.resumes);
   const setAppResume = useStore((s) => s.setApplicationResume);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [view, setView] = useState<"table" | "board">("table");
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ApplicationStatus | "all">("all");
 
-  const apps = hydrated ? applications : [];
+  // Arriving from a dashboard stat card (?status=interview) pre-applies the filter.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("status");
+    if (s && (STATUSES as string[]).includes(s)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL
+      setFilter(s as ApplicationStatus);
+    }
+  }, []);
+
+  const allApps = hydrated ? applications : [];
+  const apps = filter === "all" ? allApps : allApps.filter((a) => a.status === filter);
 
   function exportCSV() {
     if (apps.length === 0) {
@@ -69,6 +82,22 @@ export default function TrackerPage() {
     } else {
       toast("ℹ No saved generations for this application");
     }
+  }
+
+  // Build a minimal analysis from a tracked row so the interview coach has the
+  // role/company context even when the app has no saved editing snapshot.
+  function appToAnalysis(app: Application): Analysis {
+    return {
+      company: app.company, title: app.title, location: app.location ?? "", url: app.url ?? "",
+      jd: "", jdKeywords: [], matched: [], missing: [], gaps: [], overallFit: 0,
+      senioritySignal: "", domainTags: [], atsWarnings: [], isSemantic: false,
+    };
+  }
+
+  // Jump into a mock interview primed for this specific job.
+  function prepInterview(app: Application) {
+    if (!loadApp(app.id)) setAnalysis(appToAnalysis(app));
+    router.push("/app/interview");
   }
 
   function renderKanban() {
@@ -117,10 +146,14 @@ export default function TrackerPage() {
                           {app.resumeName}
                         </div>
                       ) : null}
-                      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex-wrap">
                         {app.snapshot ? (
-                          <button type="button" onClick={() => openApp(app.id)} className="text-amber-600 text-[11px] hover:text-amber-700 dark:text-amber-400">Open</button>
+                          <button type="button" onClick={() => openApp(app.id)} className="text-[var(--brand)] text-[11px] hover:underline">Continue</button>
                         ) : null}
+                        {app.resumeId && resumes.some((r) => r.id === app.resumeId) ? (
+                          <Link href={`/app/resumes/${app.resumeId}`} className="text-slate-600 text-[11px] hover:underline dark:text-slate-300">CV</Link>
+                        ) : null}
+                        <button type="button" onClick={() => prepInterview(app)} className="text-slate-600 text-[11px] hover:underline dark:text-slate-300">Prep</button>
                         <button type="button" onClick={() => { removeApp(app.id); toast("✓ Deleted"); }} className="text-red-600 text-[11px] hover:text-red-700 ml-auto dark:text-red-400">Delete</button>
                       </div>
                     </div>
@@ -154,10 +187,64 @@ export default function TrackerPage() {
         </div>
       </div>
 
+      {allApps.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5 mb-4" data-testid="tracker-filters">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            data-testid="filter-all"
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filter === "all"
+                ? "bg-[var(--brand)] border-[var(--brand)] text-white dark:text-slate-900"
+                : "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+            }`}
+          >
+            All ({allApps.length})
+          </button>
+          {STATUSES.map((st) => {
+            const n = allApps.filter((a) => a.status === st).length;
+            const active = filter === st;
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setFilter(active ? "all" : st)}
+                data-testid={`filter-${st}`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                  active
+                    ? "bg-[var(--brand)] border-[var(--brand)] text-white dark:text-slate-900"
+                    : "border-[var(--border-strong)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-40"
+                }`}
+                disabled={n === 0 && !active}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ background: active ? "currentColor" : STATUS_COLOR[st] }} />
+                {st} ({n})
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="card rounded-xl overflow-hidden">
-        {apps.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            No applications tracked yet. Analyse a job and save it from the Editing Room.
+        {allApps.length === 0 ? (
+          <div className="p-12 text-center">
+            <p className="text-slate-500 dark:text-slate-400">
+              No applications tracked yet. Analyse a job, tailor a CV, then save it here.
+            </p>
+            <Link
+              href="/app/analyze"
+              data-testid="tracker-empty-analyse"
+              className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold mt-4"
+            >
+              Analyse a job <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : apps.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400" data-testid="tracker-filter-empty">
+            No {filter} applications.{" "}
+            <button type="button" onClick={() => setFilter("all")} className="text-[var(--brand)] hover:underline">
+              Show all
+            </button>
           </div>
         ) : view === "board" ? (
           renderKanban()
@@ -234,12 +321,20 @@ export default function TrackerPage() {
                         {new Date(app.createdAt).toLocaleDateString("en-GB")}
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           {app.snapshot ? (
-                            <button type="button" onClick={() => openApp(app.id)} className="text-amber-600 text-xs hover:text-amber-600 flex items-center gap-1 dark:text-amber-400" title="Reload saved generations">
-                              <FolderOpen className="w-3.5 h-3.5" /> Open
+                            <button type="button" onClick={() => openApp(app.id)} data-testid={`continue-${app.id}`} className="text-[var(--brand)] text-xs hover:underline flex items-center gap-1" title="Reload this tailoring session in the editor">
+                              <PenLine className="w-3.5 h-3.5" /> Continue
                             </button>
                           ) : null}
+                          {app.resumeId && resumes.some((r) => r.id === app.resumeId) ? (
+                            <Link href={`/app/resumes/${app.resumeId}`} data-testid={`open-cv-${app.id}`} className="text-slate-600 text-xs hover:underline flex items-center gap-1 dark:text-slate-300" title="Open the CV used for this application">
+                              <FileText className="w-3.5 h-3.5" /> Open CV
+                            </Link>
+                          ) : null}
+                          <button type="button" onClick={() => prepInterview(app)} data-testid={`prep-${app.id}`} className="text-slate-600 text-xs hover:underline flex items-center gap-1 dark:text-slate-300" title="Practise a mock interview for this role">
+                            <Mic className="w-3.5 h-3.5" /> Prep interview
+                          </button>
                           <button
                             type="button"
                             onClick={() => {

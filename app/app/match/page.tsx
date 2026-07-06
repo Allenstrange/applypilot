@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Target, Plus, Trash2, Sparkles, ClipboardList, Wand2 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -9,7 +10,6 @@ import { useHydrated } from "@/lib/useHydrated";
 import { isAIConfigured, AI_PROVIDERS } from "@/lib/ai";
 import { matchJob } from "@/lib/match";
 import { optimizeResumeForJob } from "@/lib/generate";
-import { exportCVPDF } from "@/lib/pdf";
 import { toast } from "@/lib/toast";
 import type { JobMatch, Application, Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
@@ -32,17 +32,17 @@ const VERDICT_STYLE: Record<JobMatch["verdict"], { label: string; cls: string; r
 
 export default function MatchPage() {
   const hydrated = useHydrated();
+  const router = useRouter();
   const profile = useStore((s) => s.profile);
   const providers = useStore((s) => s.providers);
   const addApplication = useStore((s) => s.addApplication);
   const addResume = useStore((s) => s.addResume);
-  const applications = useStore((s) => s.applications);
-  const setApplicationResume = useStore((s) => s.setApplicationResume);
+  const updateResume = useStore((s) => s.updateResume);
+  const setPendingJob = useStore((s) => s.setPendingJob);
 
   const [jobs, setJobs] = useState<JobInput[]>([{ id: crypto.randomUUID(), text: "" }]);
   const [results, setResults] = useState<JobMatch[]>([]);
   const [busy, setBusy] = useState(false);
-  const [tailoring, setTailoring] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
   const aiReady = hydrated && isAIConfigured(providers);
@@ -116,37 +116,12 @@ export default function MatchPage() {
     };
   }
 
-  async function tailorOne(m: JobMatch) {
-    if (!profileReady) { toast("⚠ Complete your master profile first"); return; }
-    if (!aiReady) { toast("⚠ Configure an AI provider in Settings"); return; }
-    setTailoring(m.id);
-    toast("⏳ Tailoring your CV for this role…");
-    try {
-      const name = `${m.title} – ${m.company}`;
-      const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
-      const resumeId = addResume(name, "classic-clear", tailored);
-      exportCVPDF(tailored);
-      const existing = applications.find((a) => a.company === m.company && a.title === m.title);
-      if (existing) {
-        setApplicationResume(existing.id, resumeId);
-      } else {
-        addApplication({
-          id: newAppId(),
-          company: m.company,
-          title: m.title,
-          status: "planned",
-          createdAt: new Date().toISOString(),
-          notes: `Tailored CV (${m.fit}% fit).`,
-          resumeId,
-          resumeName: name,
-        });
-      }
-      toast("✓ Tailored CV saved, linked & tracked");
-    } catch (err) {
-      toast("✕ " + (err as Error).message);
-    } finally {
-      setTailoring(null);
-    }
+  // Hand the job to the Analyze → Editor pipeline instead of silently dumping a
+  // detached CV. One tailoring path: analyse the JD, then tailor in the editor.
+  function tailorOne(m: JobMatch) {
+    setPendingJob({ company: m.company, title: m.title, jd: m.jd });
+    toast("→ Taking you to analyse this role");
+    router.push("/app/analyze");
   }
 
   async function tailorAll() {
@@ -159,7 +134,8 @@ export default function MatchPage() {
     for (const m of results) {
       try {
         const tailored = await optimizeResumeForJob(profile, matchToAnalysis(m), providers);
-        addResume(`${m.title} – ${m.company}`, "classic-clear", tailored);
+        const id = addResume(`${m.title} – ${m.company}`, "classic-clear", tailored);
+        updateResume(id, { targetJob: { title: m.title, company: m.company } });
         ok += 1;
       } catch { /* skip individual failures */ }
     }
@@ -266,7 +242,6 @@ export default function MatchPage() {
               rank={i + 1}
               onTrack={() => track(m)}
               onTailor={() => tailorOne(m)}
-              tailoring={tailoring === m.id}
             />
           ))}
         </div>
@@ -275,7 +250,7 @@ export default function MatchPage() {
   );
 }
 
-function ResultCard({ match: m, rank, onTrack, onTailor, tailoring }: { match: JobMatch; rank: number; onTrack: () => void; onTailor: () => void; tailoring: boolean }) {
+function ResultCard({ match: m, rank, onTrack, onTailor }: { match: JobMatch; rank: number; onTrack: () => void; onTailor: () => void }) {
   const v = VERDICT_STYLE[m.verdict];
   const C = 2 * Math.PI * 26;
   return (
@@ -320,11 +295,10 @@ function ResultCard({ match: m, rank, onTrack, onTailor, tailoring }: { match: J
           <button
             type="button"
             onClick={onTailor}
-            disabled={tailoring}
             data-testid={`tailor-match-${rank}`}
-            className="btn-primary px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="btn-primary px-3 py-2 rounded-lg text-xs flex items-center gap-1.5"
           >
-            {tailoring ? <span className="spinner" /> : <Wand2 className="w-3.5 h-3.5" />} Tailor CV
+            <Wand2 className="w-3.5 h-3.5" /> Tailor CV
           </button>
         </div>
       </div>

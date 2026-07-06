@@ -30,13 +30,13 @@ const STEPS: Step[] = [
     selector: '[data-tour="/app/match"]',
     route: "/app/match",
     title: "3 · Match many jobs at once",
-    body: "Rank multiple roles by fit, then one-click ‘Tailor CV’ to generate and track a resume per job.",
+    body: "Rank multiple roles by fit, then click ‘Tailor CV’ to analyse that job and tailor a CV for it.",
   },
   {
     selector: '[data-tour="/app/editor"]',
     route: "/app/editor",
-    title: "4 · The Editing Room",
-    body: "AI-tailor your CV, cover letter, interview prep and outreach — with a live resume score and inline keyword gaps.",
+    title: "4 · Tailor",
+    body: "AI-tailor your CV, cover letter, interview prep and outreach — with a live match score and inline keyword gaps, then save it to My CVs.",
   },
   {
     selector: '[data-tour="/app/resumes"]',

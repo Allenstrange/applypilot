@@ -13,6 +13,7 @@ import {
   FileText,
   Upload,
   Plus,
+  PenLine,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated, useNow } from "@/lib/useHydrated";
@@ -26,9 +27,12 @@ export default function DashboardPage() {
   const now = useNow();
   const applications = useStore((s) => s.applications);
   const resumes = useStore((s) => s.resumes);
+  const analysis = useStore((s) => s.currentAnalysis);
+  const draftCV = useStore((s) => s.draftCV);
 
   const apps = hydrated ? applications : [];
   const cvs = hydrated ? resumes : [];
+  const resume = hydrated && analysis && draftCV ? analysis : null;
   const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
   const stats = {
     total: apps.length,
@@ -43,6 +47,30 @@ export default function DashboardPage() {
         title="Welcome back 👋"
         subtitle="Your AI-powered job application command centre."
       />
+
+      {/* Resume the last tailoring session in one click. */}
+      {resume ? (
+        <Link
+          href="/app/editor"
+          data-testid="continue-card"
+          className="group flex items-center gap-4 card rounded-xl p-5 mb-6 border-[var(--brand)]/40 hover:border-[var(--brand)] transition-colors"
+        >
+          <div className="w-11 h-11 rounded-lg shrink-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_14%,transparent)]">
+            <PenLine className="w-5 h-5 text-[var(--brand)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--brand)]">
+              Continue where you left off
+            </div>
+            <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+              Tailoring {resume.title} at {resume.company}
+            </div>
+          </div>
+          <span className="btn-primary px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 shrink-0">
+            Resume <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+      ) : null}
 
       {/* CV-first shelf: your CVs are the unit of work, so they lead the page. */}
       <div className="card rounded-xl p-6 mb-6" data-testid="cv-shelf">
@@ -122,10 +150,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" />
-        <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" />
-        <StatCard label="Offers" value={stats.offers} hint={stats.offers ? "🎉 nice work" : "keep going"} className="text-green-600 dark:text-green-400" />
-        <StatCard label="This Week" value={stats.week} hint="added this week" className="text-[var(--brand)]" />
+        <StatCard label="Applications" value={stats.total} hint="all time" className="text-slate-900 dark:text-slate-100" href="/app/tracker" />
+        <StatCard label="Interviews" value={stats.interviews} hint={stats.interviews ? "in progress" : "none yet"} className="text-amber-600 dark:text-amber-400" href="/app/tracker?status=interview" />
+        <StatCard label="Offers" value={stats.offers} hint={stats.offers ? "🎉 nice work" : "keep going"} className="text-green-600 dark:text-green-400" href="/app/tracker?status=offer" />
+        <StatCard label="This Week" value={stats.week} hint="added this week" className="text-[var(--brand)]" href="/app/tracker" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -204,18 +232,27 @@ function StatCard({
   value,
   hint,
   className,
+  href,
 }: {
   label: string;
   value: number;
   hint?: string;
   className?: string;
+  href: string;
 }) {
   return (
-    <div className="card stat-card rounded-xl p-5">
-      <div className="text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">{label}</div>
+    <Link
+      href={href}
+      data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      className="group card stat-card rounded-xl p-5 block transition-colors hover:border-[var(--brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+    >
+      <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-wider dark:text-slate-400">
+        {label}
+        <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--brand)]" />
+      </div>
       <div className={`text-3xl font-bold mt-2 ${className ?? ""}`}>{value}</div>
       {hint ? <div className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{hint}</div> : null}
-    </div>
+    </Link>
   );
 }
 

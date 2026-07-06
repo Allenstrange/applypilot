@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download, Share2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, Share2, GripVertical, ChevronUp, ChevronDown, Target } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { TEMPLATES, ACCENT_SWATCHES, DENSITY_LABELS, FONT_LABELS, DEFAULT_SECTION_ORDER, SECTION_LABELS, resolveTemplate } from "@/lib/templates";
@@ -85,6 +85,13 @@ export default function ResumeEditorPage() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href={`/app/analyze?base=${id}`}
+            data-testid="tailor-to-job-btn"
+            className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Target className="w-4 h-4" /> Tailor to a job
+          </Link>
           <button
             type="button"
             onClick={shareLink}

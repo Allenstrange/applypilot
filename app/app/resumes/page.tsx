@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FilePlus2, Copy, Trash2, GitCompare, Plus, LayoutTemplate, Upload, Target } from "lucide-react";
+import { FilePlus2, Copy, Trash2, Plus, LayoutTemplate, Upload, Target } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { scoreResume } from "@/lib/resumeScore";
@@ -13,6 +13,7 @@ import { parseCVFile } from "@/lib/cvParser";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import TemplateThumbnail from "@/components/TemplateThumbnail";
+import CvWorkspaceTabs from "@/components/CvWorkspaceTabs";
 
 export default function ResumesPage() {
   const hydrated = useHydrated();
@@ -80,14 +81,9 @@ export default function ResumesPage() {
         }}
       />
 
-      <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
-        <PageHeader title="Resumes" subtitle="Upload, build, and keep a tailored CV for every role." />
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
+        <PageHeader title="My CVs" subtitle="Upload, build, and keep a tailored CV for every role." />
         <div className="flex items-center gap-2">
-          {resumes.length >= 1 ? (
-            <Link href="/app/compare" data-testid="compare-link" className="btn-ghost px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-              <GitCompare className="w-4 h-4" /> Compare
-            </Link>
-          ) : null}
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -102,6 +98,8 @@ export default function ResumesPage() {
           </button>
         </div>
       </div>
+
+      <CvWorkspaceTabs />
 
       {list.length === 0 ? (
         <div className="card rounded-2xl p-10">

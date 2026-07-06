@@ -10,6 +10,7 @@ import { SAMPLE_PERSONAS, getPersona } from "@/lib/sampleResumes";
 import { toast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import TemplateThumbnail from "@/components/TemplateThumbnail";
+import CvWorkspaceTabs from "@/components/CvWorkspaceTabs";
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="p-8">
+      <CvWorkspaceTabs />
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <PageHeader
           title="Templates"

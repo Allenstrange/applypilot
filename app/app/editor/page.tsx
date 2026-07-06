@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -15,6 +15,9 @@ import {
   MessageSquare,
   PenLine,
   Bot,
+  FolderPlus,
+  ArrowRight,
+  Target,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
@@ -48,6 +51,7 @@ import ResumeScorePanel from "@/components/ResumeScorePanel";
 import ResumeAssistant from "@/components/ResumeAssistant";
 import KeywordCoach from "@/components/KeywordCoach";
 import ResumeInsights from "@/components/ResumeInsights";
+import PipelineStepper from "@/components/PipelineStepper";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
 type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
@@ -65,52 +69,93 @@ export default function EditorPage() {
   const hydrated = useHydrated();
   const analysis = useStore((s) => s.currentAnalysis);
   const draftCV = useStore((s) => s.draftCV);
+  const draftBaseResumeId = useStore((s) => s.draftBaseResumeId);
+  const resumes = useStore((s) => s.resumes);
   const saveToTracker = useStore((s) => s.saveCurrentToTracker);
+  const saveDraftToLibrary = useStore((s) => s.saveDraftToLibrary);
   const [tab, setTab] = useState<Tab>("cv");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [saveMenu, setSaveMenu] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   if (!hydrated) {
     return <PageSkeleton />;
   }
 
   if (!analysis || !draftCV) {
-    return (
-      <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-        <PenLine className="w-10 h-10 mx-auto mb-3" />
-        <div>No job selected for editing.</div>
-        <Link href="/app/analyze" className="btn-primary px-4 py-2 rounded-lg text-sm mt-4 inline-block">
-          Analyse a Job First
-        </Link>
-      </div>
-    );
+    return <EditorEmptyState resumes={resumes} />;
   }
 
-  function onSave() {
+  const baseResume = draftBaseResumeId ? resumes.find((r) => r.id === draftBaseResumeId) : undefined;
+
+  function onSaveTracker() {
     const r = saveToTracker();
     toast(r === "saved" ? "✓ Saved to tracker" : r === "exists" ? "ℹ Already in tracker" : "⚠ Nothing to save");
   }
 
+  function saveLibrary(mode: "new" | "update") {
+    const id = saveDraftToLibrary(mode);
+    setSaveMenu(false);
+    if (id) {
+      setSavedId(id);
+      toast(mode === "update" ? "✓ Updated in My CVs" : "✓ Saved to My CVs");
+    }
+  }
+
   return (
     <div className="p-8">
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Editing Room</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {analysis.title} at {analysis.company}
+            {baseResume ? <span className="text-slate-400"> · from {baseResume.name}</span> : null}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <PipelineStepper current="tailor" className="pt-1" />
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mb-6 flex-wrap">
+        {savedId ? (
+          <Link
+            href={`/app/resumes/${savedId}`}
+            data-testid="view-saved-cv"
+            className="text-xs font-medium text-[var(--brand)] hover:underline inline-flex items-center gap-1 mr-1"
+          >
+            View in My CVs <ArrowRight className="w-3 h-3" />
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          data-testid="open-assistant-drawer"
+          className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <Bot className="w-4 h-4" /> Ask AI
+        </button>
+        <button type="button" onClick={onSaveTracker} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          <Save className="w-4 h-4" /> Save to Tracker
+        </button>
+        <div className="relative">
           <button
             type="button"
-            onClick={() => setDrawerOpen(true)}
-            data-testid="open-assistant-drawer"
+            onClick={() => (baseResume ? setSaveMenu((v) => !v) : saveLibrary("new"))}
+            data-testid="save-to-cvs"
             className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"
           >
-            <Bot className="w-4 h-4" /> Ask AI
+            <FolderPlus className="w-4 h-4" /> Save to My CVs
+            {baseResume ? <ChevronMark open={saveMenu} /> : null}
           </button>
-          <button type="button" onClick={onSave} className="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-            <Save className="w-4 h-4" /> Save to Tracker
-          </button>
+          {saveMenu && baseResume ? (
+            <div className="absolute right-0 top-11 z-20 glass rounded-lg p-1 text-sm min-w-56 shadow-xl">
+              <button type="button" onClick={() => saveLibrary("update")} className="block w-full text-left px-3 py-2 rounded hover:bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] text-slate-700 dark:text-slate-200">
+                Update <span className="font-medium">{baseResume.name}</span>
+              </button>
+              <button type="button" onClick={() => saveLibrary("new")} className="block w-full text-left px-3 py-2 rounded hover:bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] text-slate-700 dark:text-slate-200">
+                Save as a new CV
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -150,6 +195,72 @@ export default function EditorPage() {
       </AnimatePresence>
 
       <AssistantDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </div>
+  );
+}
+
+function ChevronMark({ open }: { open: boolean }) {
+  return (
+    <span className={`transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
+      ▾
+    </span>
+  );
+}
+
+// A real router instead of a dead-end: pick a CV to tailor, or analyse a job.
+function EditorEmptyState({ resumes }: { resumes: { id: string; name: string; templateId: string }[] }) {
+  return (
+    <div className="p-8">
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Tailor a CV to a specific job, then save it back to My CVs.
+          </p>
+        </div>
+        <PipelineStepper current="tailor" className="pt-1" />
+      </div>
+
+      <div className="card rounded-2xl p-10 max-w-2xl mx-auto text-center">
+        <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_12%,transparent)]">
+          <PenLine className="w-6 h-6 text-[var(--brand)]" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Pick a job to tailor for</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
+          Tailoring works against a specific job. Analyse one to begin — the CV you choose there becomes your working draft.
+        </p>
+        <Link
+          href="/app/analyze"
+          data-testid="editor-empty-analyse"
+          className="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+        >
+          <Target className="w-4 h-4" /> Analyse a job
+        </Link>
+
+        {resumes.length ? (
+          <div className="mt-8 text-left">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              …or tailor one of your CVs
+            </div>
+            <div className="space-y-1.5">
+              {resumes.slice(0, 4).map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/app/analyze?base=${r.id}`}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] hover:border-[var(--brand)]/50 text-sm text-slate-700 dark:text-slate-200 transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2 truncate">
+                    <FileText className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" /> {r.name}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--brand)] shrink-0">
+                    Tailor <ArrowRight className="w-3 h-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -198,6 +309,36 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   const [variantsLoading, setVariantsLoading] = useState<string | null>(null);
   const [secVariants, setSecVariants] = useState<{ kind: "summary" | "skills"; options: string[] } | null>(null);
   const [secLoading, setSecLoading] = useState<string | null>(null);
+  // A loud "+N%" that flashes by the score whenever a fix moves the match rate.
+  const [scoreFlash, setScoreFlash] = useState<number | null>(null);
+  const prevScoreRef = useRef<number | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Click a missing keyword to drop it straight into Skills — the match rate
+  // and delta flash react immediately, closing the see-it → fix-it loop.
+  function addKeywordToSkills(k: string) {
+    const skills = draftCV.skills.trim();
+    updateDraftCV({ skills: skills ? `${skills.replace(/,\s*$/, "")}, ${k}` : k });
+    toast(`✓ Added “${k}” to Skills`);
+  }
+
+  // Click a matched keyword to see where it lives: scroll the preview to the
+  // first highlighted occurrence and pulse it.
+  function jumpToKeyword(k: string) {
+    const marks = previewRef.current?.querySelectorAll("mark");
+    if (!marks) return;
+    const target = Array.from(marks).find(
+      (m) => (m.textContent ?? "").toLowerCase() === k.toLowerCase(),
+    );
+    if (!target) {
+      toast("ℹ Couldn’t locate it in the preview");
+      return;
+    }
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.style.transition = "box-shadow 0.25s ease";
+    target.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--brand) 65%, transparent)";
+    setTimeout(() => { target.style.boxShadow = ""; }, 1500);
+  }
 
   async function loadSectionVariants(kind: "summary" | "skills") {
     if (!isAIConfigured(providers)) {
@@ -331,6 +472,18 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     : 0;
   const scoreColor = score > 70 ? "#4ade80" : score > 40 ? "#fbbf24" : "#f87171";
 
+  // Flash the delta whenever a fix (an edit or the one-click optimise) moves the score.
+  useEffect(() => {
+    if (prevScoreRef.current !== null && score !== prevScoreRef.current) {
+      const d = score - prevScoreRef.current;
+      setScoreFlash(d);
+      const t = setTimeout(() => setScoreFlash(null), 2400);
+      prevScoreRef.current = score;
+      return () => clearTimeout(t);
+    }
+    prevScoreRef.current = score;
+  }, [score]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Editor */}
@@ -427,6 +580,24 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
           <div className="text-xs text-slate-500 uppercase mb-1 dark:text-slate-400">Live Match Rate</div>
           <div className="flex items-center gap-3">
             <div className="text-2xl font-bold" style={{ color: scoreColor }}>{score}%</div>
+            <AnimatePresence>
+              {scoreFlash !== null && scoreFlash !== 0 ? (
+                <motion.span
+                  key={scoreFlash}
+                  initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  data-testid="score-delta"
+                  className={`text-sm font-bold px-1.5 py-0.5 rounded-full ${
+                    scoreFlash > 0
+                      ? "text-green-600 bg-green-500/15 dark:text-green-400"
+                      : "text-red-500 bg-red-500/15 dark:text-red-400"
+                  }`}
+                >
+                  {scoreFlash > 0 ? `▲ +${scoreFlash}%` : `▼ ${scoreFlash}%`}
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               {matched.length} of {analysis.jdKeywords.length} keywords matched
             </div>
@@ -439,17 +610,20 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {missing.length ? (
                 <>
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
-                    Missing keywords ({missing.length})
+                    Missing keywords ({missing.length}) · click to add to Skills
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {missing.map((k) => (
-                      <span
+                      <button
                         key={k}
-                        title="Not yet in your CV — weave it in if you have the experience"
-                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30"
+                        type="button"
+                        onClick={() => addKeywordToSkills(k)}
+                        title={`Add “${k}” to your Skills section`}
+                        data-testid={`add-kw-${k}`}
+                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30 transition-colors hover:bg-red-500/20 hover:border-red-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
                       >
                         + {k}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </>
@@ -459,12 +633,16 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
               {matched.length ? (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {matched.map((k) => (
-                    <span
+                    <button
                       key={k}
-                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25"
+                      type="button"
+                      onClick={() => jumpToKeyword(k)}
+                      title={`Show “${k}” in the preview`}
+                      data-testid={`show-kw-${k}`}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25 transition-colors hover:bg-green-500/25 hover:border-green-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
                     >
                       {k}
-                    </span>
+                    </button>
                   ))}
                 </div>
               ) : null}
@@ -476,7 +654,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
         <div className="mb-3" data-testid="editor-resume-score">
           <ResumeScorePanel profile={draftCV} />
         </div>
-        <div className="rounded-xl overflow-hidden">
+        <div ref={previewRef} className="rounded-xl overflow-hidden">
           <CVPreview profile={draftCV} keywords={analysis.jdKeywords} />
         </div>
       </div>

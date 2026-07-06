@@ -184,6 +184,8 @@ export interface ResumeDoc {
   headingUnderline?: boolean;
   /** Optional custom section order (used by DOCX export). */
   sectionOrder?: SectionKey[];
+  /** The job this CV was tailored to, if it came from the Editing Room. */
+  targetJob?: { title: string; company: string };
   profile: Profile;
   createdAt: string;
   updatedAt: string;
@@ -195,6 +197,8 @@ export interface ScoreIssue {
   severity: "error" | "warning" | "tip";
   message: string;
   where?: string;
+  /** The score category this issue counts against (matches ScoreCategory.label). */
+  category?: string;
 }
 
 export interface ScoreCategory {

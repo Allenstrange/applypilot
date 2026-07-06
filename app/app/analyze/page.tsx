@@ -13,6 +13,7 @@ import { toast } from "@/lib/toast";
 import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 import JdKeywords from "@/components/JdKeywords";
+import PipelineStepper from "@/components/PipelineStepper";
 
 const ANALYSE_PHASES = [
   "Reading the JD…",
@@ -67,6 +68,17 @@ export default function AnalyzePage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, an external system
       setBaseId(id);
     }
+  }, []);
+
+  // Pick up a job handed over by the Job Matcher, then clear it so a refresh
+  // starts fresh. This keeps tailoring on one path: Matcher → Analyze → Editor.
+  useEffect(() => {
+    const pending = useStore.getState().pendingJob;
+    if (!pending) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot handoff from another page
+    setForm((f) => ({ ...f, company: pending.company, title: pending.title, jd: pending.jd }));
+    useStore.getState().setPendingJob(null);
+    toast("✓ Loaded from Job Matcher — review and analyse");
   }, []);
 
   // Cycle through readable steps during the (10–25s) AI analysis so the user
@@ -136,7 +148,7 @@ export default function AnalyzePage() {
     toast(isAIConfigured(providers) ? "⏳ Analysing JD…" : "⏳ Keyword matching…");
     try {
       const analysis = await analyseJob(form, baseProfile, providers);
-      setAnalysis(analysis, baseResume?.profile);
+      setAnalysis(analysis, baseResume?.profile, baseResume?.id);
       toast("✓ Analysis complete");
     } catch (err) {
       toast("✕ Analysis failed: " + (err as Error).message);
@@ -152,10 +164,13 @@ export default function AnalyzePage() {
 
   return (
     <div className="p-8">
-      <PageHeader
-        title="🔍 Job Analysis"
-        subtitle="Paste a job description to diagnose gaps and ATS issues before you start editing."
-      />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-2">
+        <PageHeader
+          title="🔍 Job Analysis"
+          subtitle="Paste a job description to diagnose gaps and ATS issues before you start editing."
+        />
+        <PipelineStepper current="job" className="pt-1" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card rounded-xl p-6">
@@ -302,7 +317,7 @@ function Results({ analysis: a }: { analysis: Analysis }) {
             : null}
         </h2>
         <Link href="/app/editor" className="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2">
-          Enter Editing Room <ArrowRight className="w-4 h-4" />
+          Tailor this CV <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 

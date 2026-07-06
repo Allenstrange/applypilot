@@ -50,7 +50,7 @@ export function scoreResume(profile: Profile): ResumeScore {
   ];
   basics.forEach(([key, label]) => {
     if ((profile[key] as string)?.trim()) contact += 3;
-    else issues.push({ severity: "warning", message: `Add your ${label}`, where: "Header" });
+    else issues.push({ severity: "warning", message: `Add your ${label}`, where: "Header", category: "Contact & basics" });
   });
   categories.push({ label: "Contact & basics", score: contact, max: 15 });
 
@@ -58,13 +58,13 @@ export function scoreResume(profile: Profile): ResumeScore {
   let summary = 0;
   const sumLen = profile.summary.trim().length;
   if (sumLen === 0) {
-    issues.push({ severity: "error", message: "Add a professional summary", where: "Summary" });
+    issues.push({ severity: "error", message: "Add a professional summary", where: "Summary", category: "Summary" });
   } else if (sumLen < 150) {
     summary = 8;
-    issues.push({ severity: "tip", message: "Summary is short — aim for 2-4 punchy sentences", where: "Summary" });
+    issues.push({ severity: "tip", message: "Summary is short — aim for 2-4 punchy sentences", where: "Summary", category: "Summary" });
   } else if (sumLen > 700) {
     summary = 11;
-    issues.push({ severity: "tip", message: "Summary is long — tighten it to the essentials", where: "Summary" });
+    issues.push({ severity: "tip", message: "Summary is long — tighten it to the essentials", where: "Summary", category: "Summary" });
   } else {
     summary = 15;
   }
@@ -74,10 +74,10 @@ export function scoreResume(profile: Profile): ResumeScore {
   let skills = 0;
   const skillCount = profile.skills.split(",").map((s) => s.trim()).filter(Boolean).length;
   if (skillCount === 0) {
-    issues.push({ severity: "error", message: "Add a skills section", where: "Skills" });
+    issues.push({ severity: "error", message: "Add a skills section", where: "Skills", category: "Skills" });
   } else if (skillCount < 6) {
     skills = 8;
-    issues.push({ severity: "tip", message: `Only ${skillCount} skills listed — add more relevant tools/skills`, where: "Skills" });
+    issues.push({ severity: "tip", message: `Only ${skillCount} skills listed — add more relevant tools/skills`, where: "Skills", category: "Skills" });
   } else {
     skills = 15;
   }
@@ -87,14 +87,14 @@ export function scoreResume(profile: Profile): ResumeScore {
   let exp = 0;
   const allBullets = bullets(profile);
   if (profile.experience.length === 0) {
-    issues.push({ severity: "error", message: "Add at least one work experience entry", where: "Experience" });
+    issues.push({ severity: "error", message: "Add at least one work experience entry", where: "Experience", category: "Experience" });
   } else {
     exp += 10;
     if (allBullets.length >= profile.experience.length * 2) exp += 8;
-    else issues.push({ severity: "warning", message: "Add 2-4 bullet points per role", where: "Experience" });
+    else issues.push({ severity: "warning", message: "Add 2-4 bullet points per role", where: "Experience", category: "Experience" });
     const hasDates = profile.experience.every((e) => e.start.trim());
     if (hasDates) exp += 7;
-    else issues.push({ severity: "tip", message: "Add start/end dates to every role", where: "Experience" });
+    else issues.push({ severity: "tip", message: "Add start/end dates to every role", where: "Experience", category: "Experience" });
   }
   categories.push({ label: "Experience", score: exp, max: 25 });
 
@@ -110,6 +110,7 @@ export function scoreResume(profile: Profile): ResumeScore {
         severity: "warning",
         message: "Quantify more bullets — add numbers, %, or scale",
         where: example?.where,
+        category: "Bullet quality",
       });
     }
 
@@ -120,16 +121,16 @@ export function scoreResume(profile: Profile): ResumeScore {
       const lower = b.text.toLowerCase();
       const filler = FILLER_PHRASES.find((f) => lower.includes(f));
       if (filler) {
-        issues.push({ severity: "tip", message: `Replace filler "${filler}" with a strong action verb`, where: b.where });
+        issues.push({ severity: "tip", message: `Replace filler "${filler}" with a strong action verb`, where: b.where, category: "Bullet quality" });
       }
       if (b.text.length > 220) {
-        issues.push({ severity: "tip", message: "Bullet is long — split or trim it", where: b.where });
+        issues.push({ severity: "tip", message: "Bullet is long — split or trim it", where: b.where, category: "Bullet quality" });
       }
     });
     const verbRatio = strongCount / allBullets.length;
     quality += Math.round(verbRatio * 10);
     if (verbRatio < 0.5) {
-      issues.push({ severity: "warning", message: "Start more bullets with strong action verbs (Led, Built, Reduced…)", where: "Experience" });
+      issues.push({ severity: "warning", message: "Start more bullets with strong action verbs (Led, Built, Reduced…)", where: "Experience", category: "Bullet quality" });
     }
   }
   categories.push({ label: "Bullet quality", score: quality, max: 20 });
@@ -137,7 +138,7 @@ export function scoreResume(profile: Profile): ResumeScore {
   // 6. Education (10)
   let edu = 0;
   if (profile.education.length > 0) edu = 10;
-  else issues.push({ severity: "tip", message: "Add your education", where: "Education" });
+  else issues.push({ severity: "tip", message: "Add your education", where: "Education", category: "Education" });
   categories.push({ label: "Education", score: edu, max: 10 });
 
   const overall = categories.reduce((sum, c) => sum + c.score, 0);

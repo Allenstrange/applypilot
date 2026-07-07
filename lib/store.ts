@@ -8,6 +8,7 @@ import { quickMatchScore } from "./matchReport";
 import type {
   Profile,
   Application,
+  ApplicationContact,
   ProviderSettings,
   ProviderId,
   ProviderConfig,
@@ -16,6 +17,7 @@ import type {
   GenerationMode,
   ResumeDoc,
   TemplateId,
+  LibraryBullet,
 } from "./types";
 
 /** Ensure a tracked application has a seeded status timeline. */
@@ -64,6 +66,8 @@ interface AppState {
   pendingJob: { company: string; title: string; jd: string } | null;
   generations: Generations;
   resumes: ResumeDoc[];
+  /** Reusable achievement bullets, saved once and inserted into any draft. */
+  bulletLibrary: LibraryBullet[];
   providers: ProviderSettings;
   onboarded: boolean;
 
@@ -103,12 +107,20 @@ interface AppState {
    */
   saveDraftToLibrary: (mode?: "new" | "update") => string | null;
 
+  // ----- bullet library -----
+  /** Save a bullet for reuse. Returns false when an identical one already exists. */
+  saveBulletToLibrary: (text: string) => boolean;
+  removeLibraryBullet: (id: string) => void;
+
   // ----- tracker -----
   addApplication: (app: Application) => void;
   removeApplication: (id: number) => void;
   setApplicationStatus: (id: number, status: Application["status"]) => void;
   updateApplicationNotes: (id: number, notes: string) => void;
   setApplicationResume: (id: number, resumeId: string) => void;
+  addApplicationContact: (appId: number, contact: Omit<ApplicationContact, "id">) => void;
+  removeApplicationContact: (appId: number, contactId: string) => void;
+  setApplicationNextAction: (appId: number, action: { what: string; when: string } | null) => void;
   saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
   loadApplication: (id: number) => boolean;
 
@@ -131,6 +143,7 @@ export const useStore = create<AppState>()(
       pendingJob: null,
       generations: {},
       resumes: [],
+      bulletLibrary: [],
       providers: defaultProviders,
       onboarded: false,
 
@@ -233,6 +246,24 @@ export const useStore = create<AppState>()(
         return id;
       },
 
+      saveBulletToLibrary: (text) => {
+        const clean = text.replace(/^[-•]\s*/, "").trim();
+        if (!clean) return false;
+        const s = get();
+        if (s.bulletLibrary.some((b) => b.text.toLowerCase() === clean.toLowerCase())) {
+          return false;
+        }
+        set((st) => ({
+          bulletLibrary: [
+            { id: crypto.randomUUID(), text: clean, createdAt: new Date().toISOString() },
+            ...st.bulletLibrary,
+          ],
+        }));
+        return true;
+      },
+      removeLibraryBullet: (id) =>
+        set((s) => ({ bulletLibrary: s.bulletLibrary.filter((b) => b.id !== id) })),
+
       addApplication: (app) =>
         set((s) => ({ applications: [withInitialHistory(app), ...s.applications] })),
       removeApplication: (id) =>
@@ -267,6 +298,29 @@ export const useStore = create<AppState>()(
             ),
           };
         }),
+      addApplicationContact: (appId, contact) =>
+        set((s) => ({
+          applications: s.applications.map((a) =>
+            a.id === appId
+              ? { ...a, contacts: [...(a.contacts ?? []), { ...contact, id: crypto.randomUUID() }] }
+              : a,
+          ),
+        })),
+      removeApplicationContact: (appId, contactId) =>
+        set((s) => ({
+          applications: s.applications.map((a) =>
+            a.id === appId
+              ? { ...a, contacts: (a.contacts ?? []).filter((c) => c.id !== contactId) }
+              : a,
+          ),
+        })),
+      setApplicationNextAction: (appId, action) =>
+        set((s) => ({
+          applications: s.applications.map((a) =>
+            a.id === appId ? { ...a, nextAction: action ?? undefined } : a,
+          ),
+        })),
+
       saveCurrentToTracker: () => {
         const s = get();
         const a = s.currentAnalysis;

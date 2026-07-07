@@ -18,6 +18,8 @@ import {
   FolderPlus,
   ArrowRight,
   Target,
+  CalendarRange,
+  Bookmark,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
@@ -27,9 +29,11 @@ import {
   generateResumeSummary,
   generateInterviewPrep,
   generateOutreach,
+  generateNinetyDayPlan,
   enhanceBulletVariants,
   enhanceTextVariants,
   optimizeResumeForJob,
+  type BulletMode,
 } from "@/lib/generate";
 import { exportCVPDF, exportCoverLetterPDF, exportResumeSummaryPDF } from "@/lib/pdf";
 import { exportResumeDOCX } from "@/lib/docx";
@@ -44,6 +48,7 @@ import type {
   ResumeSummary,
   InterviewPrep,
   Outreach,
+  NinetyDayPlan,
 } from "@/lib/types";
 import Highlight from "@/components/Highlight";
 import KeywordBadges from "@/components/KeywordBadges";
@@ -52,10 +57,11 @@ import ResumeAssistant from "@/components/ResumeAssistant";
 import KeywordCoach from "@/components/KeywordCoach";
 import ResumeInsights from "@/components/ResumeInsights";
 import MatchReportTable from "@/components/MatchReportTable";
+import BulletLibrary from "@/components/BulletLibrary";
 import PipelineStepper from "@/components/PipelineStepper";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
-type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "outreach";
+type Tab = "cv" | "assistant" | "coverLetter" | "resumeSummary" | "interviewPrep" | "ninetyDay" | "outreach";
 
 const TABS: { id: Tab; label: string; icon: typeof FileText }[] = [
   { id: "cv", label: "CV", icon: FileText },
@@ -63,6 +69,7 @@ const TABS: { id: Tab; label: string; icon: typeof FileText }[] = [
   { id: "coverLetter", label: "Cover Letter", icon: Mail },
   { id: "resumeSummary", label: "Resume Summary", icon: PenLine },
   { id: "interviewPrep", label: "Interview Prep", icon: ListChecks },
+  { id: "ninetyDay", label: "90-Day Plan", icon: CalendarRange },
   { id: "outreach", label: "Outreach", icon: MessageSquare },
 ];
 
@@ -197,6 +204,7 @@ export default function EditorPage() {
           {tab === "coverLetter" ? <CoverLetterTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "resumeSummary" ? <ResumeSummaryTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "interviewPrep" ? <InterviewPrepTab analysis={analysis} draftCV={draftCV} /> : null}
+          {tab === "ninetyDay" ? <NinetyDayTab analysis={analysis} draftCV={draftCV} /> : null}
           {tab === "outreach" ? <OutreachTab analysis={analysis} draftCV={draftCV} /> : null}
         </motion.div>
       </AnimatePresence>
@@ -310,6 +318,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
   const updateDraftCV = useStore((s) => s.updateDraftCV);
   const setDraftCV = useStore((s) => s.setDraftCV);
   const providers = useStore((s) => s.providers);
+  const saveBulletToLibrary = useStore((s) => s.saveBulletToLibrary);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
   const [variants, setVariants] = useState<{ key: string; options: string[] } | null>(null);
@@ -436,7 +445,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
     updateExp(i, { bullets: lines.join("\n") });
   };
 
-  async function loadVariants(i: number, j: number, mode: "star" | "professional" | "metrics") {
+  async function loadVariants(i: number, j: number, mode: BulletMode) {
     setOpenMenu(null);
     if (!isAIConfigured(providers)) {
       toast("⚠ AI provider not configured");
@@ -528,9 +537,21 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                       >
                         {variantsLoading === `${i}-${j}` ? "…" : "✨ AI"}
                       </button>
+                      <button
+                        type="button"
+                        data-testid={`bullet-save-${i}-${j}`}
+                        onClick={() =>
+                          toast(saveBulletToLibrary(bullet) ? "✓ Saved to Bullet Library" : "ℹ Already in your library")
+                        }
+                        title="Save this bullet to your reusable library"
+                        className="absolute top-1 right-12 p-0.5 rounded text-slate-400 hover:text-[var(--brand)] transition-colors"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                      </button>
                       {openMenu === `${i}-${j}` ? (
                         <div className="absolute top-7 right-1 z-10 glass rounded-lg p-1 text-xs min-w-44 shadow-xl">
                           <MenuItem onClick={() => loadVariants(i, j, "star")}>Rewrite in STAR format</MenuItem>
+                          <MenuItem onClick={() => loadVariants(i, j, "xyz")}>Rewrite in XYZ formula</MenuItem>
                           <MenuItem onClick={() => loadVariants(i, j, "professional")}>Make more professional</MenuItem>
                           <MenuItem onClick={() => loadVariants(i, j, "metrics")}>Add metric placeholders</MenuItem>
                         </div>
@@ -565,6 +586,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
             ))}
           </div>
         </Section>
+        <BulletLibrary />
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={optimizeAll} disabled={optimizing} data-testid="ats-optimize-btn" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             {optimizing ? <span className="spinner" /> : <Wand2 className="w-4 h-4" />} One-click ATS optimise
@@ -881,6 +903,64 @@ function InterviewPrepTab({ analysis, draftCV }: { analysis: Analysis; draftCV: 
               {data.coachTips[i] ? (
                 <div className="text-xs text-slate-500 dark:text-slate-400"><span className="text-violet-600 font-medium dark:text-violet-400">Coach tip: </span><Highlight text={data.coachTips[i]} keywords={data.keywords} /></div>
               ) : null}
+            </motion.div>
+          ))}
+        </div>
+      ) : null}
+    </OutputShell>
+  );
+}
+
+function NinetyDayTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) {
+  const providers = useStore((s) => s.providers);
+  const data = useStore((s) => s.generations.ninetyDay);
+  const setGeneration = useStore((s) => s.setGeneration);
+  const { busy, go } = useGenerate<NinetyDayPlan>(
+    () => generateNinetyDayPlan(draftCV, analysis, providers),
+    (v) => setGeneration("ninetyDay", v),
+  );
+
+  function plainText(p: NinetyDayPlan) {
+    return p.phases
+      .map((ph) => `${ph.title} — ${ph.focus}\n${ph.actions.map((a) => "• " + a).join("\n")}`)
+      .join("\n\n");
+  }
+
+  return (
+    <OutputShell
+      title="30-60-90 Day Plan"
+      busy={busy}
+      onGenerate={go}
+      hasData={!!data}
+      actions={data ? <CopyBtn text={() => plainText(data)} /> : null}
+    >
+      {data ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" data-testid="ninety-day-plan">
+          {data.phases.map((ph, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="card rounded-xl p-5"
+            >
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand)] mb-1">
+                Phase {i + 1}
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                <Highlight text={ph.title} keywords={data.keywords} />
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                <Highlight text={ph.focus} keywords={data.keywords} />
+              </p>
+              <ul className="space-y-1.5">
+                {ph.actions.map((a2, j) => (
+                  <li key={j} className="text-sm text-slate-600 dark:text-slate-300 flex gap-2">
+                    <span className="text-[var(--brand)]" aria-hidden>▸</span>
+                    <span><Highlight text={a2} keywords={data.keywords} /></span>
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           ))}
         </div>

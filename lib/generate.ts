@@ -10,6 +10,7 @@ import type {
   ResumeSummary,
   InterviewPrep,
   Outreach,
+  NinetyDayPlan,
   AssistantMessage,
   ResumeEdit,
   ResumeEditKind,
@@ -292,19 +293,56 @@ JSON schema:
   };
 }
 
+export async function generateNinetyDayPlan(
+  profile: Profile,
+  analysis: Analysis,
+  providers: ProviderSettings,
+): Promise<NinetyDayPlan> {
+  const prompt = `You are helping a candidate prepare a 30-60-90 day plan to present in a final-round interview for this role. Ground every action in the job description's actual responsibilities and the candidate's real experience — no generic filler.
+${context(profile, analysis)}
+
+${KEYWORD_RULE}
+
+JSON schema:
+{
+  "phases": [
+    {"title": "First 30 days", "focus": "one-line theme (learn)", "actions": ["4-5 concrete, role-specific actions"]},
+    {"title": "Days 31-60", "focus": "one-line theme (contribute)", "actions": ["4-5 concrete, role-specific actions"]},
+    {"title": "Days 61-90", "focus": "one-line theme (own)", "actions": ["4-5 concrete, role-specific actions"]}
+  ],
+  "keywords": ["..."]
+}`;
+  const r = (await callAI(prompt, providers)) as { phases?: unknown; keywords?: unknown };
+  const phases = Array.isArray(r.phases)
+    ? r.phases.map((p) => {
+        const o = (p ?? {}) as Record<string, unknown>;
+        return {
+          title: String(o.title ?? ""),
+          focus: String(o.focus ?? ""),
+          actions: asArray(o.actions),
+        };
+      })
+    : [];
+  return { phases, keywords: asArray(r.keywords) };
+}
+
+export type BulletMode = "star" | "professional" | "metrics" | "xyz";
+
+const BULLET_INSTRUCTIONS: Record<BulletMode, string> = {
+  star: "Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise.",
+  professional:
+    "Make this CV bullet point more professional and impactful. Use strong action verbs.",
+  metrics:
+    "Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]).",
+  xyz: 'Rewrite this CV bullet point using the XYZ formula: "Accomplished [X] as measured by [Y], by doing [Z]". Keep it truthful; use metric placeholders like [X%] where the original has no numbers.',
+};
+
 export async function enhanceBullet(
   bullet: string,
-  mode: "star" | "professional" | "metrics",
+  mode: BulletMode,
   providers: ProviderSettings,
 ): Promise<string> {
-  const instructions: Record<typeof mode, string> = {
-    star: "Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise.",
-    professional:
-      "Make this CV bullet point more professional and impactful. Use strong action verbs.",
-    metrics:
-      "Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]).",
-  };
-  const prompt = `${instructions[mode]} Return JSON: {"enhanced": "rewritten bullet"}
+  const prompt = `${BULLET_INSTRUCTIONS[mode]} Return JSON: {"enhanced": "rewritten bullet"}
 
 Original: "${bullet}"`;
   const r = (await callAI(prompt, providers)) as { enhanced?: string };
@@ -314,16 +352,10 @@ Original: "${bullet}"`;
 /** Produce THREE distinct rewrite options for a single CV bullet. */
 export async function enhanceBulletVariants(
   bullet: string,
-  mode: "star" | "professional" | "metrics",
+  mode: BulletMode,
   providers: ProviderSettings,
 ): Promise<string[]> {
-  const instructions: Record<typeof mode, string> = {
-    star: "Rewrite this CV bullet point in STAR format (Situation, Task, Action, Result). Keep it truthful and concise.",
-    professional:
-      "Make this CV bullet point more professional and impactful. Use strong action verbs.",
-    metrics:
-      "Add realistic metric placeholders to this CV bullet point (e.g., [X%], [Y users]).",
-  };
+  const instructions = BULLET_INSTRUCTIONS;
   const prompt = `${instructions[mode]} Produce THREE meaningfully different options the candidate can choose from. Keep each truthful and concise (one line each). Return valid JSON only: {"options": ["option 1", "option 2", "option 3"]}
 
 Original: "${bullet}"`;

@@ -122,18 +122,35 @@ export interface Outreach {
   keywords: string[];
 }
 
+/** A classic 30-60-90 day plan for final-round interviews. */
+export interface NinetyDayPlan {
+  phases: { title: string; focus: string; actions: string[] }[];
+  keywords: string[];
+}
+
 export interface Generations {
   coverLetter?: CoverLetter;
   resumeSummary?: ResumeSummary;
   interviewPrep?: InterviewPrep;
   outreach?: Outreach;
+  ninetyDay?: NinetyDayPlan;
 }
 
 export type GenerationMode =
   | "coverLetter"
   | "resumeSummary"
   | "interviewPrep"
-  | "outreach";
+  | "outreach"
+  | "ninetyDay";
+
+/** A person attached to an application — recruiter, referral, hiring manager. */
+export interface ApplicationContact {
+  id: string;
+  name: string;
+  role?: string;
+  email?: string;
+  notes?: string;
+}
 
 export interface Application {
   id: number;
@@ -144,6 +161,10 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: string;
   notes?: string;
+  /** People involved in this application (recruiter, referral, interviewer). */
+  contacts?: ApplicationContact[];
+  /** The single next step and its due date — the tracker surfaces overdue ones. */
+  nextAction?: { what: string; when: string };
   /** Which resume version was used for this application (for resume performance analytics). */
   resumeId?: string;
   resumeName?: string;
@@ -157,6 +178,15 @@ export interface Application {
     draftCV: Profile;
     generations: Generations;
   };
+}
+
+// ---------- Bullet library ----------
+
+/** A reusable achievement bullet, saved once and inserted into any tailored CV. */
+export interface LibraryBullet {
+  id: string;
+  text: string;
+  createdAt: string;
 }
 
 // ---------- Resume library ----------

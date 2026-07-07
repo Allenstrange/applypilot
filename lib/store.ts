@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { migrateTemplateId } from "./templates";
+import { quickMatchScore } from "./matchReport";
 import type {
   Profile,
   Application,
@@ -270,11 +271,28 @@ export const useStore = create<AppState>()(
         const s = get();
         const a = s.currentAnalysis;
         if (!a) return "no-analysis";
-        if (
-          s.applications.find(
-            (app) => app.company === a.company && app.title === a.title,
-          )
-        ) {
+        const draft = s.draftCV ?? (JSON.parse(JSON.stringify(s.profile)) as Profile);
+        const score = quickMatchScore(draft, a.jdKeywords);
+        const now = new Date().toISOString();
+        const existing = s.applications.find(
+          (app) => app.company === a.company && app.title === a.title,
+        );
+        if (existing) {
+          // Re-saving acts as a rescan: refresh the snapshot and record the
+          // score so the tracker shows the tailoring trend over time.
+          set((st) => ({
+            applications: st.applications.map((app) => {
+              if (app.id !== existing.id) return app;
+              const hist = app.scoreHistory ?? [];
+              const last = hist[hist.length - 1];
+              return {
+                ...app,
+                snapshot: { analysis: a, draftCV: draft, generations: s.generations },
+                scoreHistory:
+                  last && last.score === score ? hist : [...hist, { at: now, score }],
+              };
+            }),
+          }));
           return "exists";
         }
         const app: Application = {
@@ -284,12 +302,13 @@ export const useStore = create<AppState>()(
           location: a.location,
           url: a.url,
           status: "planned",
-          createdAt: new Date().toISOString(),
+          createdAt: now,
           notes: "",
-          statusHistory: [{ status: "planned", at: new Date().toISOString() }],
+          statusHistory: [{ status: "planned", at: now }],
+          scoreHistory: [{ at: now, score }],
           snapshot: {
             analysis: a,
-            draftCV: s.draftCV ?? (JSON.parse(JSON.stringify(s.profile)) as Profile),
+            draftCV: draft,
             generations: s.generations,
           },
         };

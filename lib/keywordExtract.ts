@@ -112,14 +112,28 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Count non-overlapping occurrences of a phrase with token-aware boundaries. */
-function countOccurrences(haystack: string, phrase: string): number {
+/**
+ * Count non-overlapping occurrences of a phrase with token-aware boundaries.
+ * A trailing dot only blocks the match when it starts another token ("node" in
+ * "node.js"), not when it ends a sentence ("…Strong AWS.").
+ */
+export function countOccurrences(haystack: string, phrase: string): number {
   const re = new RegExp(
-    `(?<![a-z0-9+#.])${escapeRe(phrase)}(?![a-z0-9+#.])`,
+    `(?<![a-z0-9+#.])${escapeRe(phrase)}(?![a-z0-9+#]|\\.[a-z0-9])`,
     "gi",
   );
   const m = haystack.match(re);
   return m ? m.length : 0;
+}
+
+/** Curated category for a token (matches phrase or display form), if known. */
+export function categoryOf(token: string): KeywordCategory | null {
+  const t = token.toLowerCase();
+  if (KNOWN[t]) return KNOWN[t].category;
+  for (const phrase of Object.keys(KNOWN)) {
+    if (KNOWN[phrase].display.toLowerCase() === t) return KNOWN[phrase].category;
+  }
+  return null;
 }
 
 const CATEGORY_ORDER: KeywordCategory[] = [

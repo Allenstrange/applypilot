@@ -14,6 +14,8 @@ import type { Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
 import JdKeywords from "@/components/JdKeywords";
 import PipelineStepper from "@/components/PipelineStepper";
+import MatchReportTable from "@/components/MatchReportTable";
+import SearchabilityPanel from "@/components/SearchabilityPanel";
 
 const ANALYSE_PHASES = [
   "Reading the JD…",
@@ -290,6 +292,10 @@ export default function AnalyzePage() {
 }
 
 function Results({ analysis: a }: { analysis: Analysis }) {
+  // The CV being tailored — the draft seeded from the chosen base (or master profile).
+  const profile = useStore((s) => s.profile);
+  const draftCV = useStore((s) => s.draftCV);
+  const reportProfile = draftCV ?? profile;
   const score = a.isSemantic
     ? a.overallFit
     : a.jdKeywords.length
@@ -350,6 +356,18 @@ function Results({ analysis: a }: { analysis: Analysis }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Keyword comparison + searchability: the two report artifacts. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="card rounded-xl p-5 lg:col-span-2">
+          <h3 className="font-semibold text-slate-900 mb-1 dark:text-slate-100">Match Report</h3>
+          <p className="text-[11px] text-[var(--text-muted)] mb-4">
+            How often the job description mentions each skill vs how often your CV does. Fix the red rows in the Tailor screen.
+          </p>
+          <MatchReportTable jd={a.jd} keywords={a.jdKeywords} profile={reportProfile} />
+        </div>
+        <SearchabilityPanel profile={reportProfile} analysis={a} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

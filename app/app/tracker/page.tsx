@@ -366,6 +366,37 @@ export default function TrackerPage() {
   );
 }
 
+function ScoreTrend({ history }: { history: { at: string; score: number }[] }) {
+  if (!history.length) return null;
+  const latest = history[history.length - 1];
+  const color = (s: number) => (s >= 75 ? "text-green-600 dark:text-green-400" : s >= 40 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400");
+  return (
+    <div className="mb-4" data-testid="score-trend">
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+        Match rate trend
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+        {history.map((h, i) => (
+          <span key={i} className="inline-flex items-center gap-1.5">
+            {i > 0 ? <span className="text-slate-400" aria-hidden>→</span> : null}
+            <span
+              title={new Date(h.at).toLocaleString("en-GB")}
+              className={`font-semibold tabular-nums ${i === history.length - 1 ? color(h.score) : "text-slate-500 dark:text-slate-400"}`}
+            >
+              {h.score}%
+            </span>
+          </span>
+        ))}
+        {history.length > 1 ? (
+          <span className={`text-xs font-medium ml-1 ${color(latest.score)}`}>
+            ({latest.score - history[0].score >= 0 ? "+" : ""}{latest.score - history[0].score} since first save)
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function Timeline({ app }: { app: Application }) {
   const events = app.statusHistory?.length
     ? app.statusHistory
@@ -373,6 +404,7 @@ function Timeline({ app }: { app: Application }) {
 
   return (
     <div data-testid={`timeline-${app.id}`}>
+      <ScoreTrend history={app.scoreHistory ?? []} />
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
         <Clock className="w-3.5 h-3.5" /> Status timeline
       </div>

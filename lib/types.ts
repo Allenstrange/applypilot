@@ -149,6 +149,8 @@ export interface Application {
   resumeName?: string;
   /** Status change history for the per-application timeline. */
   statusHistory?: { status: ApplicationStatus; at: string }[];
+  /** Keyword match-rate snapshots, appended on each save — the tailoring trend. */
+  scoreHistory?: { at: string; score: number }[];
   /** Snapshot so past generations can be reloaded without new API calls. */
   snapshot?: {
     analysis: Analysis;

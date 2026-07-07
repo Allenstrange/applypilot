@@ -51,6 +51,7 @@ import ResumeScorePanel from "@/components/ResumeScorePanel";
 import ResumeAssistant from "@/components/ResumeAssistant";
 import KeywordCoach from "@/components/KeywordCoach";
 import ResumeInsights from "@/components/ResumeInsights";
+import MatchReportTable from "@/components/MatchReportTable";
 import PipelineStepper from "@/components/PipelineStepper";
 import { Skeleton, PageSkeleton } from "@/components/Skeleton";
 
@@ -90,7 +91,13 @@ export default function EditorPage() {
 
   function onSaveTracker() {
     const r = saveToTracker();
-    toast(r === "saved" ? "✓ Saved to tracker" : r === "exists" ? "ℹ Already in tracker" : "⚠ Nothing to save");
+    toast(
+      r === "saved"
+        ? "✓ Saved to tracker"
+        : r === "exists"
+          ? "✓ Tracker updated — score snapshot recorded"
+          : "⚠ Nothing to save",
+    );
   }
 
   function saveLibrary(mode: "new" | "update") {
@@ -606,46 +613,18 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
             {score >= 75 ? "✓ Above the 75% ATS benchmark" : "Aim for 75%+ to clear most ATS filters"}
           </div>
           {analysis.jdKeywords.length ? (
-            <div className="mt-3 space-y-2" data-testid="inline-keyword-gaps">
-              {missing.length ? (
-                <>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
-                    Missing keywords ({missing.length}) · click to add to Skills
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {missing.map((k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => addKeywordToSkills(k)}
-                        title={`Add “${k}” to your Skills section`}
-                        data-testid={`add-kw-${k}`}
-                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-dashed border-red-500/30 transition-colors hover:bg-red-500/20 hover:border-red-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
-                      >
-                        + {k}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-[11px] text-green-600 dark:text-green-400">✓ All JD keywords present</div>
-              )}
-              {matched.length ? (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {matched.map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => jumpToKeyword(k)}
-                      title={`Show “${k}” in the preview`}
-                      data-testid={`show-kw-${k}`}
-                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25 transition-colors hover:bg-green-500/25 hover:border-green-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
+            <div className="mt-3" data-testid="inline-keyword-gaps">
+              {missing.length === 0 ? (
+                <div className="text-[11px] text-green-600 dark:text-green-400 mb-2">✓ All JD keywords present</div>
               ) : null}
+              <MatchReportTable
+                jd={analysis.jd}
+                keywords={analysis.jdKeywords}
+                profile={draftCV}
+                onAdd={addKeywordToSkills}
+                onLocate={jumpToKeyword}
+                maxRows={8}
+              />
             </div>
           ) : null}
         </div>
@@ -727,6 +706,39 @@ function useGenerate<T>(
   return { busy, go };
 }
 
+// The same keyword scan the CV gets, run over the generated cover letter, so
+// both documents pull toward the JD.
+function CoverLetterScan({ text, jdKeywords }: { text: string; jdKeywords: string[] }) {
+  if (!jdKeywords.length) return null;
+  const lower = text.toLowerCase();
+  const matched = jdKeywords.filter((k) => lower.includes(k.toLowerCase()));
+  const missing = jdKeywords.filter((k) => !lower.includes(k.toLowerCase()));
+  const pct = Math.round((matched.length / jdKeywords.length) * 100);
+  const color = pct >= 60 ? "#16a34a" : pct >= 30 ? "#d97706" : "#dc2626";
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-3" data-testid="cover-letter-scan">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Letter keyword scan
+        </span>
+        <span className="text-xs font-bold tabular-nums" style={{ color }}>
+          {matched.length}/{jdKeywords.length} JD keywords
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-2">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+      </div>
+      {missing.length ? (
+        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          Not mentioned: {missing.join(", ")} — regenerate or weave them in when editing.
+        </div>
+      ) : (
+        <div className="text-[11px] text-green-600 dark:text-green-400">✓ Every JD keyword appears in the letter.</div>
+      )}
+    </div>
+  );
+}
+
 function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) {
   const providers = useStore((s) => s.providers);
   const data = useStore((s) => s.generations.coverLetter);
@@ -771,6 +783,7 @@ function CoverLetterTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Pr
     >
       {data ? (
         <div className="card rounded-xl p-6 space-y-4 leading-relaxed">
+          <CoverLetterScan text={plainText(data)} jdKeywords={analysis.jdKeywords} />
           <KeywordBadges keywords={data.keywords} />
           <div className="text-xs text-slate-500 uppercase dark:text-slate-400">Subject</div>
           <div className="font-semibold text-slate-900 dark:text-slate-100"><Highlight text={data.subjectLine} keywords={data.keywords} /></div>

@@ -4,13 +4,39 @@ import { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Download, Trash2, PenLine, FileText, Mic, Clock, ChevronDown, ChevronRight, LayoutGrid, Table2 } from "lucide-react";
+import { Download, Trash2, PenLine, FileText, Mic, Clock, ChevronDown, ChevronRight, LayoutGrid, Table2, Users, AlarmClock, Plus, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { downloadText } from "@/lib/download";
 import { toast } from "@/lib/toast";
 import type { Application, ApplicationStatus, Analysis } from "@/lib/types";
 import PageHeader from "@/components/PageHeader";
+
+/** Is a next-action due date today or in the past? */
+function isDue(when: string): boolean {
+  return new Date(when).getTime() <= Date.now();
+}
+
+/** Compact "what · date" chip shown wherever the application appears. */
+function NextActionChip({ app }: { app: Application }) {
+  if (!app.nextAction) return null;
+  const due = isDue(app.nextAction.when);
+  return (
+    <span
+      data-testid={`next-chip-${app.id}`}
+      title={due ? "Due — do this now" : "Upcoming next step"}
+      className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mt-1 ${
+        due
+          ? "bg-red-500/15 text-red-600 dark:text-red-400"
+          : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+      }`}
+    >
+      <AlarmClock className="w-3 h-3 shrink-0" />
+      <span className="truncate max-w-[10rem]">{app.nextAction.what}</span>
+      · {new Date(app.nextAction.when).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+    </span>
+  );
+}
 
 const STATUSES: ApplicationStatus[] = ["planned", "applied", "interview", "offer", "rejected"];
 
@@ -141,6 +167,7 @@ export default function TrackerPage() {
                     >
                       <div className="font-medium text-sm text-slate-900 dark:text-slate-100">{app.company}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{app.title}</div>
+                      <NextActionChip app={app} />
                       {app.resumeName ? (
                         <div className="text-[10px] mt-1.5 inline-block px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--brand)_10%,transparent)] text-[var(--brand)] max-w-full truncate">
                           {app.resumeName}
@@ -278,7 +305,10 @@ export default function TrackerPage() {
                           {expanded === app.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
                       </td>
-                      <td className="p-4 font-medium text-slate-900 dark:text-slate-100">{app.company}</td>
+                      <td className="p-4 font-medium text-slate-900 dark:text-slate-100">
+                        {app.company}
+                        <NextActionChip app={app} />
+                      </td>
                       <td className="p-4">{app.title}</td>
                       <td className="p-4 text-slate-500 dark:text-slate-400">{app.location || "-"}</td>
                       <td className="p-4">
@@ -351,7 +381,13 @@ export default function TrackerPage() {
                     {expanded === app.id ? (
                       <tr className="bg-slate-50 dark:bg-slate-900/40">
                         <td colSpan={8} className="px-6 pb-5 pt-1">
-                          <Timeline app={app} />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+                            <Timeline app={app} />
+                            <div className="pt-1">
+                              <NextActionEditor app={app} />
+                              <ContactsPanel app={app} />
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ) : null}
@@ -361,6 +397,131 @@ export default function TrackerPage() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// The single next step for this application, with a due date the row surfaces.
+function NextActionEditor({ app }: { app: Application }) {
+  const setNextAction = useStore((s) => s.setApplicationNextAction);
+  const [what, setWhat] = useState(app.nextAction?.what ?? "");
+  const [when, setWhen] = useState(app.nextAction?.when?.slice(0, 10) ?? "");
+
+  function save() {
+    if (!what.trim() || !when) {
+      toast("⚠ Add both a step and a date");
+      return;
+    }
+    setNextAction(app.id, { what: what.trim(), when });
+    toast("✓ Next action set");
+  }
+
+  return (
+    <div className="mb-5" data-testid={`next-action-${app.id}`}>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+        <AlarmClock className="w-3.5 h-3.5" /> Next action
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <input
+          value={what}
+          onChange={(e) => setWhat(e.target.value)}
+          placeholder="Follow up with recruiter…"
+          data-testid={`next-what-${app.id}`}
+          className="flex-1 min-w-[10rem] px-2.5 py-1.5 rounded-lg text-xs"
+        />
+        <input
+          type="date"
+          value={when}
+          onChange={(e) => setWhen(e.target.value)}
+          aria-label="Due date"
+          data-testid={`next-when-${app.id}`}
+          className="px-2.5 py-1.5 rounded-lg text-xs"
+        />
+        <button type="button" onClick={save} data-testid={`next-save-${app.id}`} className="btn-primary px-3 py-1.5 rounded-lg text-xs">
+          Set
+        </button>
+        {app.nextAction ? (
+          <button
+            type="button"
+            onClick={() => { setNextAction(app.id, null); setWhat(""); setWhen(""); toast("✓ Cleared"); }}
+            data-testid={`next-clear-${app.id}`}
+            className="btn-ghost px-2.5 py-1.5 rounded-lg text-xs"
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// People attached to this application — recruiter, referral, interviewer.
+function ContactsPanel({ app }: { app: Application }) {
+  const addContact = useStore((s) => s.addApplicationContact);
+  const removeContact = useStore((s) => s.removeApplicationContact);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
+  const contacts = app.contacts ?? [];
+
+  function add() {
+    if (!name.trim()) {
+      toast("⚠ A name is required");
+      return;
+    }
+    addContact(app.id, {
+      name: name.trim(),
+      role: role.trim() || undefined,
+      email: email.trim() || undefined,
+    });
+    setName(""); setRole(""); setEmail("");
+    toast("✓ Contact added");
+  }
+
+  return (
+    <div data-testid={`contacts-${app.id}`}>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+        <Users className="w-3.5 h-3.5" /> Contacts ({contacts.length})
+      </div>
+      {contacts.length ? (
+        <ul className="space-y-1.5 mb-2">
+          {contacts.map((c) => (
+            <li
+              key={c.id}
+              data-testid={`contact-${c.id}`}
+              className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-xs"
+            >
+              <span className="font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
+              {c.role ? <span className="text-slate-500 dark:text-slate-400">· {c.role}</span> : null}
+              {c.email ? (
+                <a href={`mailto:${c.email}`} className="text-[var(--brand)] hover:underline truncate">
+                  {c.email}
+                </a>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => { removeContact(app.id, c.id); toast("✓ Contact removed"); }}
+                aria-label={`Remove ${c.name}`}
+                className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[11px] text-slate-400 mb-2">
+          No contacts yet — recruiters, referrals, and interviewers live here.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name *" data-testid={`contact-name-${app.id}`} className="flex-1 min-w-[7rem] px-2.5 py-1.5 rounded-lg text-xs" />
+        <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role" data-testid={`contact-role-${app.id}`} className="w-28 px-2.5 py-1.5 rounded-lg text-xs" />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" data-testid={`contact-email-${app.id}`} className="w-40 px-2.5 py-1.5 rounded-lg text-xs" />
+        <button type="button" onClick={add} data-testid={`contact-add-${app.id}`} className="btn-ghost px-2.5 py-1.5 rounded-lg text-xs inline-flex items-center gap-1">
+          <Plus className="w-3 h-3" /> Add
+        </button>
       </div>
     </div>
   );

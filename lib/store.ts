@@ -200,7 +200,21 @@ export const useStore = create<AppState>()(
       updateDraftCV: (patch) =>
         set((s) => ({ draftCV: s.draftCV ? { ...s.draftCV, ...patch } : s.draftCV })),
       setGeneration: (mode, payload) =>
-        set((s) => ({ generations: { ...s.generations, [mode]: payload } })),
+        set((s) => {
+          const generations = { ...s.generations, [mode]: payload };
+          // If this job is already tracked, keep its snapshot in sync so the
+          // workspace's documents checklist reflects new generations without
+          // needing a manual re-save.
+          const a = s.currentAnalysis;
+          const applications = a
+            ? s.applications.map((app) =>
+                app.company === a.company && app.title === a.title && app.snapshot
+                  ? { ...app, snapshot: { ...app.snapshot, generations } }
+                  : app,
+              )
+            : s.applications;
+          return { generations, applications };
+        }),
       saveDraftToLibrary: (mode = "new") => {
         const s = get();
         if (!s.draftCV) return null;

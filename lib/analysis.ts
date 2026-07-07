@@ -168,7 +168,11 @@ export async function analyseJob(
       domainTags = r.domainTags ?? [];
       matched = r.matched ?? [];
       gaps = r.gaps ?? [];
-      jdKeywords = matched.map((m) => m.concept);
+      // Gaps count too — otherwise the live match rate reads 100% while known
+      // gaps remain, contradicting the match report right next to it.
+      jdKeywords = [
+        ...new Set([...matched.map((m) => m.concept), ...gaps.map((g) => g.concept)]),
+      ];
       isSemantic = true;
     } catch {
       runFallback();

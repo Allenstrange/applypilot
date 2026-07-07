@@ -21,6 +21,7 @@ import { scoreResume } from "@/lib/resumeScore";
 import { getTemplate } from "@/lib/templates";
 import PageHeader from "@/components/PageHeader";
 import TemplateThumbnail from "@/components/TemplateThumbnail";
+import AttentionStrip from "@/components/AttentionStrip";
 
 export default function DashboardPage() {
   const hydrated = useHydrated();
@@ -47,6 +48,8 @@ export default function DashboardPage() {
         title="Welcome back 👋"
         subtitle="Your AI-powered job application command centre."
       />
+
+      <AttentionStrip />
 
       {/* Resume the last tailoring session in one click. */}
       {resume ? (

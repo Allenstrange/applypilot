@@ -132,6 +132,26 @@ export default function AnalyzePage() {
   const baseResume = baseId ? resumes.find((r) => r.id === baseId) : undefined;
   const baseProfile = baseResume?.profile ?? profile;
 
+  // Pasting a JD auto-fills company/title/location so they don't have to be
+  // retyped — only when AI is configured and only into empty fields.
+  async function onJdPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const pasted = e.clipboardData.getData("text");
+    if (!isAIConfigured(providers) || pasted.trim().length < 200) return;
+    if (form.company && form.title) return;
+    try {
+      const meta = await extractJobMeta(pasted, providers);
+      setForm((f) => ({
+        ...f,
+        company: f.company || meta.company,
+        title: f.title || meta.title,
+        location: f.location || meta.location,
+      }));
+      if (meta.company || meta.title) toast("✨ Company & title detected from the JD");
+    } catch {
+      /* silent — the user can still type them */
+    }
+  }
+
   async function analyse() {
     if (!form.company || !form.title || !form.jd) {
       toast("⚠ Please fill in company, title and JD");
@@ -232,6 +252,8 @@ export default function AnalyzePage() {
               placeholder="Paste the full job description here…"
               value={form.jd}
               onChange={field("jd")}
+              onPaste={onJdPaste}
+              data-testid="jd-textarea"
             />
           </Labeled>
           <div className="flex justify-between items-center mt-4">

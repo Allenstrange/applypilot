@@ -71,9 +71,10 @@ export default function JobWorkspacePage() {
     };
   }
 
-  function continueTailoring() {
+  // Optionally deep-link straight to the relevant Tailor tab (e.g. coverLetter).
+  function continueTailoring(tab?: string) {
     if (loadApp(app!.id)) {
-      router.push("/app/editor");
+      router.push(tab ? `/app/editor?tab=${tab}` : "/app/editor");
     } else {
       toast("ℹ No saved tailoring session for this application");
     }
@@ -137,7 +138,7 @@ export default function JobWorkspacePage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <button
           type="button"
-          onClick={continueTailoring}
+          onClick={() => continueTailoring()}
           data-testid="ws-continue"
           className="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
         >
@@ -187,6 +188,31 @@ export default function JobWorkspacePage() {
             </div>
           )}
 
+          {app.interviews?.length ? (
+            <div className="card rounded-xl p-5" data-testid="ws-interviews">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
+                Interview practice ({app.interviews.length})
+              </h2>
+              <ul className="space-y-2">
+                {app.interviews.map((s, i) => {
+                  const color = s.avgScore >= 75 ? "text-green-600 dark:text-green-400" : s.avgScore >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400";
+                  return (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <Mic className="w-4 h-4 text-[var(--brand)] shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-200">
+                        {s.turns.length} question{s.turns.length === 1 ? "" : "s"} answered
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(s.at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      </span>
+                      <span className={`ml-auto font-bold tabular-nums ${color}`}>{s.avgScore}/100</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="card rounded-xl p-5" data-testid="ws-documents">
             <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Documents</h2>
             <ul className="space-y-2">
@@ -204,7 +230,7 @@ export default function JobWorkspacePage() {
                     </span>
                     <button
                       type="button"
-                      onClick={continueTailoring}
+                      onClick={() => continueTailoring(key)}
                       className="ml-auto text-xs text-[var(--brand)] hover:underline"
                     >
                       {exists ? "Open" : "Generate"}

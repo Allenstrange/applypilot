@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Mic, Send, ChevronRight, RotateCcw, Trophy } from "lucide-react";
+import { Mic, Send, ChevronRight, RotateCcw, Trophy, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import { isAIConfigured, AI_PROVIDERS } from "@/lib/ai";
@@ -17,6 +17,7 @@ export default function InterviewPage() {
   const profile = useStore((s) => s.profile);
   const providers = useStore((s) => s.providers);
   const analysis = useStore((s) => s.currentAnalysis);
+  const saveSession = useStore((s) => s.saveInterviewSession);
 
   const [turns, setTurns] = useState<InterviewTurn[]>([]);
   const [input, setInput] = useState("");
@@ -96,6 +97,21 @@ export default function InterviewPage() {
     setTurns([]);
     setInput("");
     setStarted(false);
+  }
+
+  // Persist the practice run onto the tracked application so the workspace
+  // shows the score history instead of the session evaporating on leave.
+  function saveToApplication() {
+    const r = saveSession({
+      at: new Date().toISOString(),
+      avgScore,
+      turns: turns.filter((t) => t.feedback),
+    });
+    toast(
+      r === "saved"
+        ? "✓ Session saved to this job's workspace"
+        : "⚠ Track this job first (Save to Tracker in Tailor), then save the session",
+    );
   }
 
   return (
@@ -198,6 +214,16 @@ export default function InterviewPage() {
                 {busy ? <span className="spinner" /> : <ChevronRight className="w-4 h-4" />}
                 Next question
               </button>
+              {answered.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={saveToApplication}
+                  data-testid="interview-save-btn"
+                  className="btn-ghost px-5 py-2 rounded-lg text-sm flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" /> Save session to job
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={reset}

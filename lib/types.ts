@@ -143,6 +143,13 @@ export type GenerationMode =
   | "outreach"
   | "ninetyDay";
 
+/** One completed mock-interview practice run, kept on the application. */
+export interface InterviewSession {
+  at: string;
+  avgScore: number;
+  turns: InterviewTurn[];
+}
+
 /** A person attached to an application — recruiter, referral, hiring manager. */
 export interface ApplicationContact {
   id: string;
@@ -165,6 +172,8 @@ export interface Application {
   contacts?: ApplicationContact[];
   /** The single next step and its due date — the tracker surfaces overdue ones. */
   nextAction?: { what: string; when: string };
+  /** Saved mock-interview practice runs for this job. */
+  interviews?: InterviewSession[];
   /** Which resume version was used for this application (for resume performance analytics). */
   resumeId?: string;
   resumeName?: string;

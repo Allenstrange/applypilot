@@ -9,6 +9,7 @@ import type {
   Profile,
   Application,
   ApplicationContact,
+  InterviewSession,
   ProviderSettings,
   ProviderId,
   ProviderConfig,
@@ -121,6 +122,8 @@ interface AppState {
   addApplicationContact: (appId: number, contact: Omit<ApplicationContact, "id">) => void;
   removeApplicationContact: (appId: number, contactId: string) => void;
   setApplicationNextAction: (appId: number, action: { what: string; when: string } | null) => void;
+  /** Attach a finished mock-interview run to the tracked application for the current job. */
+  saveInterviewSession: (session: InterviewSession) => "saved" | "no-app";
   saveCurrentToTracker: () => "saved" | "exists" | "no-analysis";
   loadApplication: (id: number) => boolean;
 
@@ -334,6 +337,25 @@ export const useStore = create<AppState>()(
             a.id === appId ? { ...a, nextAction: action ?? undefined } : a,
           ),
         })),
+
+      saveInterviewSession: (session) => {
+        const s = get();
+        const a = s.currentAnalysis;
+        const app = a
+          ? s.applications.find(
+              (x) => x.company === a.company && x.title === a.title,
+            )
+          : undefined;
+        if (!app) return "no-app";
+        set((st) => ({
+          applications: st.applications.map((x) =>
+            x.id === app.id
+              ? { ...x, interviews: [...(x.interviews ?? []), session] }
+              : x,
+          ),
+        }));
+        return "saved";
+      },
 
       saveCurrentToTracker: () => {
         const s = get();

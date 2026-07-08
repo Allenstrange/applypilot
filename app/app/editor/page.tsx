@@ -86,6 +86,16 @@ export default function EditorPage() {
   const [saveMenu, setSaveMenu] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
+  // Deep-link support: /app/editor?tab=coverLetter opens that tab directly
+  // (used by the Job Workspace documents checklist).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && TABS.some((x) => x.id === t)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL
+      setTab(t as Tab);
+    }
+  }, []);
+
   if (!hydrated) {
     return <PageSkeleton />;
   }

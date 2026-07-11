@@ -146,7 +146,7 @@ export default function MatchPage() {
   return (
     <div className="p-8" data-testid="match-page">
       <PageHeader
-        title="🎯 Job Matcher"
+        title="Job Matcher"
         subtitle="Paste one or many job postings and instantly rank them by how well they fit your profile."
       />
 

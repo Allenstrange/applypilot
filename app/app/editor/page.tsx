@@ -130,7 +130,7 @@ export default function EditorPage() {
     <div className="p-8">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-tight text-slate-900 dark:text-slate-100">Tailor</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {analysis.title} at {analysis.company}
             {baseResume ? <span className="text-slate-400"> · from {baseResume.name}</span> : null}
@@ -190,12 +190,12 @@ export default function EditorPage() {
             type="button"
             onClick={() => setTab(id)}
             className={`relative px-4 py-2 text-sm font-medium flex items-center gap-2 ${
-              tab === id ? "text-amber-600" : "text-slate-500 hover:text-slate-900"
+              tab === id ? "text-[var(--brand)]" : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             <Icon className="w-4 h-4" /> {label}
             {tab === id ? (
-              <motion.div layoutId="tab-underline" className="absolute left-0 right-0 -bottom-px h-0.5 bg-amber-400" />
+              <motion.div layoutId="tab-underline" className="absolute left-0 right-0 -bottom-px h-0.5 bg-[var(--brand)]" />
             ) : null}
           </button>
         ))}
@@ -238,7 +238,7 @@ function EditorEmptyState({ resumes }: { resumes: { id: string; name: string; te
     <div className="p-8">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tailor</h1>
+          <h1 className="text-[22px] leading-7 font-semibold tracking-tight text-slate-900 dark:text-slate-100">Tailor</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Tailor a CV to a specific job, then save it back to My CVs.
           </p>
@@ -588,7 +588,7 @@ function CVTab({ analysis, draftCV }: { analysis: Analysis; draftCV: Profile }) 
                       <BulletChecks text={bullet} />
                     </div>
                   ))}
-                  <button type="button" onClick={() => updateExp(i, { bullets: exp.bullets + "\nNew bullet point here" })} className="text-xs text-amber-600 hover:text-amber-600 dark:text-amber-400">
+                  <button type="button" onClick={() => updateExp(i, { bullets: exp.bullets + "\nNew bullet point here" })} className="text-xs text-[var(--text-faint)] hover:text-[var(--brand)] transition-colors">
                     + Add bullet
                   </button>
                 </div>

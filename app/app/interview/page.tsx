@@ -117,7 +117,7 @@ export default function InterviewPage() {
   return (
     <div className="p-8" data-testid="interview-page">
       <PageHeader
-        title="🎤 Mock Interview"
+        title="Mock Interview"
         subtitle="Practise with an AI interviewer that asks tailored questions and scores every answer."
       />
 

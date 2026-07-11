@@ -12,39 +12,39 @@
 }
 
 /* ---------- Design tokens ----------
-   Brand "Ascent": violet primary + coral accent on warm plum-tinted
-   neutrals. Re-theme the entire app by editing these two blocks. */
+   Violet primary on cool, neutral greys — quiet surfaces, one accent.
+   Re-theme the entire app by editing these two blocks. */
 :root {
-  --bg: #faf9fb;
+  --bg: #f7f8fa;
   --surface: #ffffff;
-  --surface-2: #f4f2f8;
-  --border: #e8e4ef;
-  --border-strong: #d6cfe3;
-  --text: #1a1426;
-  --text-muted: #5c556b;
-  --text-faint: #736c82;
-  --brand: #7c3aed;
-  --brand-hover: #6d28d9;
+  --surface-2: #f1f3f6;
+  --border: #e4e7ec;
+  --border-strong: #cfd4dd;
+  --text: #161922;
+  --text-muted: #545b6b;
+  --text-faint: #737b8c;
+  --brand: #6d28d9;
+  --brand-hover: #5b21b6;
   --accent: #fb6f4c;
   --accent-hover: #ef552f;
-  --shadow: rgba(26, 20, 38, 0.08);
+  --shadow: rgba(16, 20, 30, 0.06);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #120e1b;
-  --surface: #1b1527;
-  --surface-2: #261d36;
-  --border: #2e2542;
-  --border-strong: #3f3458;
-  --text: #ece8f3;
-  --text-muted: #a79fb8;
-  --text-faint: #786e8d;
+  --bg: #0e1015;
+  --surface: #151821;
+  --surface-2: #1c202b;
+  --border: #262b38;
+  --border-strong: #384050;
+  --text: #e6e8ee;
+  --text-muted: #9aa2b3;
+  --text-faint: #6e7688;
   --brand: #a78bfa;
   --brand-hover: #c4b5fd;
   --accent: #fb7c5c;
   --accent-hover: #fd9576;
-  --shadow: rgba(0, 0, 0, 0.5);
+  --shadow: rgba(0, 0, 0, 0.45);
   color-scheme: dark;
 }
 
@@ -57,64 +57,52 @@ body {
   min-height: 100vh;
 }
 
-/* Display typeface for headings (resumes keep their own font; see .doc-preview) */
+/* One typeface everywhere — headings differ by weight and tracking, not font.
+   (Resumes keep their own document fonts; see .doc-preview.) */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.015em;
 }
 
-/* ---------- Surfaces ---------- */
+/* ---------- Surfaces ----------
+   Quiet by default: small radius, hairline borders, near-invisible shadows.
+   Hover feedback is a border shift only — no lifts, no glow. */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 10px;
   box-shadow: 0 1px 2px var(--shadow);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 .card:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 10px 30px var(--shadow);
 }
 .glass {
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   border: 1px solid var(--border);
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 30px var(--shadow);
+  box-shadow: 0 4px 16px var(--shadow);
+  border-radius: 10px;
 }
 .stat-card {
   position: relative;
-  overflow: hidden;
-}
-.stat-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--brand);
-  opacity: 0.85;
-}
-.stat-card:hover {
-  transform: translateY(-2px);
 }
 
 /* ---------- Sidebar ---------- */
 .sidebar-item {
   color: var(--text-muted);
-  border-left: 3px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  font-weight: 450;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .sidebar-item:hover {
   background: var(--surface-2);
   color: var(--text);
 }
 .sidebar-item.active {
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  border-left-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 9%, transparent);
   color: var(--brand);
   font-weight: 600;
 }
@@ -127,17 +115,13 @@ h4 {
 }
 .btn-primary:hover {
   background: var(--brand-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
 }
 .btn-primary:active {
-  transform: translateY(0);
+  filter: brightness(0.96);
 }
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 .btn-ghost {
   background: var(--surface);

@@ -167,7 +167,7 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
 function MiniStat({ label, value, testid }: { label: string; value: number; testid: string }) {
   return (
     <div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-center" data-testid={testid}>
-      <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value > 0 ? value : "–"}</div>
+      <div className="text-[22px] leading-7 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{value > 0 ? value : "–"}</div>
       <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1 dark:text-slate-400">{label}</div>
       <div className="text-[10px] text-slate-400 h-3">{value > 0 ? "days" : ""}</div>
     </div>

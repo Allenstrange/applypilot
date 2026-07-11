@@ -42,7 +42,7 @@ export default function ComparePage() {
   if (!hydrated) {
     return (
       <div className="p-8">
-        <PageHeader title="⚖ Compare Resumes" subtitle="Loading…" />
+        <PageHeader title="Compare Resumes" subtitle="Loading…" />
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function ComparePage() {
     return (
       <div className="p-8">
         <CvWorkspaceTabs />
-        <PageHeader title="⚖ Compare Resumes" subtitle="See two versions side by side with scores and a diff." />
+        <PageHeader title="Compare Resumes" subtitle="See two versions side by side with scores and a diff." />
         <div className="card rounded-xl p-12 text-center text-slate-500 dark:text-slate-400" data-testid="compare-empty">
           You need at least one saved resume to compare. Create one from your{" "}
           <Link href="/app/resumes" className="text-violet-600 underline dark:text-violet-400">Resumes</Link> library.
@@ -64,7 +64,7 @@ export default function ComparePage() {
     <div className="p-8" data-testid="compare-page">
       <CvWorkspaceTabs />
       <PageHeader
-        title="⚖ Compare Resumes"
+        title="Compare Resumes"
         subtitle="Pick two versions to see scores side by side, plus a skill and summary diff."
       />
 

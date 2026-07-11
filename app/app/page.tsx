@@ -45,7 +45,7 @@ export default function DashboardPage() {
   return (
     <div className="p-8">
       <PageHeader
-        title="Welcome back 👋"
+        title="Welcome back"
         subtitle="Your AI-powered job application command centre."
       />
 

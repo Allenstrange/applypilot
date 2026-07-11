@@ -6,9 +6,13 @@ export default function PageHeader({
   subtitle?: string;
 }) {
   return (
-    <div className="mb-8">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>
-      {subtitle ? <p className="text-slate-500 mt-1 dark:text-slate-400">{subtitle}</p> : null}
+    <div className="mb-6">
+      <h1 className="text-[22px] leading-7 font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        {title}
+      </h1>
+      {subtitle ? (
+        <p className="text-sm text-slate-500 mt-0.5 dark:text-slate-400">{subtitle}</p>
+      ) : null}
     </div>
   );
 }

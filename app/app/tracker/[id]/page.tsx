@@ -98,7 +98,7 @@ export default function JobWorkspacePage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 truncate">
+            <h1 className="text-[22px] leading-7 font-semibold tracking-tight text-slate-900 dark:text-slate-100 truncate">
               {app.title}
             </h1>
             <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">

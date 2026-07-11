@@ -188,7 +188,7 @@ export default function AnalyzePage() {
     <div className="p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-2">
         <PageHeader
-          title="🔍 Job Analysis"
+          title="Job Analysis"
           subtitle="Paste a job description to diagnose gaps and ATS issues before you start editing."
         />
         <PipelineStepper current="job" className="pt-1" />
@@ -260,7 +260,7 @@ export default function AnalyzePage() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, company: f.company || "Tetra Tech", title: f.title || "1st/2nd Line Support Analyst", location: f.location || "Birmingham, UK", jd: SAMPLE_JD }))}
-              className="text-xs text-amber-600 hover:text-amber-600 dark:text-amber-400"
+              className="text-xs text-[var(--text-faint)] hover:text-[var(--brand)] transition-colors"
             >
               Load sample JD for testing
             </button>
@@ -285,23 +285,29 @@ export default function AnalyzePage() {
             <div className="flex gap-2"><span className="text-[var(--brand)]" aria-hidden>•</span><span>Keep your master profile up to date first</span></div>
             <div className="flex gap-2"><span className="text-[var(--brand)]" aria-hidden>•</span><span>Review the ATS safety scan before editing</span></div>
           </div>
-          <div className="mt-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <div className="text-xs text-amber-600 font-semibold mb-1 dark:text-amber-400">PROFILE STATUS</div>
-            <div className="text-sm">
+          <div className="mt-6 rounded-lg border border-[var(--border)] divide-y divide-[var(--border)]">
+            <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">Profile</span>
               {profileComplete ? (
-                <span className="text-green-600 dark:text-green-400">✓ Ready to analyse</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" aria-hidden /> Ready
+                </span>
               ) : (
-                <span className="text-amber-600 dark:text-amber-400">⚠ <Link href="/app/profile" className="underline">Profile incomplete</Link></span>
+                <Link href="/app/profile" className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400 hover:underline">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden /> Incomplete
+                </Link>
               )}
             </div>
-          </div>
-          <div className="mt-4 p-4 rounded-lg bg-violet-500/10 border border-violet-500/20">
-            <div className="text-xs text-violet-600 font-semibold mb-1 dark:text-violet-400">AI PROVIDER</div>
-            <div className="text-sm">
+            <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">AI provider</span>
               {aiReady ? (
-                <span className="text-green-600 dark:text-green-400">✓ {AI_PROVIDERS[providers.activeProvider].name}</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" aria-hidden /> {AI_PROVIDERS[providers.activeProvider].name}
+                </span>
               ) : (
-                <span className="text-amber-600 dark:text-amber-400">⚠ <Link href="/app/settings" className="underline">Not configured</Link> — keyword fallback</span>
+                <Link href="/app/settings" className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400 hover:underline">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden /> Not set up
+                </Link>
               )}
             </div>
           </div>
